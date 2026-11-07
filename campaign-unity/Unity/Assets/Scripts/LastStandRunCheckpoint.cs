@@ -13,16 +13,17 @@ namespace SingedTerra.LastStand
         public string FittingId=>LastStandFittingCatalog.Id((LastStandFitting)Encounter.Fitting);
         public string RulesVersion=>Encounter.RulesVersion;
         public LastStandRunEdition Edition { get; }
+        public LastStandLoadout Loadout=>Encounter.Loadout;
+        public LastStandCombatResearchSnapshot CombatResearch=>Encounter.CombatResearch;
         public int CompletedWave=>Encounter.CompletedWave;
         public EncounterCheckpoint Encounter { get; }
         public LastStandShopCheckpoint Shop { get; }
         public LastStandRunCheckpoint(int runId,EncounterCheckpoint encounter,LastStandShopCheckpoint shop,string contentVersion=null)
         {
             if(encounter==null || shop==null || runId<1 || runId!=shop.RunId ||
-                encounter.Fitting!=shop.Fitting || encounter.Kills!=shop.UniqueKills)
+                !encounter.Loadout.Equals(shop.Loadout)||!encounter.CombatResearch.Equals(shop.CombatResearch) || encounter.Kills!=shop.UniqueKills)
                 throw new ArgumentException("Checkpoint identities do not match.");
-            Edition=LastStandRunEdition.Resolve(encounter.RulesVersion,contentVersion??
-                (encounter.RulesVersion==LastStandRunEdition.LegacyRulesVersion?LastStandRunEdition.LegacyContentVersion:LastStandRunEdition.CurrentContentVersion),shop.EconomyVersion);
+            Edition=LastStandRunEdition.Resolve(encounter.RulesVersion,contentVersion??LastStandRunEdition.ContentForRules(encounter.RulesVersion),shop.EconomyVersion);
             var restoredShop=LastStandShopState.RestoreCheckpoint(shop,Edition,encounter.Tier);
             if(!Edition.IsLegacy&&(shop.Tier!=encounter.Tier||shop.RewardWave!=encounter.Wave||
                 shop.DefeatedMask!=(encounter.CompletedWave==0?0:(1<<LastStandWaveCatalog.ForWave(Edition.Tier(encounter.Tier),encounter.Wave,Edition).EnemyCount)-1)))
@@ -32,6 +33,7 @@ namespace SingedTerra.LastStand
                 encounter.CommittedCannonDamage!=projection.CommittedCannonDamage ||
                 encounter.LauncherDamage!=projection.CurrentLauncherDamage ||
                 encounter.ScattergunDamage!=projection.CurrentScattergunDamage ||
+                Edition.IsBuildcraft&&(encounter.Buildcraft.ArcDamage!=projection.CurrentArcDamage||encounter.Buildcraft.ShieldCapacity!=projection.CurrentShieldCapacity)||
                 !Edition.IsLegacy&&(encounter.MortarDamage!=projection.CurrentMortarDamage||encounter.RailgunDamage!=projection.CurrentRailgunDamage) ||
                 encounter.MaximumHull!=projection.CurrentMaximumHull ||
                 encounter.CannonPeriod!=projection.CurrentCannonPeriod ||
@@ -46,9 +48,13 @@ namespace SingedTerra.LastStand
             EncounterProfile.ForTier(Tier,Edition),(LastStandFitting)Encounter.Fitting,Encounter);
         public LastStandShopState RestoreShop()=>LastStandShopState.RestoreCheckpoint(Shop,Edition,Tier);
         public static LastStandRunCheckpoint Start(int runId,int tier,string fitting,IReadOnlyList<int> levels,LastStandRunEdition edition=null)
+            =>Start(runId,tier,new LastStandLoadout(fitting),levels,edition);
+        public static LastStandRunCheckpoint Start(int runId,int tier,LastStandLoadout loadout,IReadOnlyList<int> levels,
+            LastStandRunEdition edition=null,LastStandCombatResearchSnapshot combatResearch=null)
         {
             edition=edition??LastStandRunEdition.Current;
-            var shop=new LastStandShopState(runId,LastStandFittingCatalog.Parse(fitting),levels,edition.EconomyVersion,edition,tier);
+            if(loadout==null)throw new ArgumentNullException(nameof(loadout));
+            var shop=new LastStandShopState(runId,loadout.Primary,levels,edition.EconomyVersion,edition,tier,loadout,combatResearch);
             var model=EncounterModel.CreatePlayable(shop.Fitting,tier,shop);
             return new LastStandRunCheckpoint(runId,model.CaptureCheckpoint(),shop.CaptureCheckpoint());
         }

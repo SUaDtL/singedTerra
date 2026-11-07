@@ -24,14 +24,14 @@ static class HudLayoutChecks
     static readonly int[,] Profiles = { {1366,768}, {1920,1080}, {390,844}, {844,390}, {720,640},
         {1366,664}, {1920,976}, {390,688}, {844,266}, {720,516} };
     static readonly Scenario[] Scenarios = {
-        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry","ResearchEntry"} },
+        new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu","TierPrevious","TierNext","ArmoryEntry","ShopEntry","ResearchEntry"} },
         new Scenario { Phase="garage", SaveError=true, Controls=new[] {"Deploy","RetrySave","Menu"} },
         new Scenario { Phase="garage", Controls=new[] {"Deploy","Menu"} }, // unresolved reserved run: recovery hierarchy
         new Scenario { Phase="battle", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus","ShopEntry"} },
         new Scenario { Phase="settling", Controls=new[] {"Menu","SpeedMinus","SpeedRate","SpeedPlus"} },
         new Scenario { Phase="result", Controls=new[] {"Claim","Menu"} },
         new Scenario { Phase="result", SaveError=true, Controls=new[] {"Claim","RetrySave","Menu"} },
-        new Scenario { Phase="workshop", Controls=new[] {"Redeploy","Menu","TierPrevious","TierNext","FittingPrevious","FittingNext","ShopEntry","ResearchEntry"} },
+        new Scenario { Phase="workshop", Controls=new[] {"Redeploy","Menu","TierPrevious","TierNext","ArmoryEntry","ShopEntry","ResearchEntry"} },
         new Scenario { Phase="workshop", SaveError=true, Controls=new[] {"Purchase","Redeploy","RetrySave","Menu"} },
         new Scenario { Phase="save-error", SaveError=true, Controls=new[] {"RetrySave","Menu"} }
     };
@@ -154,8 +154,9 @@ static class HudLayoutChecks
             Require(control.Width >= 44-.001 && control.Height >= 44-.001,context+": target smaller than 44x44 "+control.Id);
         if(scenario.InlineGarage)
         {
-            foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingName","GarageFittingDescription","GarageSave"})
+            foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingDescription","GarageSave"})
                 Require(boxes.Any(b=>b.Kind=="text"&&b.Id==id),context+": missing inline garage field "+id);
+            Require(boxes.Any(b=>b.Kind=="control"&&b.Id=="ArmoryEntry"&&b.Parent=="GarageFittingCard"),context+": build card owns the Armory entry");
             Require(!boxes.Any(b=>b.Id=="PhaseDetail"||b.Id=="SaveStatus"),context+": ready garage must use its inline reading hierarchy");
         }
         else if(scenario.Phase != "battle" && scenario.Phase != "settling")
@@ -215,8 +216,9 @@ static class HudLayoutChecks
                 foreach(var control in controls)Require(control.Width>=44 && control.Height>=44,context+": complete touch target "+control.Id);
                 foreach(var text in boxes.Where(b=>b.Kind=="text"))Require(text.FontSize>=14 && text.Height>=text.FontSize,
                     context+": readable text region "+text.Id);
-                foreach(string id in new[]{"PhaseHeading","GarageTierName","GarageTierDetail","GarageFittingName","GarageSave"})
+                foreach(string id in new[]{"PhaseHeading","GarageTierName","GarageTierDetail","GarageSave"})
                     Require(boxes.Any(b=>b.Kind=="text"&&b.Id==id),context+": essential label "+id);
+                Require(boxes.Any(b=>b.Kind=="control"&&b.Id=="ArmoryEntry"&&b.Parent=="GarageFittingCard"),context+": shortest build card retains Armory entry");
             }
             return;
         }

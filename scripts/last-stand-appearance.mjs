@@ -15,7 +15,7 @@ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inputs=[...new Set(['scripts/last-stand-appearance.mjs','e2e/helpers/lastStandBrowserActor.mjs',
   'e2e/helpers/lastStandJourney.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'e2e/helpers/lastStandEvidenceDirectory.mjs','scripts/ci/lastStandEvidenceDirectory.test.mjs',
-  ...[1,2,3,4,5].map(v=>'campaign-unity/Tools/contracts/last-stand-observation-v'+v+'.json'),...LAST_STAND_HELPER_INPUTS])];
+  ...[1,2,3,4,5,6].map(v=>'campaign-unity/Tools/contracts/last-stand-observation-v'+v+'.json'),...LAST_STAND_HELPER_INPUTS])];
 const inputHashes=()=>Object.fromEntries(inputs.map(path=>[path,hash(readFileSync(resolve(root,path)))]));
 const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
 assert.ok(['127.0.0.1','localhost'].includes(base.hostname)&&base.port==='4174');
@@ -61,7 +61,7 @@ try{
   const actor=await create('desktop',{width:1280,height:900});
   const initial=await actor.stored('initial');await actor.shot('garage');await open(actor);
   check('current contract includes all appearance controls',()=>{
-    assert.equal(actor.layout().schema,'singedterra-last-stand-observation/v5');
+    assert.equal(actor.layout().schema,'singedterra-last-stand-observation/v6');
     assert.equal(actor.layout().appearanceControls.length,33);assert.equal(actor.state().appearanceCanApply,false);
   });
   for(const kit of ['Foundry','Ranger','Bulwark','Jackal']){

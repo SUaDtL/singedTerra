@@ -13,10 +13,6 @@ class HudOutcomeTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Only this task's ordinary evidence destination changes. The imported
-        # shared runner, root/project/tool binding and earlier evidence stay intact.
-        unity_check_runner.EVIDENCE = Path(
-            r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t07-author-20261008")
         cls.exit_code, cls.log = unity_check_runner.run_checks("LastStandHudChecks.RunOutcomes")
 
     def check_case(self, name):

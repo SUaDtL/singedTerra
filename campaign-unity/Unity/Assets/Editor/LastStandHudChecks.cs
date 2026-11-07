@@ -35,9 +35,9 @@ public static class LastStandHudChecks
         public readonly MemoryStorage Storage;
         readonly RenderTexture texture;
         public Fixture(int width = 1366, int height = 768, int level = 0, int wallet = 0,
-            bool denyRead = false, bool denyWrite = false, int nextId = 1)
+            bool denyRead = false, bool denyWrite = false, int nextId = 1,string gameplay=null)
         {
-            Storage = new MemoryStorage { Value = denyWrite ? null : Save(level, wallet, nextId),
+            Storage = new MemoryStorage { Value = denyWrite ? null : gameplay??Save(level, wallet, nextId),
                 DenyRead = denyRead, DenyWrite = denyWrite };
             LastStandLoopController.StorageFactory = () => Storage;
             EditorSceneManager.OpenScene("Assets/Scenes/LastStandPrototype.unity", OpenSceneMode.Single);
@@ -70,6 +70,19 @@ public static class LastStandHudChecks
     static string Save(int level, int wallet, int nextId)
     { return "{\"version\":1,\"credits\":" + wallet + ",\"permanentLevel\":" + level +
         ",\"nextRunId\":" + nextId + ",\"lastFinalizedRunId\":0,\"pendingDefeat\":null}"; }
+    // A genuine retained v1 pending award, not a current wave outcome relabeled
+    // as legacy. Migration and Claim own its one-time Salvage accounting.
+    static string LegacyPendingSave()=>"{\"version\":1,\"credits\":0,\"permanentLevel\":0,\"nextRunId\":2,\"lastFinalizedRunId\":0,\"pendingDefeat\":{\"runId\":1,\"elapsedTicks\":33,\"kills\":4,\"reward\":1}}";
+    static object SaveCodec(string method,object value)=>typeof(LastStandProgression).Assembly.GetType("SingedTerra.LastStand.LastStandSaveJson")
+        .GetMethod(method,BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic).Invoke(null,new[]{value});
+    static string WorkshopSave(int level,int wallet,int nextId=2)
+    {
+        // Explicit funded UI fixture; this does not claim earned progression.
+        var storage=new MemoryStorage{Value=Save(0,wallet,nextId).Replace("\"lastFinalizedRunId\":0","\"lastFinalizedRunId\":1")};LastStandProgression.Load(storage);
+        var saved=(Dictionary<string,object>)SaveCodec("Read",storage.Value);
+        ((Dictionary<string,object>)saved["permanentLevels"])["cannonAttack"]=level;
+        return (string)SaveCodec("Write",saved);
+    }
     static void Require(bool value, string label)
     { if (!value) throw new InvalidOperationException(label); }
     static void Invoke(object value, string method)
@@ -101,29 +114,29 @@ public static class LastStandHudChecks
         foreach(var text in root.GetComponentsInChildren<Text>(true))if(text.name==id){found=text;count++;}
         Require(count==1,"one actual HUD text "+id);return found;
     }
-    static bool IsInlineArrow(string id) => id=="TierPrevious"||id=="TierNext"||id=="FittingPrevious"||id=="FittingNext";
+    static bool IsInlineArrow(string id) => id=="TierPrevious"||id=="TierNext"||id=="ArmoryEntry";
     static bool ExpectedGarageCards(LastStandLoopController loop) => (loop.Phase=="garage"||loop.Phase=="workshop") &&
         loop.Progression.SaveState=="ready" && loop.Progression.ActiveRunId==0 && loop.Progression.PendingDefeat==null && loop.Session.Model==null;
     static string CorePath(string id) => id=="WaveInfo"?"LastStandCard/WaveInfo":id=="Menu"||id=="ResearchEntry" ? id : id=="TierPrevious"||id=="TierNext" ? "GarageTierCard/"+id :
-        id=="FittingPrevious"||id=="FittingNext" ? "GarageFittingCard/"+id : "LastStandDock/"+id;
+        id=="ArmoryEntry" ? "GarageFittingCard/"+id : "LastStandDock/"+id;
     static void AssertInlineGarageFields(LastStandLoopController loop,RectTransform root)
     {
         var tier=LastStandTierCatalog.Get(loop.Progression.SelectedTier);
         LastStandSelectionOption fitting=null;
         foreach(var option in LastStandFittingCatalog.Options)if(option.Id==loop.FittingId)fitting=option;
         Require(fitting!=null,"actual fitting has authored catalog content");
-        foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingName","GarageFittingDescription","GarageSave"})
+        foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingDescription","GarageSave"})
             RequireVisible(FindText(root,id),"visible inline garage field "+id);
         Require(FindText(root,"GarageTierName").text==("Tier "+tier.Id+" - "+LastStandEnvironmentCatalog.Get(tier.EnvironmentId).Name).ToUpperInvariant(),
             "inline card names the actual committed tier");
-        Require(FindText(root,"GarageTierDetail").text=="Goal: survive "+tier.GoalTicks/20+"s. "+
-            LastStandTierHudText.Best(loop.Progression.GetBestTicks(tier.Id),loop.Progression.GetBestKills(tier.Id)),"inline tier goal and best are owner-derived");
-        Require(FindText(root,"GarageFittingName").text==fitting.Name.ToUpperInvariant() &&
-            FindText(root,"GarageFittingDescription").text==fitting.Description,"inline fitting names and explains the equipped module");
+        Require(FindText(root,"GarageTierDetail").text==loop.GarageTierSelection.Current.Description,"inline wave milestones and best are owner-derived");
+        Require(FindButton(root,"ArmoryEntry").GetComponentInChildren<Text>().text=="ARMORY & BUILDS" &&
+            FindText(root,"GarageFittingDescription").text.Contains(fitting.Name)&&
+            FindText(root,"GarageFittingDescription").text.Contains(loop.Progression.EquipmentBayCount+" / 2 bays unlocked"),"garage names its saved build, available bays and Armory action");
         string expectedSave=loop.HasLockedTierPreview?"DEPLOY: Choose an unlocked tier.":
             !loop.Session.CanRun?"DEPLOY: Return to this tab.":
             loop.Progression.NextRunId==int.MaxValue?"DEPLOY: Local run limit reached.":
-            "SALVAGE "+loop.Progression.Wallet+"  |  LOCAL SAVE READY";
+            "SALVAGE "+loop.Progression.Wallet+"  |  WAVE 1: +"+LastStandRewardCatalog.At(tier,1).RepeatableSalvage;
         Require(FindText(root,"GarageSave").text==expectedSave,
             "garage shows exact owner refusal when unavailable and quiet salvage/confirmed save when admitted; expected="+expectedSave);
         Require(!FindText(root,"PhaseDetail").gameObject.activeInHierarchy&&!FindText(root,"SaveStatus").gameObject.activeInHierarchy,
@@ -152,22 +165,25 @@ public static class LastStandHudChecks
         foreach(var panel in new[]{tier,fitting})
             Require(!Overlap(panel,menuBounds)&&!Overlap(panel,primary)&&!Overlap(panel,secondary),"garage cards do not cover Menu or primary actions");
         if(viewport.width<LastStandHudLayout.PortraitBreakpoint)Require(fitting.yMin>=tier.yMax,"portrait fitting follows the tier and preview");
-        foreach(string id in new[]{"TierPrevious","TierNext","FittingPrevious","FittingNext"})
+        foreach(string id in new[]{"TierPrevious","TierNext","ArmoryEntry"})
         {
             var button=FindButton(root,id);var target=bounds((RectTransform)button.transform);
-            Require(Contained(target,id.StartsWith("Tier",StringComparison.Ordinal)?tier:fitting),"inline arrow stays inside its own card "+id);
+            Require(Contained(target,id.StartsWith("Tier",StringComparison.Ordinal)?tier:fitting),"garage action stays inside its own card "+id);
         }
     }
     static void SelectFitting(LastStandLoopController loop, TankPresentation art, Transform root, bool launcher, Action refresh)
     {
         if(art.showingLauncher==launcher)return;
-        Require(loop.MenuPage=="" && loop.Session.Model==null,"inline fitting starts outside a modal or run");
-        var arrow=FindButton(root,launcher ? "FittingNext" : "FittingPrevious");
-        Require(arrow.IsActive() && arrow.IsInteractable(),"requested fitting arrow is available");Click(arrow);
-        Require(art.showingLauncher==launcher && loop.FittingId==(launcher ? "launcher" : "repair"),
-            "actual fitting arrow selects the explicit catalog identity");
+        Require(loop.MenuPage=="" && loop.Session.Model==null,"build selection starts outside a modal or run");
+        var entry=FindButton(root,"ArmoryEntry");Require(entry.IsActive()&&entry.IsInteractable(),"Armory entry is available");Click(entry);
+        string before=loop.Progression.SelectedLoadout.PrimaryId;string wanted=launcher?"launcher":"repair";
+        Click(FindButton(root,launcher?"ArmoryBay1Next":"ArmoryBay1Previous"));
+        Require(loop.ArmoryDraft.PrimaryId==wanted&&art.showingLauncher==launcher&&loop.Progression.SelectedLoadout.PrimaryId==before,"Armory previews the actual module without committing");
+        Click(FindButton(root,"ArmoryApply"));
+        Require(loop.Progression.SelectedLoadout.PrimaryId==wanted,"Apply commits the explicit build identity");
+        Click(FindButton(root,"ArmoryCancel"));
         RefreshCameraCanvas(root.GetComponentInParent<Canvas>(),refresh);
-        Require(loop.MenuPage=="" && loop.Session.Model==null,"inline fitting never opens a modal or deploys");
+        Require(loop.MenuPage=="" && loop.Session.Model==null,"closing Armory returns to garage without deploying");
     }
     public static void RunGarage()
     {
@@ -205,19 +221,18 @@ public static class LastStandHudChecks
                 string text = f.Text("PhaseDetail").text;
                 AssertGarageFields(f);
                 RequireGarageVisible(f);
-                Require(text.IndexOf(launcher ? "Auxiliary launcher" : "Field repair", StringComparison.OrdinalIgnoreCase) >= 0,
-                    "live actual fitting");
-                Require(text.Contains(level + "/3") && text.Contains((20 + 10 * level).ToString()), "live actual level and damage");
-                Require(text.Contains("Salvage") && text.Contains("0") && text.Contains(level == 3 ? "MAX" : (level + 1).ToString()),
-                    "live wallet and next cost/MAX");
-                Require(f.Text("SaveStatus").text.Contains("LOCAL SAVE READY"), "actual confirmed save");
+                Require(text.IndexOf(launcher ? "Auxiliary launcher" : "Field repair", StringComparison.OrdinalIgnoreCase) >= 0,"live actual fitting");
+                Require(f.Loop.Progression.CannonAttackLevel==level,"migrated permanent investment survives build editing");
+                Require(Field(text,@"^Salvage ([0-9]+)$","Salvage").Groups[1].Value=="0","live wallet remains independent of the saved build");
+                AssertGarageSaveTruth(f);
                 string before = f.Storage.Value;
                 SelectFitting(f.Loop,f.Art,f.Root,!launcher,() => f.Hud.Refresh());
-                Require(f.Art.showingLauncher != launcher && f.Storage.Value == before && f.Loop.Session.Model == null,
-                    "actual fitting selection changes attachment without progression/run");
+                Require(f.Art.showingLauncher != launcher && f.Storage.Value != before && f.Loop.Session.Model == null&&
+                    LastStandProgression.Load(f.Storage).SelectedLoadout.PrimaryId==f.Art.FittingId,
+                    "Apply persists the selected build without creating a run");
                 Require(f.Text("PhaseDetail").text.IndexOf(launcher ? "Field repair" : "Auxiliary launcher", StringComparison.OrdinalIgnoreCase) >= 0,
                     "fitting selection refreshes live label");
-                Require(FindText(f.Root,"GarageFittingName").text == (launcher ? "FIELD REPAIR" : "AUXILIARY LAUNCHER"),
+                Require(FindText(f.Root,"GarageFittingDescription").text.StartsWith(launcher ? "Field repair" : "Auxiliary launcher",StringComparison.OrdinalIgnoreCase),
                     "inline card names the actual equipped fitting");
                 AssertGarageFields(f);
             }
@@ -253,11 +268,16 @@ public static class LastStandHudChecks
         using (var f = new Fixture(nextId: int.MaxValue)) Denied(f, "exhausted run id");
         using (var f = new Fixture())
         {
-            Require(f.Loop.Progression.TryDeploy(), "actual reserved-run fixture"); Denied(f, "active reservation");
+            Require(f.Loop.Progression.TryDeploy(), "actual reserved-run fixture");f.Hud.Refresh();
+            int run=f.Loop.Progression.ActiveRunId,next=f.Loop.Progression.NextRunId;
+            Require(f.Button("Deploy").IsInteractable()&&f.Button("Deploy").GetComponentInChildren<Text>().text=="RESUME RUN","confirmed checkpoint offers Resume");
+            Click(f.Button("Deploy"));Require(f.Loop.Session.Model!=null&&f.Loop.Session.ManualPaused&&
+                f.Loop.Progression.ActiveRunId==run&&f.Loop.Progression.NextRunId==next,"Resume restores paused without reserving a second run");
         }
-        using (var f = new Fixture())
+        using (var f = new Fixture(gameplay:LegacyPendingSave()))
         {
-            Require(f.Loop.Progression.TryDeploy() && f.Loop.Progression.TryStageDefeat(120, 2), "actual pending-result fixture");
+            Require(f.Loop.Progression.PendingDefeat!=null,"retained pending-result fixture migrated");
+            typeof(LastStandLoopController).GetField("<Phase>k__BackingField",Private).SetValue(f.Loop,"garage");
             Denied(f, "pending defeat");
         }
         using (var f = new Fixture())
@@ -266,7 +286,7 @@ public static class LastStandHudChecks
             int count = 0; foreach (var b in f.Root.GetComponentsInChildren<Button>()) if (b.name == "Deploy") count++;
             Require(count == 1 && deploy.IsInteractable(), "one ready Deploy");
             var primary = deploy.GetComponent<Image>().color;
-            Require(primary.r > .7f && primary.g > .5f && primary.b < .5f && primary != f.Button("FittingNext").GetComponent<Image>().color,
+            Require(primary.r > .7f && primary.g > .5f && primary.b < .5f && primary != f.Button("ArmoryEntry").GetComponent<Image>().color,
                 "Deploy alone has brass primary surface");
             Require(Contrast(deploy.GetComponentInChildren<Text>().color, primary) >= 4.5, "primary ink contrast");
             var label = deploy.GetComponentInChildren<Text>();
@@ -413,25 +433,29 @@ public static class LastStandHudChecks
     static void AssertGarageFields(Fixture f)
     {
         var progress = f.Loop.Progression; string text = f.Text("PhaseDetail").text;
-        var fitting = Field(text, @"^Fitting:[ \t]*(Field repair|Auxiliary launcher)[ \t]*$", "Fitting");
-        Require(fitting.Groups[1].Value == (f.Art.showingLauncher ? "Auxiliary launcher" : "Field repair"), "field-bound actual fitting");
-        var tier = Field(text, @"^Tier ([12]) / Goal ([0-9]+)s$", "tier and goal");
-        Require(int.Parse(tier.Groups[1].Value) == progress.SelectedTier && int.Parse(tier.Groups[2].Value) ==
-            (progress.SelectedTier == 1 ? 60 : 90), "approved selected tier goal");
-        var level = Field(text, @"^Cannon Attack ([0-9]+)/3 / Damage ([0-9]+)$", "cannon level and damage");
-        Require(int.Parse(level.Groups[1].Value) == progress.CannonAttackLevel &&
-            int.Parse(level.Groups[2].Value) == progress.CannonDamage, "field-bound actual cannon projection");
-        var economy = Field(text, @"^Salvage ([0-9]+) / Next ([0-9]+|MAX)$", "Salvage / Next");
-        Require(int.Parse(economy.Groups[1].Value) == progress.Wallet && economy.Groups[2].Value ==
-            (progress.NextCost == 0 ? "MAX" : progress.NextCost.ToString()), "actual wallet and next cost");
-        Require(text.Split('\n').Length == 5 && text.Split('\n')[1].StartsWith("Best"), "tier best has a dedicated reading line");
+        var fitting = Field(text, @"^Build:[ \t]*(.+)$", "Build");
+        var loadout=progress.Checkpoint?.Loadout??progress.SelectedLoadout;string first=null,second=null;
+        foreach(var definition in LastStandFittingCatalog.Definitions)
+        {if(definition.Id==loadout.PrimaryId)first=definition.Name;if(definition.Id==loadout.SecondaryId)second=definition.Name;}
+        Require(fitting.Groups[1].Value==(second==null?first:first+" + "+second),"field-bound complete saved build");
+        var tier = Field(text, @"^Tier ([0-9]+) / Clear every enemy to advance$", "wave goal");
+        Require(int.Parse(tier.Groups[1].Value)==progress.SelectedTier,"selected wave-based tier");
+        string best=progress.GetBestWave(progress.SelectedTier)==0?"Best: no completed wave":"Best: wave "+progress.GetBestWave(progress.SelectedTier);
+        Require(text.Split('\n')[1]==best,"best completed wave has its own reading line");
+        var economy=Field(text,@"^Salvage ([0-9]+)$","Salvage");
+        Require(int.Parse(economy.Groups[1].Value)==progress.Wallet,"field-bound actual wallet");
+        Require(text.Split('\n').Length==4,"four bounded garage detail rows; upgrade quotes live in the shared Shop");
     }
     static void AssertGarageSaveTruth(Fixture f)
     {
         if(f.Loop.GarageCardsVisible) { AssertInlineGarageFields(f.Loop,f.Root);return; }
         var status = f.Text("SaveStatus"); RequireVisible(status, "required garage SaveStatus");
         if (f.Loop.Progression.SaveState == "ready")
-            Require(status.text.Split('\n')[0] == "LOCAL SAVE READY", "confirmed storage has ready field");
+        {
+            string expected=f.Loop.Progression.LastReceipt==null&&f.Loop.Guidance.Suggestion!=""?f.Loop.Guidance.Suggestion:
+                f.Loop.Notice==""?"LOCAL SAVE READY / Completed rewards are banked.":f.Loop.Notice;
+            Require(status.text==expected&&!string.IsNullOrEmpty(status.text),"confirmed storage projects its actual notice or guidance");
+        }
         else
         {
             Require(status.text == f.Loop.Progression.SaveError && !string.IsNullOrEmpty(status.text),
@@ -484,7 +508,7 @@ public static class LastStandHudChecks
     }
     static void AssertGarageFeedback(Fixture f)
     {
-        foreach (string id in new[] { "TierPrevious","TierNext","FittingPrevious","FittingNext","Deploy","ToggleMute","RetrySave","Menu" })
+        foreach (string id in new[] { "TierPrevious","TierNext","ArmoryEntry","Deploy","ToggleMute","RetrySave","Menu" })
         {
             var button = f.Button(id); if (!button.gameObject.activeInHierarchy) continue;
             var label = button.GetComponentInChildren<Text>(true); var outline = button.GetComponent<Outline>();
@@ -1060,18 +1084,14 @@ public static class LastStandHudChecks
             Canvas.renderMode=RenderMode.ScreenSpaceCamera; Canvas.worldCamera=Camera; Refresh();
         }
         public void Defeat()
-        {
-            var clock=(LastStandRunClock)typeof(EncounterSession).GetField("runClock",Private).GetValue(Loop.Session);
-            while(Loop.Session.Model.Status==EncounterStatus.Running) Loop.Session.AdvanceAt(clock.LastTimestamp+LastStandRunClock.StepSeconds);
-            Refresh();
-        }
+        { InputDefeat(this); }
         public void FinishSettling()
         {
             var clock=(LastStandRunClock)typeof(EncounterSession).GetField("runClock",Private).GetValue(Loop.Session);
             Loop.Session.AdvanceAt(clock.LastTimestamp+.5); Invoke(Loop,"Update");
             Canvas.renderMode=RenderMode.ScreenSpaceOverlay;
             Canvas.renderMode=RenderMode.ScreenSpaceCamera; Canvas.worldCamera=Camera; Refresh();
-            Require(Loop.Phase=="result" && Loop.Session.Model==null,"actual interval finishes into pending result");
+            Require(Loop.Phase=="result" && Loop.Session.Model==null,"actual interval finishes into result");
         }
         public void Dispose()
         { Camera.targetTexture=null; UnityEngine.Object.DestroyImmediate(texture); EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
@@ -1101,15 +1121,16 @@ public static class LastStandHudChecks
         foreach(string id in ids)
         {
             bool active=id=="Menu" || id=="RetrySave"&&!ready ||
-                id=="Claim"&&phase=="result" || id=="Purchase"&&phase=="workshop"&&!cards || id=="Redeploy"&&phase=="workshop" ||
+                id=="Claim"&&phase=="result" || id=="Redeploy"&&phase=="workshop" ||
                 id=="Deploy"&&phase=="garage" || IsInlineArrow(id)&&cards ||
+                id=="ResearchEntry"&&cards || id=="WaveInfo"&&(phase=="battle"||phase=="settling")&&f.Loop.Session.Model?.Profile.IsWaveBased==true ||
                 (id=="SpeedMinus"||id=="SpeedRate"||id=="SpeedPlus")&&(phase=="battle"||phase=="settling");
             var b=f.Button(id); Require(b.gameObject.activeInHierarchy==active,"outcome exact active inventory "+id+" "+phase);
             if(!active)continue;
-            Require(b.enabled,"outcome Button enabled "+id); RequireVisible(b.GetComponent<Image>(),"outcome visible action "+id);
-            var text=b.transform.Find(id+"Text").GetComponent<Text>();RequireVisible(text,"outcome visible action label "+id);
+            Require(b.enabled,"outcome Button enabled "+id); RequireVisible(b.targetGraphic,"outcome visible action "+id);
+            var text=id=="WaveInfo"?f.Text("ElapsedTime"):b.GetComponentInChildren<Text>();RequireVisible(text,"outcome visible action label "+id);
             Require(!string.IsNullOrEmpty(text.text),"outcome label nonempty "+id);
-            var outline=b.GetComponent<Outline>(); Require(outline,"outcome shared stroke "+id);
+            var outline=id=="WaveInfo"?text.GetComponent<Outline>():b.GetComponent<Outline>(); Require(outline,"outcome shared stroke "+id);
             var basic=new BaseEventData(EventSystem.current);var pointer=new PointerEventData(EventSystem.current){button=PointerEventData.InputButton.Left};
             ExecuteEvents.Execute(b.gameObject,pointer,ExecuteEvents.pointerUpHandler);ExecuteEvents.Execute(b.gameObject,pointer,ExecuteEvents.pointerExitHandler);ExecuteEvents.Execute(b.gameObject,basic,ExecuteEvents.deselectHandler);
             bool available=b.IsInteractable();Require(!outline.enabled&&text.fontStyle==(available?FontStyle.Normal:FontStyle.Italic),"outcome neutral/disabled type "+id);
@@ -1137,7 +1158,7 @@ public static class LastStandHudChecks
             Require(bounds.width>=43.9f&&bounds.height>=43.9f,"outcome actual44px target "+button.name);
             Require(Contained(bounds,viewport)&&Contained(bounds,f.Bounds((RectTransform)button.transform.parent)),
                 "outcome target stays inside its actual approved owner "+button.name+" target="+bounds+" parent="+button.transform.parent.name);
-            Require(!Overlap(bounds,card),"outcome control does not cover the actual title/recovery panel "+button.name+
+            Require(button.name=="WaveInfo"&&Contained(bounds,card)||!Overlap(bounds,card),"outcome control stays in its intended card or outside the recovery panel "+button.name+
                 " target="+bounds+" panel="+card);
             foreach(var prior in controls)Require(!Overlap(bounds,prior),"outcome control nonoverlap");controls.Add(bounds);
         }
@@ -1160,168 +1181,190 @@ public static class LastStandHudChecks
         Require(t.Split('\n')[0]==(p.Tier == 0 ? "Legacy run" : "Tier " + p.Tier)+" / "+(p.ElapsedTicks/(float)EncounterModel.TicksPerSecond).ToString("F1")+"s / "+p.Kills+" disabled","outcome own exact tier/duration/kills");
         Require(t.Split('\n')[1]=="Earned salvage  "+p.Reward,"outcome separate own earned salvage field");
         Require(t.Split('\n')[2]=="Wallet  "+f.Loop.Progression.Wallet+" salvage","outcome separate committed wallet field");
-        bool claim=f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId==0&&(p.Reward == 0 || f.Loop.Progression.Wallet!=int.MaxValue);
+        bool claim=f.Loop.Progression.SaveState=="ready"&&f.Loop.Progression.ActiveRunId==0&&p.Reward<=int.MaxValue-f.Loop.Progression.Wallet;
         Require(f.Button("Claim").IsInteractable()==claim,"outcome Claim agrees with complete owner guard");
     }
     static void OutcomeClaim()
     {
-        using(var f=new OutcomeFixture(OutcomeProfiles[0],new OutcomeStorage{Value=Save(0,int.MaxValue,1)}))
+        // Exercise the complete owner refusal before broader layout checks so
+        // an unrelated geometry fixture cannot hide this payment-safety regression.
+        using(var f=new OutcomeFixture(OutcomeProfiles[0],new OutcomeStorage{Value=LegacyPendingSave()
+            .Replace("\"credits\":0","\"credits\":"+int.MaxValue)}))
         {
-            f.Deploy();f.Defeat();f.FinishSettling();
-            Require(!f.Button("Claim").IsInteractable(),"saturated wallet disables refused Claim");
+            OutcomeResultFields(f);
+            Require(!f.Button("Claim").IsInteractable(),"legacy Claim refuses a reward larger than remaining wallet capacity");
+            string saved=f.Storage.Value;Click(f.Button("Claim"));
+            Require(f.Storage.Value==saved&&f.Loop.Progression.Wallet==int.MaxValue,"refused Claim preserves retained award and wallet");
         }
         foreach(var profile in OutcomeProfiles)
         {
-            string pending,claimed;
+            // Current waves bank rewards before defeat; Continue cannot award twice.
             using(var f=new OutcomeFixture(profile))
             {
-                f.Deploy();f.Defeat();Require(f.Loop.Phase=="settling"&&f.Loop.Progression.PendingDefeat!=null,"actual persisted terminal settling");
-                Require(!f.Button("Claim").gameObject.activeInHierarchy,"no premature visible Claim");
-                string save=f.Storage.Value;f.Loop.Claim();Require(f.Storage.Value==save&&f.Loop.Progression.Wallet==0,"settling cannot award");
-                OutcomeGeometry(f,"settling");f.FinishSettling();OutcomeResultFields(f);OutcomeGeometry(f,"pending");pending=f.Storage.Value;
-                Click(f.Button("Claim"));Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==1&&f.Loop.Progression.PendingDefeat==null&&f.Loop.Progression.FinalizedRunId==1,"real manual Claim exactly once");
-                claimed=f.Storage.Value;int writes=f.Storage.Writes;f.Loop.Claim();f.Hud.Refresh();
-                Require(f.Storage.Value==claimed&&f.Storage.Writes==writes&&f.Loop.Progression.Wallet==1&&!f.Button("Claim").gameObject.activeInHierarchy,"duplicate Claim/Refresh cannot award");
+                f.Deploy();f.Defeat();Require(f.Loop.Phase=="settling"&&f.Loop.Progression.PendingDefeat==null,"current terminal settling has no legacy pending award");
+                int wallet=f.Loop.Progression.Wallet;string saved=f.Storage.Value;
+                Require(!f.Button("Claim").IsActive(),"settling hides Continue");f.Loop.Claim();
+                Require(f.Storage.Value==saved&&f.Loop.Progression.Wallet==wallet,"settling cannot award");
+                OutcomeGeometry(f,"current-settling");f.FinishSettling();
+                Require(f.Button("Claim").GetComponentInChildren<Text>().text=="CONTINUE","current outcome uses Continue");
+                OutcomeGeometry(f,"current-result");Click(f.Button("Claim"));
+                Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==wallet&&f.Storage.Value==saved,"Continue preserves already banked rewards");
+            }
+            string pending,claimed;
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=LegacyPendingSave()}))
+            {
+                OutcomeResultFields(f);OutcomeGeometry(f,"legacy-pending");pending=f.Storage.Value;
+                Click(f.Button("Claim"));Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==1&&f.Loop.Progression.PendingDefeat==null,"retained Claim awards exactly once");
+                claimed=f.Storage.Value;int writes=f.Storage.Writes;f.Loop.Claim();f.Refresh();
+                Require(f.Storage.Value==claimed&&f.Storage.Writes==writes&&f.Loop.Progression.Wallet==1&&!f.Button("Claim").IsActive(),"duplicate Claim cannot award");
             }
             using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=pending}))
-            { Require(f.Loop.Phase=="result"&&f.Loop.Progression.Wallet==0,"actual pending reload");OutcomeResultFields(f);OutcomeGeometry(f,"pending-reload"); }
+            {Require(f.Loop.Phase=="result"&&f.Loop.Progression.Wallet==0,"retained pending reload");OutcomeResultFields(f);OutcomeGeometry(f,"pending-reload");}
             using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=claimed}))
-            { Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==1&&!f.Button("Claim").gameObject.activeInHierarchy,"actual claimed reload");OutcomeGeometry(f,"claimed-reload"); }
+            {Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==1&&!f.Button("Claim").IsActive(),"claimed reload");OutcomeGeometry(f,"claimed-reload");}
             using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=pending.Replace("\"credits\":0","\"credits\":"+int.MaxValue)}))
             {
-                OutcomeResultFields(f);Require(!f.Button("Claim").IsInteractable(),"saturated wallet disables refused Claim");
-                string save=f.Storage.Value;Click(f.Button("Claim"));Require(f.Storage.Value==save&&f.Loop.Progression.Wallet==int.MaxValue,"disabled saturated Claim pointer preserves record");OutcomeGeometry(f,"saturated-claim");
+                OutcomeResultFields(f);Require(!f.Button("Claim").IsInteractable(),"saturated legacy wallet disables refused Claim");
+                string saved=f.Storage.Value;Click(f.Button("Claim"));Require(f.Storage.Value==saved&&f.Loop.Progression.Wallet==int.MaxValue,"disabled overflow Claim preserves record");
+                OutcomeGeometry(f,"saturated-claim");
+            }
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=WorkshopSave(0,int.MaxValue)}))
+            {
+                // A current result has no payment outstanding even at the limit.
+                typeof(LastStandLoopController).GetField("<Phase>k__BackingField",Private).SetValue(f.Loop,"result");f.Refresh();
+                Require(f.Button("Claim").IsInteractable(),"saturated current Continue remains available");
+                Click(f.Button("Claim"));Require(f.Loop.Progression.Wallet==int.MaxValue&&f.Loop.Phase=="workshop","Continue performs no award");
             }
         }
     }
     static void OutcomeWorkshopFields(OutcomeFixture f)
     {
-        var p=f.Loop.Progression;string t=f.Text("PhaseDetail").text;
+        var p=f.Loop.Progression;
         if(f.Loop.GarageCardsVisible)AssertInlineGarageFields(f.Loop,f.Root);
-        else RequireVisible(f.Text("PhaseDetail"),"outcome visible recovery workshop fields");
-        Require(t.Split('\n')[0] == "Tier " + p.SelectedTier + " / Goal " + (p.SelectedTier == 1 ? 60 : 90) + "s", "workshop selected tier/goal");
-        Require(t.Split('\n')[1].StartsWith("Best"), "workshop persistent best reading line");
-        Require(t.Split('\n')[2] == "Cannon Attack " + p.CannonAttackLevel + "/3 / Damage " + p.CannonDamage, "workshop cannon state");
-        Require(t.Split('\n')[3] == "Salvage " + p.Wallet + " / Cost " + (p.NextCost == 0 ? "MAX" : p.NextCost.ToString()), "workshop saved wallet and next cost");
-        Require(t.Split('\n')[4] == "Fitting: " + (f.Art.showingLauncher ? "Auxiliary launcher" : "Field repair"), "workshop selected fitting");
-        bool available=p.SaveState=="ready"&&p.ActiveRunId==0&&p.PendingDefeat==null&&p.NextCost!=0&&p.Wallet>=p.NextCost;
-        if(f.Loop.GarageCardsVisible)
+        else RequireVisible(f.Text("PhaseDetail"),"visible workshop recovery or Resume detail");
+        Require(!f.Button("Purchase").IsActive(),"the shared Shop owns purchases, not a duplicate recovery button");
+        if(p.PendingDefeat==null)
         {
-            Require(!f.Button("Purchase").IsActive(),"ready workshop exposes Upgrades instead of duplicate cannon purchase");
-            Click(f.Button("ShopEntry"));f.Refresh();var buy=f.Button("ShopCard_cannonAttackBuy");
-            var card=LastStandShopPresentation.ProjectPermanent(p,f.Art.showingLauncher?LastStandFitting.Launcher:LastStandFitting.Repair).Cards[(int)LastStandUpgradeTrackId.CannonAttack];
-            Require(buy.IsActive()&&buy.IsInteractable()==available,"actual permanent cannon card retains purchase owner guards");
-            RequireVisible(FindText(f.Root,"ShopCard_cannonAttackLevels"),"actual visible permanent cannon level");
-            Require(FindText(f.Root,"ShopCard_cannonAttackLevels").text=="Level "+p.CannonAttackLevel+" / "+card.Cap &&
-                FindText(f.Root,"ShopCard_cannonAttackPrice").text==card.PriceDescription,"actual upgrade card reports committed level and price/MAX");
+            Click(f.Button("ShopEntry"));f.Refresh();
+            var view=LastStandShopPresentation.ProjectPermanent(p,f.Art.Fitting);
+            var card=view.Cards[(int)LastStandUpgradeTrackId.CannonAttack];
+            var buy=f.Button("ShopCard_cannonAttackBuy");bool available=p.SaveState=="ready"&&p.QuotePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One).Quantity==1;
+            Require(buy.IsActive()&&buy.IsInteractable()==available,"permanent card matches current quote and save admission");
+            Require(FindText(f.Root,"ShopCard_cannonAttackLevels").text=="Level "+p.CannonAttackLevel+" / "+card.Cap&&
+                FindText(f.Root,"ShopCard_cannonAttackPrice").text==card.QuotedCost+" "+view.CurrencyName,"shared Shop reports actual investment, cap and price");
             Click(f.Button("ShopClose"));f.Refresh();
         }
-        else
-        {
-            Require(f.Button("Purchase").IsInteractable()==available,"outcome complete recovery purchase owner guards");
-            Require(f.Button("Purchase").GetComponentInChildren<Text>(true).text==(p.NextCost==0?"CANNON ATTACK MAX":available?"BUY CANNON ATTACK":"PURCHASE UNAVAILABLE"),"outcome no purchase offer at MAX/unavailable");
-        }
-        bool deploy=p.SaveState=="ready"&&f.Loop.Session.CanRun&&p.ActiveRunId==0&&p.PendingDefeat==null&&p.NextRunId!=int.MaxValue;
-        Require(f.Button("Redeploy").IsInteractable()==deploy,"outcome complete Redeploy gates");
+        bool deploy=p.SaveState=="ready"&&f.Loop.Session.CanRun&&p.PendingDefeat==null&&(p.HasCheckpoint||p.NextRunId!=int.MaxValue);
+        Require(f.Button(f.Loop.Phase=="garage"?"Deploy":"Redeploy").IsInteractable()==deploy,"Deploy or Resume follows complete owner guard");
     }
     static void PurchaseCannon(OutcomeFixture f)
     {
-        if(!f.Loop.GarageCardsVisible){Click(f.Button("Purchase"));return;}
         var entry=f.Button("ShopEntry");Require(entry.IsActive()&&entry.IsInteractable(),"actual Upgrades entry available");
         Click(entry);f.Refresh();Click(f.Button("ShopCard_cannonAttackBuy"));f.Refresh();
         if(f.Button("ShopClose").IsActive()){Click(f.Button("ShopClose"));f.Refresh();}
     }
     static void OutcomeWorkshop()
     {
-        using(var f=new OutcomeFixture(OutcomeProfiles[0],new OutcomeStorage{Value=Save(3,6,1)}))
-            Require(f.Button("Purchase").GetComponentInChildren<Text>(true).text=="CANNON ATTACK MAX","capped workshop has MAX rather than a purchase offer");
+        var definition=LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack);
         foreach(var profile in OutcomeProfiles)
         {
             string upgraded;
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(0,6,1)}))
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=WorkshopSave(0,100)}))
             {
-                for(int level=0;level<=3;level++)
+                for(int level=0;level<3;level++)
                 {
                     OutcomeWorkshopFields(f);OutcomeGeometry(f,"workshop-level"+level);
-                    SelectFitting(f.Loop,f.Art,f.Root,!f.Art.showingLauncher,f.Refresh);OutcomeWorkshopFields(f);
-                    if(level<3) { PurchaseCannon(f);Require(f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.CannonDamage==30+10*level,"confirmed real purchase damage"); }
+                    SelectFitting(f.Loop,f.Art,f.Root,!f.Art.showingLauncher,f.Refresh);
+                    var quote=f.Loop.Progression.QuotePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One);int wallet=f.Loop.Progression.Wallet;
+                    Require(quote.Quantity==1,"funded fixture can buy one actual rank");PurchaseCannon(f);
+                    Require(f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.CannonDamage==definition.EffectAt(level+1,1)&&
+                        f.Loop.Progression.Wallet==wallet-quote.Cost,"purchase commits exactly its displayed quantity, effect and price");
                 }
-                Require(f.Loop.Progression.Wallet==0,"actual1/2/3costs consumed six");string save=f.Storage.Value;PurchaseCannon(f);Require(f.Storage.Value==save,"capped pointer cannot purchase");
-            }
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(0,1,1)}))
-            {
-                OutcomeWorkshopFields(f);PurchaseCannon(f);Require(f.Loop.Progression.CannonDamage==30&&f.Loop.Progression.Wallet==0&&f.Loop.Progression.NextCost==2,"first actual20to30at1 and next2");
-                upgraded=f.Storage.Value;OutcomeWorkshopFields(f);string save=f.Storage.Value;PurchaseCannon(f);Require(f.Storage.Value==save,"insufficient pointer cannot purchase");
+                upgraded=f.Storage.Value;OutcomeWorkshopFields(f);
                 typeof(EncounterSession).GetField("focused",Private).SetValue(f.Loop.Session,false);f.Refresh();OutcomeWorkshopFields(f);
-                Click(f.Button("Redeploy"));Require(f.Loop.Session.Model==null&&f.Storage.Value==save,"unfocused Redeploy refused");
-                typeof(EncounterSession).GetField("focused",Private).SetValue(f.Loop.Session,true);f.Refresh();f.Deploy();Require(f.Loop.Session.Model.CommittedCannonDamage==30,"real stronger Redeploy commits30");
+                Click(f.Button("Redeploy"));Require(f.Loop.Session.Model==null&&f.Storage.Value==upgraded,"unfocused Redeploy refused");
+                typeof(EncounterSession).GetField("focused",Private).SetValue(f.Loop.Session,true);f.Refresh();f.Deploy();
+                Require(f.Loop.Session.Model.CommittedCannonDamage==definition.EffectAt(3,1),"Redeploy captures bought permanent damage");
             }
             using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=upgraded}))
-            { Require(f.Loop.Progression.CannonDamage==30,"actual upgraded reload");typeof(LastStandLoopController).GetField("<Phase>k__BackingField",Private).SetValue(f.Loop,"workshop");f.Refresh();OutcomeWorkshopFields(f);OutcomeGeometry(f,"upgraded-reload"); }
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(1,1,int.MaxValue)}))
-            { OutcomeWorkshopFields(f);string save=f.Storage.Value;Click(f.Button("Redeploy"));Require(f.Storage.Value==save&&f.Loop.Session.Model==null,"exhausted Redeploy denied");OutcomeGeometry(f,"insufficient-exhausted"); }
-            foreach(string guard in new[]{"reservation","pending"})
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(0,2,1)}))
+            {Require(f.Loop.Progression.CannonAttackLevel==3,"purchased investment reloads");OutcomeWorkshopFields(f);OutcomeGeometry(f,"upgraded-reload");}
+            foreach(int level in new[]{0,definition.PermanentCap})
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=WorkshopSave(level,0)}))
             {
-                Require(f.Loop.Progression.TryDeploy(),"actual reserved owner fixture");if(guard=="pending")Require(f.Loop.Progression.TryStageDefeat(17,3),"actual pending owner fixture");f.Refresh();OutcomeWorkshopFields(f);
-                string save=f.Storage.Value;Click(f.Button("Purchase"));Click(f.Button("Redeploy"));Require(f.Storage.Value==save&&f.Loop.Session.Model==null,"guarded workshop pointers preserve owner "+guard);OutcomeGeometry(f,guard);
+                OutcomeWorkshopFields(f);string saved=f.Storage.Value;PurchaseCannon(f);
+                Require(f.Storage.Value==saved,"insufficient or capped pointer cannot purchase");OutcomeGeometry(f,level==0?"insufficient":"actual-cap");
             }
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=WorkshopSave(1,0,int.MaxValue)}))
+            {OutcomeWorkshopFields(f);string saved=f.Storage.Value;Click(f.Button("Redeploy"));Require(f.Storage.Value==saved&&f.Loop.Session.Model==null,"exhausted new deployment refused");}
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=WorkshopSave(0,100)}))
+            {
+                Require(f.Loop.Progression.TryDeploy(),"real checkpoint reservation");var checkpoint=f.Loop.Progression.Checkpoint;int damage=checkpoint.Encounter.CommittedCannonDamage;
+                f.Refresh();OutcomeWorkshopFields(f);PurchaseCannon(f);
+                Require(f.Loop.Progression.Checkpoint.Encounter.CommittedCannonDamage==damage,"next-deploy purchase preserves paid checkpoint projection");
+                Click(f.Button("Redeploy"));Require(f.Loop.Session.Model.CommittedCannonDamage==damage&&f.Loop.Session.ManualPaused,"Resume uses the saved damage and starts paused");
+            }
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=LegacyPendingSave()}))
+            {string saved=f.Storage.Value;Click(f.Button("Purchase"));Click(f.Button("Redeploy"));Require(f.Storage.Value==saved&&f.Loop.Session.Model==null,"pending legacy reward refuses hidden purchase/deploy paths");}
         }
     }
     static void OutcomeSaveTruth(OutcomeFixture f)
     {
         if(f.Loop.GarageCardsVisible){AssertInlineGarageFields(f.Loop,f.Root);return;}
-        var p=f.Loop.Progression;var status=f.Text("SaveStatus");RequireVisible(status,"outcome visible real save status");
-        if(p.SaveState=="ready")Require(status.text.Split('\n')[0]=="LOCAL SAVE READY","outcome confirmed ready badge");
+        var p=f.Loop.Progression;var status=f.Text("SaveStatus");RequireVisible(status,"visible real save status");
+        if(p.SaveState=="ready")
+        {
+            string expected=p.LastReceipt==null&&f.Loop.Guidance.Suggestion!=""?f.Loop.Guidance.Suggestion:
+                f.Loop.Notice==""?"LOCAL SAVE READY / Completed rewards are banked.":f.Loop.Notice;
+            Require(status.text==expected,"confirmed status projects its current owner notice");
+        }
         else
         {
-            Require(status.text==p.SaveError&&!string.IsNullOrEmpty(status.text)&&!status.text.Contains("LOCAL SAVE READY"),"outcome exact specific unconfirmed status");
-            Require(f.Button("RetrySave").gameObject.activeInHierarchy&&f.Button("RetrySave").IsInteractable(),"outcome actual Retry available");
-            Require(!f.Button("Claim").IsInteractable()&&!f.Button("Purchase").IsInteractable()&&!f.Button("Redeploy").IsInteractable()&&!f.Button("Deploy").IsInteractable(),"outcome unready domain actions disabled");
-            Require(!status.text.Contains("claimed")&&!status.text.Contains("upgraded and saved"),"outcome no false successful award/purchase");
+            Require(status.text==p.SaveError&&!string.IsNullOrEmpty(status.text)&&!status.text.Contains("LOCAL SAVE READY"),"exact specific unconfirmed status");
+            Require(f.Button("RetrySave").IsActive()&&f.Button("RetrySave").IsInteractable(),"Retry available");
+            Require(!f.Button("Claim").IsInteractable()&&!f.Button("Purchase").IsInteractable()&&!f.Button("Redeploy").IsInteractable()&&!f.Button("Deploy").IsInteractable(),"unready domain actions disabled");
         }
     }
     static void OutcomeRecovery()
     {
-        using(var f=new OutcomeFixture(new Vector2Int(844,266)))
-        {
-            typeof(LastStandLoopController).GetField("<Notice>k__BackingField",Private).SetValue(f.Loop,"Local save confirmed. Unfinished runs earn no reward. This page must remain loaded for active time to continue. Claim salvage manually after defeat.");
-            OutcomeGeometry(f,"derived-short-Canvas-long-notice");
-        }
         foreach(var profile in OutcomeProfiles)
         {
             using(var f=new OutcomeFixture(profile))
             {
-                typeof(LastStandLoopController).GetField("<Notice>k__BackingField",Private).SetValue(f.Loop,"Local save confirmed. Unfinished runs earn no reward. This page must remain loaded for active time to continue. Claim salvage manually after defeat.");
-                OutcomeGeometry(f,"long-ready-garage-notice");
+                typeof(LastStandLoopController).GetField("<Notice>k__BackingField",Private).SetValue(f.Loop,"Completed-wave rewards are saved. Your next run starts from its confirmed checkpoint; closing this tab can lose only the unfinished wave.");
+                OutcomeGeometry(f,"long-ready-notice");
             }
             foreach(string problem in new[]{"read","corrupt","initial-write","unsupported"})
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=problem=="initial-write"?null:problem=="corrupt"?"broken":problem=="unsupported"?Save(0,0,1).Replace("\"version\":1","\"version\":2"):Save(0,0,1),DenyRead=problem=="read",DenyWrite=problem=="initial-write"}))
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=problem=="initial-write"?null:problem=="corrupt"?"broken":problem=="unsupported"?Save(0,0,1).Replace("\"version\":1","\"version\":999"):Save(0,0,1),DenyRead=problem=="read",DenyWrite=problem=="initial-write"}))
             {
-                OutcomeSaveTruth(f);OutcomeGeometry(f,problem);string save=f.Storage.Value;Click(f.Button("Deploy"));Require(f.Storage.Value==save&&f.Loop.Session.Model==null,"blocked load cannot deploy");
+                OutcomeSaveTruth(f);OutcomeGeometry(f,problem);string saved=f.Storage.Value;Click(f.Button("Deploy"));Require(f.Storage.Value==saved&&f.Loop.Session.Model==null,"blocked load cannot deploy");
                 f.Storage.DenyRead=f.Storage.DenyWrite=false;if(problem=="corrupt"||problem=="unsupported")f.Storage.Value=Save(0,0,1);
-                Click(f.Button("RetrySave"));Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Phase=="garage","real load Retry recovers garage");OutcomeSaveTruth(f);OutcomeGeometry(f,problem+"-recovered");
+                Click(f.Button("RetrySave"));Require(f.Loop.Progression.SaveState=="ready"&&f.Loop.Phase=="garage","load Retry recovers garage");OutcomeSaveTruth(f);OutcomeGeometry(f,problem+"-recovered");
             }
             foreach(string action in new[]{"reserve","stage","claim","purchase"})
             foreach(string failure in new[]{"denied-write","write-readback","mismatch-readback","conflict"})
-            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=Save(0,action=="purchase"?1:0,1)}))
+            using(var f=new OutcomeFixture(profile,new OutcomeStorage{Value=action=="claim"?LegacyPendingSave():action=="purchase"?WorkshopSave(0,100):Save(0,0,1)}))
             {
-                if(action=="stage"||action=="claim") { f.Deploy();if(action=="claim"){f.Defeat();f.FinishSettling();} }
-                int wallet=f.Loop.Progression.Wallet,level=f.Loop.Progression.CannonAttackLevel,writes=f.Storage.Writes;string prior=f.Storage.Value;
+                if(action=="stage")f.Deploy();
+                int wallet=f.Loop.Progression.Wallet,level=f.Loop.Progression.CannonAttackLevel;string prior=f.Storage.Value;
+                int purchaseCost=f.Loop.Progression.QuotePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One).Cost;
                 f.Storage.DenyWrite=failure=="denied-write";f.Storage.WriteThenFailRead=failure=="write-readback";f.Storage.MismatchAfterWrite=failure=="mismatch-readback";
                 if(failure=="conflict")f.Storage.Value=Save(2,9,22);
                 if(action=="reserve")Click(f.Button("Deploy"));else if(action=="stage")f.Defeat();else if(action=="claim")Click(f.Button("Claim"));else PurchaseCannon(f);
-                f.Refresh();Require(f.Loop.Progression.SaveState!="ready"&&f.Loop.Progression.Wallet==wallet&&f.Loop.Progression.CannonAttackLevel==level,"unconfirmed transaction leaves committed values "+action+" "+failure);
-                if(action=="stage")Require(f.Loop.Phase=="save-error"&&f.Loop.Progression.PendingDefeat==null&&!f.Text("PhaseDetail").text.Contains("Earned"),"unconfirmed defeat is no earned award");
+                f.Refresh();Require(f.Loop.Progression.SaveState!="ready"&&f.Loop.Progression.Wallet==wallet&&f.Loop.Progression.CannonAttackLevel==level,"unconfirmed transaction preserves committed values "+action+" "+failure);
+                if(action=="stage")Require(f.Loop.Phase=="save-error"&&f.Loop.Session.CheckpointBlocked&&f.Loop.Progression.PendingDefeat==null,"unconfirmed wave holds its checkpoint without a legacy award");
                 if(action=="claim")OutcomeResultFields(f);if(action=="purchase")OutcomeWorkshopFields(f);
                 OutcomeSaveTruth(f);OutcomeGeometry(f,action+"-"+failure);
-                f.Storage.DenyWrite=false;if(failure=="conflict")f.Storage.Value=prior;int before=f.Storage.Writes;
-                Click(f.Button("RetrySave"));Require(f.Loop.Progression.SaveState=="ready","real transaction Retry confirms "+action);
-                if(failure=="write-readback"||failure=="mismatch-readback")Require(f.Storage.Writes==before,"immutable candidate recognized without duplicate write");
-                if(action=="reserve")Require(f.Loop.Phase=="battle"&&f.Loop.Session.Model!=null,"reservation Retry starts actual reserved run");
-                if(action=="stage"){Require(f.Loop.Phase=="result"&&f.Loop.Progression.PendingDefeat!=null&&f.Loop.Progression.Wallet==0,"stage Retry recovers pending, no award");OutcomeResultFields(f);}
-                if(action=="claim")Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==wallet+1&&f.Loop.Progression.PendingDefeat==null,"claim Retry awards exactly once");
-                if(action=="purchase"){Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.CannonAttackLevel==1&&f.Loop.Progression.CannonDamage==30&&f.Loop.Progression.Wallet==0,"purchase Retry shows only confirmed30");OutcomeWorkshopFields(f);}
+                f.Storage.DenyWrite=false;if(failure=="conflict")f.Storage.Value=prior;int writes=f.Storage.Writes;
+                Click(f.Button("RetrySave"));Require(f.Loop.Progression.SaveState=="ready","Retry confirms "+action);
+                if(failure=="write-readback"||failure=="mismatch-readback")Require(f.Storage.Writes==writes,"immutable candidate recognized without a duplicate write");
+                if(action=="reserve")
+                {Require(f.Loop.Phase=="garage"&&f.Loop.Progression.HasCheckpoint&&f.Loop.Session.Model==null,"reservation Retry offers a confirmed Resume");Click(f.Button("Deploy"));Require(f.Loop.Session.Model!=null&&f.Loop.Session.ManualPaused,"explicit Resume restores paused");}
+                if(action=="stage")Require(f.Loop.Phase=="battle"&&f.Loop.Session.ManualPaused&&f.Loop.Progression.Checkpoint.CompletedWave==1&&
+                    f.Loop.Progression.Wallet==wallet+f.Loop.Progression.LastReceipt.Salvage,"wave Retry banks the exact receipt and preserves paused continuation");
+                if(action=="claim")
+                {Require(f.Loop.Progression.Wallet==wallet+1&&f.Loop.Progression.PendingDefeat==null,"legacy Retry awards once");if(f.Loop.Phase=="result")Click(f.Button("Claim"));Require(f.Loop.Phase=="workshop"&&f.Loop.Progression.Wallet==wallet+1,"Continue after reconciled claim cannot award again");}
+                if(action=="purchase")
+                {Require(f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.Wallet==wallet-purchaseCost,"purchase Retry shows exactly the confirmed quote");OutcomeWorkshopFields(f);}
                 Canvas.ForceUpdateCanvases();f.Canvas.renderMode=RenderMode.ScreenSpaceOverlay;f.Canvas.renderMode=RenderMode.ScreenSpaceCamera;f.Canvas.worldCamera=f.Camera;f.Refresh();
                 OutcomeSaveTruthForPhase(f);OutcomeGeometry(f,action+"-"+failure+"-recovered");
             }
@@ -1333,9 +1376,9 @@ public static class LastStandHudChecks
     // T-08 adds input assertions to the same imported scene and owner fixtures.
     // Earlier assertions, fixtures, selectors and geometry remain unchanged.
     static readonly string[] InputIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects", "SpeedMinus", "SpeedRate", "SpeedPlus",
-        "TierPrevious","TierNext","FittingPrevious","FittingNext" };
+        "TierPrevious","TierNext","ArmoryEntry" };
     static readonly string[] CoreControlIds = { "ToggleFitting", "Deploy", "Claim", "Purchase", "Redeploy", "RetrySave", "Pause", "ToggleMute", "ToggleTier", "Effects",
-        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","FittingPrevious","FittingNext","ResearchEntry","WaveInfo" };
+        "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "TierPrevious","TierNext","ArmoryEntry","ResearchEntry","WaveInfo" };
     static Button FindOrdinaryButton(RectTransform root, string id)
     {
         Button found = null; int count = 0;
@@ -1353,6 +1396,11 @@ public static class LastStandHudChecks
         foreach(var inventory in inventories)
             foreach(var name in inventory.Value)
             {Require(!expected.ContainsKey(name),"one declared current control owner "+name);expected.Add(name,inventory.Key);}
+        var inputs=root.GetComponentsInChildren<InputField>(true);
+        Require(inputs.Length==1&&inputs[0].name=="ArmoryName","exact ordinary name input "+state);
+        Require(expected.TryGetValue(inputs[0].name,out var inputOwner)&&inputOwner=="armoryControls"&&
+            inputs[0].transform.IsChildOf(root.Find("ArmoryModal/ArmoryPanel")),"name input belongs to its declared Armory owner "+state);
+        expected.Remove(inputs[0].name);
         int expectedCount=expected.Count;
         foreach (string id in CoreControlIds)
             Require(root.Find(CorePath(id)).GetComponent<Button>() == FindOrdinaryButton(root,id),
@@ -1460,7 +1508,8 @@ public static class LastStandHudChecks
     }
     static OutcomeFixture InputFixture(Vector2Int profile, string state)
     {
-        var storage = new OutcomeStorage { Value = Save(state == "capped" ? 3 : 0, state == "workshop" || state == "capped" ? 6 : 0,1), DenyRead = state == "blocked" };
+        var storage = new OutcomeStorage { Value = state=="result"?LegacyPendingSave():state=="tier-unlocked"?LastStandControlsChecks.EarnedSecondTierSave():
+            state=="workshop"||state=="capped"?WorkshopSave(state=="capped"?LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).PermanentCap:0,6):Save(0,0,1), DenyRead = state == "blocked" };
         var f = new OutcomeFixture(profile,storage);
         // Edit-mode batch import does not tick EventSystem.OnEnable. Select
         // the scene's existing actual EventSystem explicitly; create no owner.
@@ -1468,10 +1517,11 @@ public static class LastStandHudChecks
             if (events.gameObject.scene == f.Art.gameObject.scene) { Invoke(events,"OnEnable"); EventSystem.current = events; break; }
         Require(EventSystem.current != null,"actual scene EventSystem available");
         Invoke(f.Canvas.GetComponent<GraphicRaycaster>(),"OnEnable");
-        if (state == "battle" || state == "paused" || state == "settling" || state == "result" || state == "save-error") f.Deploy();
+        if (state == "battle" || state == "paused" || state == "settling" || state == "save-error") f.Deploy();
         if (state == "paused") { ReanchorInput(f); Click(f.Button("SpeedRate"));Require(f.Loop.Session.ManualPaused,"actual rate button establishes manual pause"); }
-        if (state == "settling" || state == "result") { InputDefeat(f); if (state == "result") f.FinishSettling(); }
-        if (state == "save-error") { storage.DenyWrite = true; InputDefeat(f); }
+        if (state == "settling")InputDefeat(f);
+        if (state == "result")Require(f.Loop.Phase=="result"&&f.Loop.Progression.PendingDefeat!=null,"retained pending result preserves legacy Claim input coverage");
+        if (state == "save-error") { storage.DenyWrite = true; InputDefeat(f);Require(f.Loop.Session.CheckpointBlocked&&f.Loop.Phase=="save-error","real failed wave checkpoint holds combat"); }
         f.Refresh(); EventSystem.current.SetSelectedGameObject(null); return f;
     }
     static void ReanchorInput(OutcomeFixture f)
@@ -1484,8 +1534,14 @@ public static class LastStandHudChecks
         // Real deterministic owner/model, bounded batches, no per-step log
         // amplification or changed outcome/award fixture.
         var clock = (LastStandRunClock)typeof(EncounterSession).GetField("runClock",Private).GetValue(f.Loop.Session);
-        while (f.Loop.Session.Model.Status == EncounterStatus.Running)
-            f.Loop.Session.AdvanceAt(clock.LastTimestamp + 128 * LastStandRunClock.StepSeconds);
+        int batches=0;
+        while(f.Loop.Session.Model.Status==EncounterStatus.Running&&!f.Loop.Session.CheckpointBlocked&&f.Loop.Session.Failure==""&&batches++<1000)
+        {
+            int before=f.Loop.Session.Model.Tick;
+            f.Loop.Session.AdvanceAt(clock.LastTimestamp+128*LastStandRunClock.StepSeconds);
+            Require(f.Loop.Session.Model.Tick>before||f.Loop.Session.CheckpointBlocked||f.Loop.Session.Failure!="","fixture combat cannot spin without advancing or a named stop");
+        }
+        Require(f.Loop.Session.Model.Status!=EncounterStatus.Running||f.Loop.Session.CheckpointBlocked||f.Loop.Session.Failure!="","fixture reaches terminal or held checkpoint within finite callback budget");
         f.Refresh();
     }
     static List<Button> VisibleEnabledInput(OutcomeFixture f)
@@ -1575,17 +1631,15 @@ public static class LastStandHudChecks
             }
         }
         foreach (string id in new[]{"Deploy","Claim","Redeploy","RetrySave","SpeedRate",
-            "TierPrevious","TierNext","FittingPrevious","FittingNext"})
+            "TierPrevious","TierNext","ArmoryEntry"})
         using (var f = InputFixture(OutcomeProfiles[0],id == "Claim" ? "result" : id == "Redeploy" ? "workshop" : id == "RetrySave" ? "blocked" :
-            id == "SpeedRate" ? "battle" : "garage"))
+            id == "SpeedRate" ? "battle" : id=="TierPrevious"||id=="TierNext"?"tier-unlocked":"garage"))
         {
             if(id=="TierPrevious"||id=="TierNext")
             {
-                Require(f.Loop.Progression.TryDeploy()&&f.Loop.Progression.TryStageDefeat(1200,1)&&f.Loop.Progression.TryClaim(),
-                    "keyboard tier fixture unlocks via the actual saved outcome and claim owner");
+                Require(f.Loop.Progression.IsTierUnlocked(2),"keyboard tier fixture unlocks via sequential saved wave commits");
                 f.Refresh();if(id=="TierPrevious"){Click(f.Button("TierNext"));f.Refresh();}
             }
-            if(id=="FittingPrevious")SelectFitting(f.Loop,f.Art,f.Root,true,f.Refresh);
             var b = f.Button(id); Require(b.IsActive() && b.IsInteractable(),"actual eligible action "+id);
             EventSystem.current.SetSelectedGameObject(b.gameObject);
             var text = b.GetComponentInChildren<Text>(true); var outline = b.GetComponent<Outline>();
@@ -1602,11 +1656,14 @@ public static class LastStandHudChecks
             SubmitInput(b); Require(calls == 1,"one native Button Submit callback "+id);
             if (b.IsActive() && b.IsInteractable())
                 Require(text.fontStyle == FontStyle.BoldAndItalic && outline.enabled,id+" native keyboard press has non-color cue");
-            if (id == "FittingPrevious" || id=="FittingNext")
+            if (id == "ArmoryEntry")
             {
-                Require(f.Art.showingLauncher!=attachment && f.Loop.FittingId==(id=="FittingNext"?"launcher":"repair") &&
-                    f.Loop.MenuPage=="" && f.Loop.Session.Model==null && f.Loop.Progression.Wallet==wallet,
-                    "one native inline arrow Submit selects the exact fitting without modal, progression or run");
+                string saved=f.Storage.Value;
+                Require(f.Loop.MenuPage=="armory"&&f.Art.showingLauncher==attachment,"one ordinary Submit opens Armory without changing build");
+                SubmitInput(f.Button("ArmoryBay1Next"));Require(f.Art.showingLauncher&&!attachment&&f.Storage.Value==saved,"keyboard previews the launcher without saving");
+                SubmitInput(f.Button("ArmoryApply"));Require(f.Loop.Progression.SelectedLoadout.PrimaryId=="launcher","keyboard Apply persists selected build");
+                SubmitInput(f.Button("ArmoryCancel"));
+                Require(f.Loop.MenuPage==""&&f.Loop.Session.Model==null&&f.Loop.Progression.Wallet==wallet,"keyboard Armory flow preserves wallet and no run");
             }
             if (id == "Deploy" || id == "Redeploy") Require(f.Loop.Phase == "battle" && f.Loop.Progression.ActiveRunId != 0 && f.Loop.Session.Model != null,"Submit existing run owner");
             if (id == "Claim") { Require(f.Loop.Phase == "workshop" && f.Loop.Progression.Wallet == wallet+1 && f.Loop.Progression.PendingDefeat == null,"Submit one manual Claim"); SubmitInput(b); Require(calls == 1 && f.Loop.Progression.Wallet == wallet+1,"hidden claimed control cannot award twice"); }
@@ -1638,8 +1695,9 @@ public static class LastStandHudChecks
             Require(buy.IsActive()&&buy.IsInteractable(),"Upgrades exposes actual eligible cannon card to keyboard");
             EventSystem.current.SetSelectedGameObject(buy.gameObject);int calls=0;buy.onClick.AddListener(()=>calls++);
             int wallet=f.Loop.Progression.Wallet,level=f.Loop.Progression.CannonAttackLevel;
+            int cost=f.Loop.Progression.QuotePermanent(LastStandUpgradeTrackId.CannonAttack,LastStandBulkQuantity.One).Cost;
             SubmitInput(buy);
-            Require(calls==1&&f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.Wallet==wallet-1,
+            Require(calls==1&&f.Loop.Progression.CannonAttackLevel==level+1&&f.Loop.Progression.Wallet==wallet-cost,
                 "one native upgrade-card Submit uses the existing saved purchase owner");
         }
     }
@@ -1676,18 +1734,20 @@ public static class LastStandHudChecks
                 string save=f.Storage.Value;int writes=f.Storage.Writes;
                 foreach(int pointerId in new[]{-1,0})
                 {
-                    bool prior=f.Art.showingLauncher;var arrow=f.Button(prior?"FittingPrevious":"FittingNext");
-                    var targetBounds=f.Bounds((RectTransform)arrow.transform);int arrowCallbacks=0;arrow.onClick.AddListener(()=>arrowCallbacks++);
+                    bool prior=f.Art.showingLauncher;var entry=f.Button("ArmoryEntry");
+                    var targetBounds=f.Bounds((RectTransform)entry.transform);int entryCallbacks=0;UnityEngine.Events.UnityAction countEntry=()=>entryCallbacks++;entry.onClick.AddListener(countEntry);
                     var pointer=new PointerEventData(EventSystem.current){position=new Vector2(targetBounds.center.x,f.Canvas.pixelRect.height-targetBounds.center.y),
                         pointerId=pointerId,button=PointerEventData.InputButton.Left};
-                    Require(InputRaycast(f,pointer.position,pointerId)==arrow,"inline fitting uses the same mouse/touch raycast owner");
-                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerDownHandler);
-                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerUpHandler);
-                    ExecuteEvents.Execute(arrow.gameObject,pointer,ExecuteEvents.pointerClickHandler);
-                    Require(arrowCallbacks==1&&f.Art.showingLauncher!=prior&&f.Loop.FittingId==(prior?"repair":"launcher")&&f.Loop.MenuPage=="",
-                        "one actual mouse/touch activation selects exact inline fitting");
-                    Require(f.Bounds((RectTransform)arrow.transform)==targetBounds&&f.Storage.Value==save&&f.Storage.Writes==writes,
-                        "inline activation preserves target geometry and gameplay save");
+                    Require(InputRaycast(f,pointer.position,pointerId)==entry,"Armory entry uses the same mouse/touch raycast owner");
+                    ExecuteEvents.Execute(entry.gameObject,pointer,ExecuteEvents.pointerDownHandler);
+                    ExecuteEvents.Execute(entry.gameObject,pointer,ExecuteEvents.pointerUpHandler);
+                    ExecuteEvents.Execute(entry.gameObject,pointer,ExecuteEvents.pointerClickHandler);
+                    Require(entryCallbacks==1&&f.Art.showingLauncher==prior&&f.Loop.MenuPage=="armory","one actual mouse/touch activation opens the build editor");
+                    Click(f.Button(prior?"ArmoryBay1Previous":"ArmoryBay1Next"));
+                    Require(f.Art.showingLauncher!=prior&&f.Storage.Value==save&&f.Storage.Writes==writes,"preview changes actual module without a save");
+                    Click(f.Button("ArmoryCancel"));f.Refresh();entry.onClick.RemoveListener(countEntry);
+                    Require(f.Art.showingLauncher==prior&&f.Bounds((RectTransform)entry.transform)==targetBounds&&f.Storage.Value==save&&f.Storage.Writes==writes,
+                        "Cancel restores saved model, target geometry and gameplay bytes");
                 }
                 Debug.Log("ST_LS_HUD_INPUT_BOUNDS "+profile+" "+state+" enabled="+enabled.Count);continue;
             }
@@ -1695,17 +1755,22 @@ public static class LastStandHudChecks
             int callbacks = 0; menu.onClick.AddListener(()=>callbacks++);
             foreach (int pointerId in new[] { -1,0 })
             {
-                bool manualPaused=f.Loop.Session.ManualPaused;string snapshot=f.Loop.Session.Model?.Snapshot(),save=f.Storage.Value;
-                if(f.Loop.Session.Model!=null)ReanchorInput(f);
+                bool manualPaused=f.Loop.Session.ManualPaused,checkpointBlocked=f.Loop.Session.CheckpointBlocked,menuPaused=f.Loop.Session.MenuPaused;
+                string snapshot=f.Loop.Session.Model?.Snapshot(),save=f.Storage.Value,reason=f.Loop.Session.Reason;
+                if(f.Loop.Session.Model!=null&&!checkpointBlocked)ReanchorInput(f);
                 var pointer = new PointerEventData(EventSystem.current) { position = new Vector2(rect.center.x,f.Canvas.pixelRect.height-rect.center.y), pointerId = pointerId, button = PointerEventData.InputButton.Left };
                 var target = InputRaycast(f,pointer.position,pointerId); Require(target == menu,"same floating Menu mouse/touch owner");
                 ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerDownHandler);
                 ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerUpHandler);
                 int priorCalls = callbacks; ExecuteEvents.Execute(target.gameObject,pointer,ExecuteEvents.pointerClickHandler);
                 Require(callbacks == priorCalls+1 && f.Loop.MenuPage=="menu","single mouse/touch activation opens the actual menu");
-                if(f.Loop.Session.Model!=null)Require(f.Loop.Session.MenuPaused&&f.Loop.Session.Paused,"Menu pointer holds active run");
+                if(f.Loop.Session.Model!=null)
+                    Require(f.Loop.Session.Paused&&(checkpointBlocked?
+                        f.Loop.Session.CheckpointBlocked&&f.Loop.Session.MenuPaused==menuPaused&&f.Loop.Session.Reason==reason:
+                        f.Loop.Session.MenuPaused),"Menu pointer preserves the active run or checkpoint-save hold");
                 Click(f.Button("SettingsClose"));
-                Require(!f.Loop.MenuOpen&&!f.Loop.Session.MenuPaused&&f.Loop.Session.ManualPaused==manualPaused&&
+                Require(!f.Loop.MenuOpen&&f.Loop.Session.MenuPaused==menuPaused&&f.Loop.Session.ManualPaused==manualPaused&&
+                    f.Loop.Session.CheckpointBlocked==checkpointBlocked&&(!checkpointBlocked||f.Loop.Session.Paused&&f.Loop.Session.Reason==reason)&&
                     f.Loop.Session.Model?.Snapshot()==snapshot&&f.Storage.Value==save,"Menu pointer round trip preserves manual pause/model/save");
                 Require(f.Bounds((RectTransform)menu.transform) == rect,"Menu round trip retains target bounds");
             }

@@ -63,6 +63,20 @@ namespace SingedTerra.LastStand
             }
             LastStandConsoleChrome.Feedback(button,text,frame);Style(button,true,false);return button;
         }
+        public InputField Input(string name,Transform parent,int maximumLength,Action<string> changed)
+        {
+            var rect=Panel(name,parent,true);var input=rect.gameObject.AddComponent<InputField>();
+            input.targetGraphic=rect.GetComponent<Image>();input.characterLimit=maximumLength;
+            input.lineType=InputField.LineType.SingleLine;input.contentType=InputField.ContentType.Standard;
+            var text=Text(name+"Text",rect,16);text.alignment=TextAnchor.MiddleLeft;
+            text.horizontalOverflow=HorizontalWrapMode.Overflow;
+            text.rectTransform.anchorMin=Vector2.zero;text.rectTransform.anchorMax=Vector2.one;
+            text.rectTransform.offsetMin=new Vector2(12,4);text.rectTransform.offsetMax=new Vector2(-12,-4);
+            input.textComponent=text;input.caretColor=Brass;input.customCaretColor=true;
+            input.selectionColor=new Color(.91f,.69f,.33f,.35f);
+            input.onValidateInput=(value,index,character)=>Char.IsControl(character)||Char.IsSurrogate(character)||character=='<'||character=='>'?'\0':character;
+            input.onValueChanged.AddListener(value=>changed(value));return input;
+        }
         public static void Style(Button button,bool available,bool selected)
         {
             button.interactable=available;button.GetComponent<Image>().color=!available?DisabledSurface:selected?Brass:Olive;

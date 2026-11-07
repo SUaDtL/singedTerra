@@ -1,0 +1,27 @@
+﻿funding run=1 ticks=21329 best=53,0,0,0,0,0 gross=95 wallet=75
+funding run=2 ticks=52462 best=80,0,0,0,0,0 gross=175 wallet=96
+funding run=3 ticks=83094 best=81,0,0,0,0,0 gross=256 wallet=140
+funding run=4 ticks=178801 best=190,0,0,0,0,0 gross=592 wallet=295
+funding run=5 ticks=1229871 best=1376,0,0,0,0,0 gross=12544 wallet=11340
+funding run=6 ticks=1474451 best=1376,349,0,0,0,0 gross=13925 wallet=6989
+funding run=7 ticks=3887610 best=2584,349,0,0,0,0 gross=52449 wallet=43680
+funding run=8 ticks=3931806 best=2584,349,99,0,0,0 gross=52596 wallet=27023
+funding run=9 ticks=6434003 best=2678,349,99,0,0,0 gross=92062 wallet=66155
+funding run=10 ticks=6476093 best=2678,349,99,0,0,0 gross=92169 wallet=42819
+funding run=11 ticks=9073732 best=2783,349,99,0,0,0 gross=135532 wallet=83064
+funding run=12 ticks=9115771 best=2783,349,99,0,0,0 gross=135639 wallet=82984
+funding run=13 ticks=11766830 best=2837,349,99,0,0,0 gross=181510 wallet=126892
+funding run=14 ticks=12059249 best=2837,349,399,0,0,0 gross=183734 wallet=74896
+funding run=15 ticks=16066507 best=4272,349,399,0,0,0 gross=290016 wallet=175139
+funding run=16 ticks=16514739 best=4272,349,399,533,0,0 gross=295431 wallet=127798
+funding run=17 ticks=21018141 best=5000,349,399,533,0,0 gross=440787 wallet=264012
+funding run=18 ticks=21398714 best=5000,349,399,533,534,0 gross=447292 wallet=194488
+funding run=19 ticks=24000000 best=5000,349,399,533,534,0 gross=515420 wallet=258658
+matrix 28/168
+matrix 56/168
+System.InvalidOperationException: Penetration cannot reduce damage
+  at CombatBalanceMeasurements+RoleEffects.Observe (SingedTerra.Encounter.EncounterModel model) [0x0043e] in <af123d5078684af9ac38a711b7756780>:0 
+  at CombatBalanceMeasurements.Run (CombatBalanceMeasurements+Context c, System.Int32 tier, System.String fitting, System.String policy, System.Int32 speedHalf, System.Int32 maxTicks, System.Int32 stopWave, System.Action`2[T1,T2] confirmedBoundary) [0x0028b] in <af123d5078684af9ac38a711b7756780>:0 
+  at BuildcraftBalanceMeasurements.Compare (CombatBalanceMeasurements+Seed seed, System.Int32 tier, System.String name, System.String policy, System.Int32 maximumTicks, System.Int32 endWave) [0x000dc] in <af123d5078684af9ac38a711b7756780>:0 
+  at BuildcraftBalanceMeasurements.Measure (System.Boolean quick) [0x00316] in <af123d5078684af9ac38a711b7756780>:0 
+  at BuildcraftBalanceMeasurements.Main (System.String[] args) [0x00018] in <af123d5078684af9ac38a711b7756780>:0 

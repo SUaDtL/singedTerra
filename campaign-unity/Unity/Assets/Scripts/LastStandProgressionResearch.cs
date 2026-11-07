@@ -9,16 +9,29 @@ namespace SingedTerra.LastStand
         public LastStandHistorySnapshot HistorySnapshot=>committed?.History?.Snapshot();
         public double MaximumGameSpeed=>committed?.Research?.MaximumGameSpeed??1;
         public int ResearchRank(LastStandResearchTrackId track)=>committed?.Research?.Rank(track)??0;
+        public LastStandCombatResearchSnapshot CompletedCombatResearch=>CaptureCombatResearch();
+        static bool ResearchSnapshotIsFunded(LastStandResearchState state,LastStandCombatResearchSnapshot snapshot)=>
+            state!=null&&snapshot!=null&&snapshot.ArmorPiercing<=state.Rank(LastStandResearchTrackId.ArmorPiercing)&&
+            snapshot.AreaControl<=state.Rank(LastStandResearchTrackId.AreaControl)&&snapshot.FieldEngineering<=state.Rank(LastStandResearchTrackId.FieldEngineering);
+        public bool ResearchSnapshotIsFunded(LastStandCombatResearchSnapshot snapshot)=>ResearchSnapshotIsFunded(committed?.Research,snapshot);
         public string ResearchContext()=>committed==null?"":ResearchContext(committed);
         static string ResearchContext(Record row,LastStandShopCheckpoint shop=null)
         {
             var s=row.Research.Snapshot();
-            string context=s.catalogVersion+":"+string.Join(",",s.completedRanks);
             shop=shop??row.Checkpoint?.Shop;
+            if(shop==null)return s.catalogVersion+":"+string.Join(",",s.completedRanks);
+            var liveRanks=new int[LastStandResearchCatalog.LegacyTrackCount];
+            Array.Copy(s.completedRanks,liveRanks,liveRanks.Length);
+            bool buildcraft=LastStandRunEdition.ForEconomy(shop.EconomyVersion).IsBuildcraft;
+            // Retained runs keep their original opaque context format. Only
+            // the four original live benefits may change an ongoing sample.
+            string context=(buildcraft?LastStandResearchCatalog.Version:LastStandResearchCatalog.LegacyVersion)+":"+string.Join(",",liveRanks);
+            if(buildcraft)context+=";l:"+shop.Loadout+";c:"+shop.CombatResearch.ArmorPiercing+","+
+                shop.CombatResearch.AreaControl+","+shop.CombatResearch.FieldEngineering;
             // The shop freezes deployment levels. Profile purchases made in a
             // running game apply to its next deployment and must not relabel
             // this sample. Stable catalog order keeps both arrays bounded.
-            if(shop!=null)context+=";p:"+string.Join(",",shop.PermanentLevels)+";r:"+string.Join(",",shop.RunPurchases);
+            context+=";p:"+string.Join(",",shop.PermanentLevels)+";r:"+string.Join(",",shop.RunPurchases);
             return context;
         }
         static bool TryTerminalShop(Record row,LastStandShopState live,out LastStandShopCheckpoint shop)
@@ -26,6 +39,7 @@ namespace SingedTerra.LastStand
             shop=row.Checkpoint.Shop;
             if(live==null)return true;
             if(live.RunId!=shop.RunId || (int)live.Fitting!=shop.Fitting || live.EconomyVersion!=shop.EconomyVersion ||
+                !live.Loadout.Equals(shop.Loadout)||!live.CombatResearch.Equals(shop.CombatResearch)||
                 live.UniqueKills<shop.UniqueKills || live.FinalAccounting!=null ||
                 (live.PurchaseLifecycle!=LastStandShopPurchaseLifecycle.Running &&
                  live.PurchaseLifecycle!=LastStandShopPurchaseLifecycle.Paused &&
@@ -86,7 +100,7 @@ namespace SingedTerra.LastStand
             var current=new LastStandResearchIntent { Action=intent.Action,Slot=intent.Slot,Rank=intent.Rank,
                 Track=intent.Track,ExpectedRevision=advance.State.Revision,
                 ExpectedActiveIdentity=intent.ExpectedActiveIdentity,ExpectedQueuedIdentity=intent.ExpectedQueuedIdentity };
-            if(!advance.State.TryApply(current,Wallet,GetBestWave(1),out var change))return false;
+            if(!advance.State.TryApply(current,Wallet,GetBestWave(1),GetBestWave(2),out var change))return false;
             long wallet=(long)Wallet+change.WalletDelta;
             if(wallet<0 || wallet>int.MaxValue)return false;
             var next=committed.Copy();next.Research=change.State;next.Wallet=(int)wallet;

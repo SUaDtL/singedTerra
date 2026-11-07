@@ -74,7 +74,7 @@ def generate(utc_ms=None):
                       sourcePath=LEGACY.relative_to(REPO).as_posix(),
                       sourceManifestPath=LEGACY.with_suffix(".manifest.json").relative_to(REPO).as_posix(),
                       scope="Unchanged pinned compatibility input; not a current presentation profile."))
-    return dict(schema="last-stand-combat-depth-presentation-fixtures/v1",
+    return dict(schema="last-stand-combat-depth-presentation-fixtures/v2",
                 storageKey="singedTerra.lastStand.prototype.v1",
                 generatedAt=datetime.now(timezone.utc).isoformat(),
                 generatedUtcMilliseconds=max(row["createdUtcMilliseconds"] or 0 for row in cases),
@@ -90,7 +90,7 @@ def generate(utc_ms=None):
 def write(result, destination):
     # Only known sibling names are exported, before creating any output.
     identities = [row["id"] for row in result["cases"]]
-    if identities != ["roster-ready", "tier2-before-elite", "legacy-v4"]:
+    if identities != ["roster-ready", "tier2-before-elite", "tier5-before-commander", "legacy-v4"]:
         raise ValueError("Unexpected presentation fixture identities")
     destination = Path(destination).resolve()
     destination.mkdir(parents=True, exist_ok=False)

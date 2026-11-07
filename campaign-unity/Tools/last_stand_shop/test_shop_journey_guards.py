@@ -64,6 +64,21 @@ def _current_control_fixture():
     names += ['AppearanceApply', 'AppearanceCancel', 'AppearanceRotateLeft', 'AppearanceRotateRight']
     fixture['appearanceControls'] = [control(name, 'Appearance') for name in names]
     fixture['appearanceScrollOffset'] = fixture['appearanceMaximumScrollOffset'] = 0
+    # Current buildcraft inventory. The retained fixture and older contracts
+    # remain byte-identical; this is an independent invented parser input.
+    fixture['schema'] = 'singedterra-last-stand-observation/v6'
+    fixture['controls'] = [row for row in fixture['controls'] if row['name'] not in ('FittingPrevious', 'FittingNext')]
+    fixture['controls'].append(control('ArmoryEntry', 'Garage'))
+    fixture['shopControls'] += [control('ShopCard_' + key + 'Buy', 'Shop') for key in ('arcOutput', 'shieldCapacity')]
+    fixture['settingsControls'].append(control('MenuArmory', 'Settings'))
+    fixture['researchControls'] += [control('ResearchProject-' + key, 'Research') for key in
+        ('armorPiercing', 'areaControl', 'fieldEngineering')]
+    fixture['researchControls'] += [control('Research' + action + '2', 'Research') for action in
+        ('Start', 'Queue', 'Switch', 'Suspend', 'RemoveQueued')]
+    fixture['armoryControls'] = [control('Armory' + suffix, 'Armory') for suffix in
+        ('Close', 'PresetPrevious', 'PresetNext', 'Bay1Previous', 'Bay1Next', 'Bay2Previous', 'Bay2Next',
+         'Apply', 'Cancel', 'RotateLeft', 'RotateRight', 'Name')]
+    fixture['armoryScrollOffset'] = fixture['armoryMaximumScrollOffset'] = 0
     return fixture
 
 
@@ -1214,6 +1229,15 @@ class ShopJourneyGuardTests(unittest.TestCase):
         fixture = _current_control_fixture()
         self.assertCountEqual(actual_core, [row['name'] for row in fixture['controls']])
         self.assertCountEqual(actual_settings, [row['name'] for row in fixture['settingsControls']])
+        armory_source = (scripts / 'LastStandArmoryHud.cs').read_text(encoding='utf8')
+        actual_armory = re.findall(r'modal\.(?:Button|Input)\("([^\"]+)"', armory_source)
+        self.assertIn('new LastStandModal("Armory"', armory_source)
+        self.assertIn('for(int i=0;i<2;i++)', armory_source)
+        self.assertIn('modal.Button(token+"Previous"', armory_source)
+        self.assertIn('modal.Button(token+"Next"', armory_source)
+        actual_armory += ['ArmoryClose'] + ['ArmoryBay' + str(bay) + direction
+            for bay in (1, 2) for direction in ('Previous', 'Next')]
+        self.assertCountEqual(actual_armory, [row['name'] for row in fixture['armoryControls']])
 
     def test_shop_controls_only_complete_prefix(self):
         """Synthetic current inventory and truncation, never browser qualification."""
@@ -1236,9 +1260,9 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.schema,'singedterra-last-stand-observation/v5');
-assert.equal(controls.controls.length,20);assert.equal(controls.shopControls.length,16);assert.equal(controls.settingsControls.length,53);assert.equal(controls.researchControls.length,18);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);assert.equal(controls.appearanceControls.length,33);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls,...controls.appearanceControls].map(c=>c.name)).size,166);
+assert.equal(controls.schema,'singedterra-last-stand-observation/v6');
+assert.equal(controls.controls.length,19);assert.equal(controls.shopControls.length,18);assert.equal(controls.settingsControls.length,54);assert.equal(controls.researchControls.length,26);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);assert.equal(controls.appearanceControls.length,33);assert.equal(controls.armoryControls.length,12);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls,...controls.appearanceControls,...controls.armoryControls].map(c=>c.name)).size,188);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');
@@ -1254,8 +1278,10 @@ const cases={
   'missing-speed-control':complete({...value,controls:value.controls.filter(v=>v.name!=='SpeedRate')}),
   'missing-inline-tier-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='TierPrevious')}),
   'missing-inline-tier-next':complete({...value,controls:value.controls.filter(v=>v.name!=='TierNext')}),
-  'missing-inline-fitting-previous':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingPrevious')}),
-  'missing-inline-fitting-next':complete({...value,controls:value.controls.filter(v=>v.name!=='FittingNext')}),
+  'missing-inline-armory-entry':complete({...value,controls:value.controls.filter(v=>v.name!=='ArmoryEntry')}),
+  'missing-armory-name':complete({...value,armoryControls:value.armoryControls.filter(v=>v.name!=='ArmoryName')}),
+  'missing-armory-bay-control':complete({...value,armoryControls:value.armoryControls.filter(v=>v.name!=='ArmoryBay2Next')}),
+  'missing-armory-apply':complete({...value,armoryControls:value.armoryControls.filter(v=>v.name!=='ArmoryApply')}),
   'missing-settings-inventory':complete(Object.fromEntries(Object.entries(value).filter(([key])=>key!=='settingsControls'))),
   'duplicate-settings-control':complete({...value,settingsControls:value.settingsControls.map((v,i)=>i===0?value.settingsControls[1]:v)}),
   'missing-settings-control':complete({...value,settingsControls:value.settingsControls.slice(1)}),
@@ -1306,7 +1332,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
         truncated = ('ST_LS_HUD_LAYOUT ' + json.dumps(dict(value, graphics=[{'text': 'synthetic parser fixture ' * 1000}]), separators=(',', ':')))[:8190]
         with self.assertRaisesRegex(AssertionError, 'Controls were not complete'):
             namespace['read_controls'](truncated)
-        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls', 'appearanceControls', 'armoryControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = deepcopy(value)
                 if fault == 'missing': candidate[key].pop()
@@ -1330,7 +1356,7 @@ console.log('PASS controls_only_preserves_original_strict_parser');
                          'observation': {'text': 'synthetic current controls'}}
             exec(code, namespace)
         admit(_current_control_fixture())
-        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls'):
+        for key in ('controls', 'shopControls', 'settingsControls', 'researchControls', 'historyControls', 'plannerControls', 'appearanceControls', 'armoryControls'):
             for fault in ('missing', 'duplicate', 'unexpected'):
                 candidate = _current_control_fixture()
                 if fault == 'missing': candidate[key].pop()

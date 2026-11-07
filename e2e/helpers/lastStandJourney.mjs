@@ -37,7 +37,7 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 import { lastStandJourneyTimeBudget } from './lastStandProcessSupervisor.mjs';
 import { assertWaveSavePreserved, assertIdleWaveSave, validateCheckpointResume, validateWaveAbandonSave } from './lastStandWaveGuards.mjs';
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACTS=[1,2,3,4,5].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
+const OBSERVATION_CONTRACTS=[1,2,3,4,5,6].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
@@ -62,6 +62,7 @@ export const SHOP_PLAYER_INPUTS = [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/last
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
@@ -150,9 +151,35 @@ export function readShopControlObservation(raw) {
 // Use the catalog card's actual inline arrow and observe the equipped identity.
 // Legacy ToggleFitting controls are retained only for old comparison surfaces.
 export async function selectLastStandFitting({fitting,click,currentLayout,currentState,waitFor}) {
-  assert.ok(['repair','launcher'].includes(fitting),'Known shipped player fitting required');
+  assert.ok(['repair','launcher','scattergun','mortar','railgun','arc','shield'].includes(fitting),'Known shipped player fitting required');
   assert.equal(currentState()?.menu,'','Inline fitting selection requires the actual garage');
   await waitFor(()=>Array.isArray(currentLayout()?.controls));
+  if(currentLayout().schema==='singedterra-last-stand-observation/v6'){
+    const original=currentState().selectedPrimaryId,secondary=currentState().selectedSecondaryId;
+    const order=['repair','launcher','scattergun','mortar','railgun','arc','shield'];
+    assert.ok(order.includes(original)&&typeof secondary==='string','Observed committed loadout required');
+    assert.ok(currentLayout().controls.some(item=>item.name==='ArmoryEntry'&&item.active&&item.interactable),'Armory entry is visibly available');
+    if(original===fitting)return;
+    assert.notEqual(secondary,fitting,'Selection cannot duplicate the secondary fitting');
+    await click('ArmoryEntry');await waitFor(()=>currentState()?.menu==='armory');
+    for(let n=0;n<order.length&&currentState().armoryDraftPrimaryId!==fitting;n++){
+      const before=currentState().armoryDraftPrimaryId;
+      assert.ok(order.includes(before),'Observed Armory draft required');
+      const control='ArmoryBay1'+(order.indexOf(before)<order.indexOf(fitting)?'Next':'Previous');
+      assert.ok(currentLayout().armoryControls.some(item=>item.name===control&&item.active&&item.interactable),'Armory bay arrow is visibly available');
+      await click(control);await waitFor(()=>currentState().armoryDraftPrimaryId!==before);
+      assert.equal(currentState().selectedPrimaryId,original,'Preview cannot change committed loadout');
+      assert.equal(currentState().armoryDraftSecondaryId,secondary,'Primary selection preserves the secondary bay');
+    }
+    assert.equal(currentState().armoryDraftPrimaryId,fitting,'Requested draft fitting reached');
+    assert.equal(currentState().armoryCanApply,true,'Draft can be applied');
+    await click('ArmoryApply');await waitFor(()=>currentState().selectedPrimaryId===fitting&&!currentState().armoryCanApply);
+    assert.equal(currentState().selectedSecondaryId,secondary,'Apply preserves the secondary bay');
+    await click('ArmoryClose');await waitFor(()=>currentState().menu==='');
+    assert.equal(currentState().fittingId,fitting,'Applied fitting is visible in the garage');
+    return;
+  }
+  assert.ok(['repair','launcher'].includes(fitting),'Retained inline helper supports the original two fitting controls');
   const selected=()=>currentState()?.fittingId===fitting;
   if(!selected()) {
     const arrow=fitting==='launcher'?'FittingNext':'FittingPrevious';
@@ -1382,6 +1409,7 @@ export const LAST_STAND_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUT
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
@@ -1831,7 +1859,8 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
-    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith('/GarageFittingName')&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
+    const garageBuildField=layouts.at(-1).schema==='singedterra-last-stand-observation/v6'?'/GarageFittingDescription':'/GarageFittingName';
+    check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith(garageBuildField)&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;const upgradedDeployment=await deployObservedJourney({gameClick,states,layouts});
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
     const {upgradedHit,upgradedSound}=await observeUpgradedImpact({deployed:upgradedDeployment,start:hitStart,hits,encounters,callbackRecords,cues,

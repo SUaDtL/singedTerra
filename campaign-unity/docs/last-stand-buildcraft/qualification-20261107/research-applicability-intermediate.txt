@@ -1,0 +1,39 @@
+test_action_legality_uses_actual_engine (last_stand_research.test_presentation.ResearchPresentationTests.test_action_legality_uses_actual_engine) ... ok
+test_bulk_shop_geometry (last_stand_research.test_presentation.ResearchPresentationTests.test_bulk_shop_geometry) ... ok
+test_forty_project_filtering (last_stand_research.test_presentation.ResearchPresentationTests.test_forty_project_filtering) ... ok
+test_garage_targets_and_battle_separation (last_stand_research.test_presentation.ResearchPresentationTests.test_garage_targets_and_battle_separation) ... ok
+test_suspended_time_and_cost_disclosed (last_stand_research.test_presentation.ResearchPresentationTests.test_suspended_time_and_cost_disclosed) ... ok
+test_timer_and_effect_readouts (last_stand_research.test_presentation.ResearchPresentationTests.test_timer_and_effect_readouts) ... ok
+test_completion_keeps_active_snapshot_and_updates_next_deployment (last_stand_research.test_combat_research.CombatResearchTests.test_completion_keeps_active_snapshot_and_updates_next_deployment) ... ok
+test_earned_tracks_three_labs_and_six_prepaid_completions (last_stand_research.test_combat_research.CombatResearchTests.test_earned_tracks_three_labs_and_six_prepaid_completions) ... ok
+test_lab_planner_quotes_share_cost_effects_and_applicability (last_stand_research.test_combat_research.CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability) ... FAIL
+test_legacy_two_lab_paid_work_migrates_losslessly (last_stand_research.test_combat_research.CombatResearchTests.test_legacy_two_lab_paid_work_migrates_losslessly) ... ok
+test_active_queued_and_suspended_research_funding (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_active_queued_and_suspended_research_funding) ... ok
+test_caps_fitting_save_failure_and_active_checkpoint (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_caps_fitting_save_failure_and_active_checkpoint) ... ok
+test_catalog_goal_provenance_and_no_mutation (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_catalog_goal_provenance_and_no_mutation) ... ok
+test_completed_and_unsupported_research_snapshot (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_completed_and_unsupported_research_snapshot) ... ok
+test_exact_shared_budget_effects_and_shortfall (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_exact_shared_budget_effects_and_shortfall) ... ok
+test_fixed_pin_completion_clear_and_missing_catalog (last_stand_research.test_progression_planner.ProgressionPlannerTests.test_fixed_pin_completion_clear_and_missing_catalog) ... ok
+test_research_coordinator_confirms_once_after_uncertain_save (last_stand_architecture.test_application.ApplicationTests.test_research_coordinator_confirms_once_after_uncertain_save) ... ok
+test_run_coordinator_retries_wave_without_duplicate_rewards (last_stand_architecture.test_application.ApplicationTests.test_run_coordinator_retries_wave_without_duplicate_rewards) ... ok
+test_suspend_resume_preserves_clock_and_checkpoint_semantics (last_stand_architecture.test_application.ApplicationTests.test_suspend_resume_preserves_clock_and_checkpoint_semantics) ... ok
+
+======================================================================
+FAIL: test_lab_planner_quotes_share_cost_effects_and_applicability (last_stand_research.test_combat_research.CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_combat_research.py", line 39, in test_lab_planner_quotes_share_cost_effects_and_applicability
+    self.case("quotes")
+    ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_combat_research.py", line 29, in case
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : System.Exception: Global Planner applicability fixture
+  at CombatResearchChecks.Quotes () [0x00a70] in <e5f2b7b804e94dddb095ea23db2c1163>:0 
+  at CombatResearchChecks.Main (System.String[] args) [0x0004e] in <e5f2b7b804e94dddb095ea23db2c1163>:0 
+
+
+----------------------------------------------------------------------
+Ran 19 tests in 4.574s
+
+FAILED (failures=1)

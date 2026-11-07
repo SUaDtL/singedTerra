@@ -16,7 +16,7 @@ static class ShopLayoutChecks
     static readonly string[] ClosedBattleControls = { "Menu", "SpeedMinus", "SpeedRate", "SpeedPlus", "ShopEntry" };
     static readonly string[] PermanentControls = { "Redeploy", "Menu", "ShopEntry" };
     static readonly string[] RecoveryControls = { "Redeploy", "RetrySave", "Menu", "ShopEntry" };
-    static readonly string[] ReadyGarageControls = { "Deploy", "Menu", "TierPrevious", "TierNext", "FittingPrevious", "FittingNext", "ShopEntry", "ResearchEntry" };
+    static readonly string[] ReadyGarageControls = { "Deploy", "Menu", "TierPrevious", "TierNext", "ArmoryEntry", "ShopEntry", "ResearchEntry" };
     const double Tolerance = .002;
 
     static void Require(bool condition, string reason)

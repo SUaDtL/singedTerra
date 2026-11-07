@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {readShopControlObservation} from './lastStandJourney.mjs';
 import {tierJourneyControlGeometry} from './lastStandTierJourney.mjs';
 const key='singedTerra.lastStand.prototype.v1';
-export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls','plannerControls','appearanceControls'].flatMap(key=>layout?.[key]??[]);
+export const lastStandObservedControls=layout=>['controls','shopControls','settingsControls','researchControls','historyControls','plannerControls','appearanceControls','armoryControls'].flatMap(key=>layout?.[key]??[]);
 const controls=lastStandObservedControls;
 
 export async function createLastStandBrowserActor({context,id,report,output,base,persist,saveState='ready',maxRetainedLayouts=Infinity}){

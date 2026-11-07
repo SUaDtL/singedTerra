@@ -1,0 +1,2450 @@
+Inventory modules: {"alias": 1, "artifact": 3, "calibration": 3, "native-browser": 5, "portable": 85, "unity-editor": 21}
+Inventory cases: {"alias": 0, "artifact": 14, "calibration": 9, "native-browser": 13, "portable": 594, "unity-editor": 86}
+portable last_stand_architecture/test_application.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_architecture/test_boundaries.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_architecture/test_build_manifest.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_architecture/test_content.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_architecture/test_content_validation.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_architecture/test_encounter_oracle.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_architecture/test_foundation_baseline.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+alias last_stand_architecture/test_milestone_fixtures.py � Compatibility import of the same five tests; the canonical portable module executes once
+portable last_stand_architecture/test_native_storage.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_architecture/test_observation_contract.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_architecture/test_observation_versions.py � Strict current and retained diagnostic schema admission against maintained readers; no player qualification
+portable last_stand_architecture/test_test_runtime.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_architecture/test_ui_foundation.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_architecture/test_wave_oracle.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_architecture/test_web_artifact_binding.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_buildcraft/test_balance.py � Production C# buildcraft contract checks; no rendered acceptance
+portable last_stand_buildcraft/test_combat.py � Production C# buildcraft contract checks; no rendered acceptance
+portable last_stand_buildcraft/test_foundation.py � Production C# retained-edition, loadout, save transaction and reward-entitlement contracts; no rendered acceptance
+portable last_stand_buildcraft/test_sensitivity.py � Temporary parameter probes preserve all four retained editions and bound counterfactual scope; not player qualification
+unity-editor last_stand_buildcraft_ui/test_armory_hud.py � Requires imported Unity scene and Editor process; portable checks do not qualify the surface
+portable last_stand_buildcraft_ui/test_armory_session.py � Production C# local Armory draft and restore-generation contracts; no rendered acceptance
+portable last_stand_buildcraft_ui/test_wave_information.py � Production C# buildcraft contract checks; no rendered acceptance
+portable last_stand_combat_depth/test_armament_transactions.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_armaments.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_campaign.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_combat_balance.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_crowded_waves.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_enemies.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_enemy_income.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_enemy_information.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_presentation_fixtures.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_combat_depth/test_rules.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_continuity/test_backup.py � Actual-source profile backup/restore, strict decoding, ownership and uncertain-write checks; no native file-picker qualification
+portable last_stand_continuity/test_backup_transport.py � Actual-source bounded save/transport checks; no player profile or physical-device qualification
+portable last_stand_continuity/test_native_profile.py � Actual native storage owners, development-only profile selection, rejected arguments and linked-root refusal on temporary fixtures; no owner profile access
+unity-editor last_stand_controls/test_appearance_hud.py � Actual imported Unity UI; isolated stores, not device/visual acceptance
+portable last_stand_controls/test_appearance_layout.py � Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch
+portable last_stand_controls/test_audio_settings.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_controls/test_environments.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_controls/test_fitting.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_controls/test_fullscreen.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_controls/test_guidance.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_controls/test_menu.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_controls/test_preferences.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_controls/test_selection.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_controls/test_speed.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_loop/test_build_receipt_binding.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_loop/test_console_classification.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_loop/test_loop_model.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_loop/test_loop_unity.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+native-browser last_stand_loop/test_native_chrome_cache.py � Requires owned browser, preview/export or native host evidence; separate from portable source checks
+portable last_stand_loop/test_shader_build_log.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_combat_research.py � Production C# research funding and deployment snapshot contracts; no rendered acceptance
+portable last_stand_research/test_history.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_history_comparison.py � Actual production C# projections and behavior; no rendered or platform acceptance
+calibration last_stand_research/test_periodic_bulk.py � Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity
+portable last_stand_research/test_presentation.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_progression_planner.py � Actual production C# projections and behavior; no rendered or platform acceptance
+portable last_stand_research/test_qualification_fixtures.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_research_engine.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_research_profile.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_research_save.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_save_codec.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+calibration last_stand_research/test_upgrade_balance.py � Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity
+portable last_stand_research/test_upgrade_economy.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_wave_information.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_research/test_writer_lock.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_shop/test_shop.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+artifact last_stand_shop/test_shop_artifact_guards.py � Eight preserved negative replay cases require genuine retained records or the sealed external observer diagnostic; no synthetic receipt substitutes
+artifact last_stand_shop/test_shop_build.py � Reads completed genuine export/build receipts; a clean checkout does not manufacture those receipts
+native-browser last_stand_shop/test_shop_delivery.py � Requires owned browser, preview/export or native host evidence; separate from portable source checks
+portable last_stand_shop/test_shop_journey_guards.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_shop/test_shop_layout.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance; retains custom PID/raw-output evidence recorder with shared tool discovery
+portable last_stand_shop/test_shop_persistence.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+native-browser last_stand_shop/test_shop_player.py � Requires owned browser, preview/export or native host evidence; separate from portable source checks
+portable last_stand_shop/test_shop_player_portable.py � Executes actual source-extracted Shop CLI/observation logic with inert process/browser boundaries; no external evidence or native host required
+unity-editor last_stand_shop/test_shop_ui.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_shop/test_shop_vertical.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_tank/test_appearance.py � Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch
+portable last_stand_tank_art/test_appearance_draft.py � Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch
+portable last_stand_tank_art/test_tank_art.py � Pure cosmetic profile/layout/draft and authored-asset checks; no player storage or Unity launch
+portable last_stand_tiers/test_tier_calibration.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_tiers/test_tier_controller.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_tiers/test_tier_progression.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_tiers/test_tier_rules.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_tiers/test_tier_ui.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+native-browser last_stand_ui/test_background_admission.py � All eleven Node admission cases; Windows additionally executes actual owned-caption/foreground probes. Separate from portable Python/source checks
+portable last_stand_ui/test_background_clock.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_ui/test_background_feedback.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_ui/test_background_session.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+artifact last_stand_ui/test_build_delivery.py � Reads completed genuine export/build receipts; a clean checkout does not manufacture those receipts
+unity-editor last_stand_ui/test_combat_feedback.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_ui/test_hud_battle.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_ui/test_hud_garage.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_ui/test_hud_input.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_ui/test_hud_layout.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_ui/test_hud_outcomes.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_ui/test_journey_contracts.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+native-browser last_stand_ui/test_preview_delivery.py � Requires owned browser, preview/export or native host evidence; separate from portable source checks
+unity-editor last_stand_waves/test_armament_presentation.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+calibration last_stand_waves/test_balance.py � Long 5000-wave economy matrix; preserve frozen source maps/reports and bind reruns to a separate execution identity
+portable last_stand_waves/test_catalogs.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_checkpoint_store.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_earned_milestone_fixtures.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_fitting_catalog.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_long_run_economy.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_save_review.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+unity-editor last_stand_waves/test_shared_chrome.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_waves/test_startup.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+unity-editor last_stand_waves/test_wave_integration.py � Requires imported Unity scene/assets and Editor process; portable tests do not qualify this surface
+portable last_stand_waves/test_wave_model.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable last_stand_waves/test_wave_receipts.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_build_web.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_inspection_checks.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_make_web_entry.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_native_chrome.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_test_inventory.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+portable test_visual_review_checks.py � Python/Node and actual Mono production-source checks; no Editor or rendered acceptance
+RUN last_stand_architecture/test_application.py
+test_research_coordinator_confirms_once_after_uncertain_save (test_application.ApplicationTests.test_research_coordinator_confirms_once_after_uncertain_save) ... ok
+test_run_coordinator_retries_wave_without_duplicate_rewards (test_application.ApplicationTests.test_run_coordinator_retries_wave_without_duplicate_rewards) ... ok
+test_suspend_resume_preserves_clock_and_checkpoint_semantics (test_application.ApplicationTests.test_suspend_resume_preserves_clock_and_checkpoint_semantics) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.108s
+
+OK
+RUN last_stand_architecture/test_boundaries.py
+test_domain_compiles_without_unity (test_boundaries.BoundaryTests.test_domain_compiles_without_unity) ... ok
+test_presentation_cannot_write_progression (test_boundaries.BoundaryTests.test_presentation_cannot_write_progression) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.371s
+
+OK
+RUN last_stand_architecture/test_build_manifest.py
+test_android_receipt_requires_the_effective_tool_paths_version_and_java_execution (test_build_manifest.BuildManifestTests.test_android_receipt_requires_the_effective_tool_paths_version_and_java_execution) ... ok
+test_build_environment_is_scoped_and_clears_inherited_android_overrides (test_build_manifest.BuildManifestTests.test_build_environment_is_scoped_and_clears_inherited_android_overrides) ... ok
+test_effective_tool_bytes_and_paths_are_bound_but_unrelated_sdk_images_are_not (test_build_manifest.BuildManifestTests.test_effective_tool_bytes_and_paths_are_bound_but_unrelated_sdk_images_are_not) ... ok
+test_external_tools_reuse_sdk_without_requiring_embedded_java_or_ndk (test_build_manifest.BuildManifestTests.test_external_tools_reuse_sdk_without_requiring_embedded_java_or_ndk) ... ok
+test_java_metadata_requires_one_stable_java17_version_and_nonempty_binary (test_build_manifest.BuildManifestTests.test_java_metadata_requires_one_stable_java17_version_and_nonempty_binary) ... ok
+test_manifest_binds_output_bytes_source_toolchain_scene_and_flags (test_build_manifest.BuildManifestTests.test_manifest_binds_output_bytes_source_toolchain_scene_and_flags) ... ok
+test_missing_extra_and_modified_player_bytes_are_rejected (test_build_manifest.BuildManifestTests.test_missing_extra_and_modified_player_bytes_are_rejected) ... ok
+test_preflight_rejects_java_version_the_pinned_unity_cannot_parse (test_build_manifest.BuildManifestTests.test_preflight_rejects_java_version_the_pinned_unity_cannot_parse) ... ok
+test_target_preflight_requires_module_and_android_toolchain (test_build_manifest.BuildManifestTests.test_target_preflight_requires_module_and_android_toolchain) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.225s
+
+OK
+RUN last_stand_architecture/test_content.py
+test_content_extension_reaches_runtime_without_scattered_counts (test_content.ContentTests.test_content_extension_reaches_runtime_without_scattered_counts) ... ok
+test_content_identity_and_reference_errors_fail_before_build (test_content.ContentTests.test_content_identity_and_reference_errors_fail_before_build) ... ok
+test_legacy_content_identity_survives_catalog_extension (test_content.ContentTests.test_legacy_content_identity_survives_catalog_extension) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.497s
+
+OK
+RUN last_stand_architecture/test_encounter_oracle.py
+Retained actual encounter compiler evidence: C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Evidence\last-stand-playable-loop\t06\encounter-oracle-regression-642cea65eeab4fd5a9694db6c510e353
+test_browser_encounter_oracle_compiles_complete_current_source_and_preserves_reference (test_encounter_oracle.EncounterOracleTests.test_browser_encounter_oracle_compiles_complete_current_source_and_preserves_reference) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.432s
+
+OK
+RUN last_stand_architecture/test_foundation_baseline.py
+test_frozen_fixture_rejects_reward_drift (test_foundation_baseline.FoundationBaselineTests.test_frozen_fixture_rejects_reward_drift) ... ok
+test_refactor_preserves_frozen_model_and_save_fixtures (test_foundation_baseline.FoundationBaselineTests.test_refactor_preserves_frozen_model_and_save_fixtures) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.880s
+
+OK
+RUN last_stand_architecture/test_native_storage.py
+test_ambiguous_sequence_is_not_silently_selected (test_native_storage.NativeStorageTests.test_ambiguous_sequence_is_not_silently_selected) ... ok
+test_checksum_corruption_and_two_invalid_slots_never_create_fresh_profile (test_native_storage.NativeStorageTests.test_checksum_corruption_and_two_invalid_slots_never_create_fresh_profile) ... ok
+test_crc_covers_identity_sequence_and_payload_without_crypto (test_native_storage.NativeStorageTests.test_crc_covers_identity_sequence_and_payload_without_crypto) ... ok
+test_future_container_version_is_not_downgraded (test_native_storage.NativeStorageTests.test_future_container_version_is_not_downgraded) ... ok
+test_link_at_record_file_position_refuses_access_and_preserves_target (test_native_storage.NativeStorageTests.test_link_at_record_file_position_refuses_access_and_preserves_target) ... ok
+test_linked_root_and_ancestor_refuse_access_without_changing_target (test_native_storage.NativeStorageTests.test_linked_root_and_ancestor_refuse_access_without_changing_target) ... ok
+test_missing_os_range_lock_is_detected_by_an_independent_process (test_native_storage.NativeStorageTests.test_missing_os_range_lock_is_detected_by_an_independent_process) ... ok
+test_native_lease_honors_an_independent_os_range_lock (test_native_storage.NativeStorageTests.test_native_lease_honors_an_independent_os_range_lock) ... ok
+test_native_storage_restart_and_interrupted_write_recovery (test_native_storage.NativeStorageTests.test_native_storage_restart_and_interrupted_write_recovery) ... ok
+test_native_writer_lease_excludes_another_process_and_releases_on_exit (test_native_storage.NativeStorageTests.test_native_writer_lease_excludes_another_process_and_releases_on_exit) ... ok
+test_preferences_retry_reacquires_before_read_and_preserves_newer_records (test_native_storage.NativeStorageTests.test_preferences_retry_reacquires_before_read_and_preserves_newer_records) ... ok
+test_record_isolation_and_rejected_path_escape (test_native_storage.NativeStorageTests.test_record_isolation_and_rejected_path_escape) ... ok
+test_same_process_observers_do_not_release_the_cross_process_lease (test_native_storage.NativeStorageTests.test_same_process_observers_do_not_release_the_cross_process_lease) ... ok
+test_surviving_waiter_retries_after_the_owner_process_exits (test_native_storage.NativeStorageTests.test_surviving_waiter_retries_after_the_owner_process_exits) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 11.573s
+
+OK
+RUN last_stand_architecture/test_observation_versions.py
+test_appearance_v5_requires_every_control_and_scroll_field (test_observation_versions.ObservationVersionTests.test_appearance_v5_requires_every_control_and_scroll_field) ... ok
+test_buildcraft_v6_requires_armory_and_expanded_research_exactly (test_observation_versions.ObservationVersionTests.test_buildcraft_v6_requires_armory_and_expanded_research_exactly) ... ok
+test_continuity_requires_each_new_control_and_its_exact_version (test_observation_versions.ObservationVersionTests.test_continuity_requires_each_new_control_and_its_exact_version) ... ok
+test_current_schema_cannot_be_downgraded_or_mislabeled (test_observation_versions.ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled) ... ok
+test_duplicate_json_keys_are_not_silently_repaired (test_observation_versions.ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired) ... ok
+test_incomplete_extra_repeated_and_malformed_current_refused (test_observation_versions.ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused) ... ok
+test_retained_and_current_complete_shapes (test_observation_versions.ObservationVersionTests.test_retained_and_current_complete_shapes) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.296s
+
+OK
+RUN last_stand_architecture/test_test_runtime.py
+test_discovery_uses_explicit_tools_or_path_without_silent_skip (test_test_runtime.TestRuntimeTests.test_discovery_uses_explicit_tools_or_path_without_silent_skip) ... ok
+test_explicit_defines_preserve_preprocessor_contract_without_raw_flags (test_test_runtime.TestRuntimeTests.test_explicit_defines_preserve_preprocessor_contract_without_raw_flags) ... ok
+test_explicit_sources_outputs_and_runtime_failure_are_preserved (test_test_runtime.TestRuntimeTests.test_explicit_sources_outputs_and_runtime_failure_are_preserved) ... ok
+test_explicit_tools_survive_unavailable_default_discovery (test_test_runtime.TestRuntimeTests.test_explicit_tools_survive_unavailable_default_discovery) ... ok
+test_runner_propagates_compile_timeout_and_source_failures (test_test_runtime.TestRuntimeTests.test_runner_propagates_compile_timeout_and_source_failures) ... ok
+test_source_change_during_compilation_rejects_output (test_test_runtime.TestRuntimeTests.test_source_change_during_compilation_rejects_output) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 3.586s
+
+OK
+RUN last_stand_architecture/test_wave_oracle.py
+test_browser_oracle_compiles_its_complete_bound_source_list (test_wave_oracle.WaveOracleTests.test_browser_oracle_compiles_its_complete_bound_source_list) ... ok
+test_retained_combat_depth_oracle_keeps_four_tiers_five_fittings (test_wave_oracle.WaveOracleTests.test_retained_combat_depth_oracle_keeps_four_tiers_five_fittings) ... ok
+test_retained_oracle_uses_original_complete_edition (test_wave_oracle.WaveOracleTests.test_retained_oracle_uses_original_complete_edition) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.867s
+
+OK
+RUN last_stand_architecture/test_web_artifact_binding.py
+test_current_depth_and_retained_sprint_identities_are_metadata (test_web_artifact_binding.WebArtifactBindingTests.test_current_depth_and_retained_sprint_identities_are_metadata) ... ok
+test_mixed_unknown_or_malformed_metadata_cannot_reach_build (test_web_artifact_binding.WebArtifactBindingTests.test_mixed_unknown_or_malformed_metadata_cannot_reach_build) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.085s
+
+OK
+RUN last_stand_buildcraft/test_balance.py
+test_fresh_earned_measurement_keeps_unavailable_pairs_and_currency_truthful (test_balance.BuildcraftBalanceTests.test_fresh_earned_measurement_keeps_unavailable_pairs_and_currency_truthful) ... ok
+test_report_rejects_gifted_currency_omitted_pairs_and_false_frontier (test_balance.BuildcraftBalanceTests.test_report_rejects_gifted_currency_omitted_pairs_and_false_frontier) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.421s
+
+OK
+RUN last_stand_buildcraft/test_combat.py
+test_all_seven_singles_and_twenty_one_pairs_clear_restore_and_keep_common_effects_once (test_combat.BuildcraftCombatTests.test_all_seven_singles_and_twenty_one_pairs_clear_restore_and_keep_common_effects_once) ... ok
+test_arc_acquisition_and_hops_include_exact_boundaries_and_exclude_outside (test_combat.BuildcraftCombatTests.test_arc_acquisition_and_hops_include_exact_boundaries_and_exclude_outside) ... ok
+test_arc_has_unique_bounded_falloff_targets_and_both_bays_tick (test_combat.BuildcraftCombatTests.test_arc_has_unique_bounded_falloff_targets_and_both_bays_tick) ... ok
+test_carrier_and_medic_aura_boundaries_affect_only_expected_identities (test_combat.BuildcraftCombatTests.test_carrier_and_medic_aura_boundaries_affect_only_expected_identities) ... ok
+MUTATION_DETECTED combat:0 EncounterBuildcraft.cs arc -> chain target repeats
+MUTATION_DETECTED combat:1 EncounterBuildcraft.cs shield -> no early recharge
+MUTATION_DETECTED combat:2 EncounterModel.cs arc -> both bays tick independently
+test_combat_contracts_reject_repeat_chain_early_recharge_and_single_bay_faults (test_combat.BuildcraftCombatTests.test_combat_contracts_reject_repeat_chain_early_recharge_and_single_bay_faults) ... ok
+test_combat_research_projects_shared_bounded_effects_once (test_combat.BuildcraftCombatTests.test_combat_research_projects_shared_bounded_effects_once) ... ok
+test_paid_shield_capacity_delta_and_recharge_ledger_survive_restore (test_combat.BuildcraftCombatTests.test_paid_shield_capacity_delta_and_recharge_ledger_survive_restore) ... ok
+test_pause_and_five_times_speed_preserve_shield_chain_and_telegraph_outcomes (test_combat.BuildcraftCombatTests.test_pause_and_five_times_speed_preserve_shield_chain_and_telegraph_outcomes) ... ok
+MUTATION_DETECTED bounds:0 EncounterModel.cs arc-ranges -> arc acquisition range boundary
+MUTATION_DETECTED bounds:1 EncounterModel.cs arc-ranges -> arc acquisition range boundary
+MUTATION_DETECTED bounds:2 EncounterBuildcraft.cs arc-ranges -> arc hop radius boundary
+MUTATION_DETECTED bounds:3 EncounterBuildcraft.cs arc-ranges -> arc hop radius boundary
+MUTATION_DETECTED bounds:4 EncounterBuildcraft.cs aura-ranges -> carrier aura radius boundary
+MUTATION_DETECTED bounds:5 EncounterBuildcraft.cs support-limits -> carrier distinct target cap
+MUTATION_DETECTED bounds:6 EncounterBuildcraft.cs support-limits -> carrier finite shield conservation
+MUTATION_DETECTED bounds:7 EncounterBuildcraft.cs aura-ranges -> medic aura radius boundary
+MUTATION_DETECTED bounds:8 EncounterBuildcraft.cs support-limits -> medic target cap
+MUTATION_DETECTED bounds:9 EncounterBuildcraft.cs support-limits -> medic finite healing conservation
+test_range_target_and_budget_guard_removals_are_detected (test_combat.BuildcraftCombatTests.test_range_target_and_budget_guard_removals_are_detected) ... ok
+test_shield_absorbs_recharges_after_quiet_period_and_cannot_heal_without_bound (test_combat.BuildcraftCombatTests.test_shield_absorbs_recharges_after_quiet_period_and_cannot_heal_without_bound) ... ok
+test_support_is_finite_and_commanders_preserve_clear_and_telegraph_rules (test_combat.BuildcraftCombatTests.test_support_is_finite_and_commanders_preserve_clear_and_telegraph_rules) ... ok
+test_support_limits_three_targets_and_conserves_finite_budgets (test_combat.BuildcraftCombatTests.test_support_limits_three_targets_and_conserves_finite_budgets) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 12.693s
+
+OK
+RUN last_stand_buildcraft/test_foundation.py
+test_campaign_expands_only_the_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_campaign_expands_only_the_buildcraft_edition) ... ok
+test_four_retained_checkpoint_payloads_survive_profile_migration (test_foundation.BuildcraftFoundationTests.test_four_retained_checkpoint_payloads_survive_profile_migration) ... ok
+test_four_retained_editions_keep_combat_prices_income_and_catalogs (test_foundation.BuildcraftFoundationTests.test_four_retained_editions_keep_combat_prices_income_and_catalogs) ... ok
+test_new_runs_have_a_distinct_buildcraft_edition (test_foundation.BuildcraftFoundationTests.test_new_runs_have_a_distinct_buildcraft_edition) ... ok
+test_preset_apply_is_atomic_and_only_affects_future_deployment (test_foundation.BuildcraftFoundationTests.test_preset_apply_is_atomic_and_only_affects_future_deployment) ... ok
+test_profile_schema_has_bounded_loadout_and_preset_fields (test_foundation.BuildcraftFoundationTests.test_profile_schema_has_bounded_loadout_and_preset_fields) ... ok
+test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks (test_foundation.BuildcraftFoundationTests.test_retained_receipts_announce_reconciled_fitting_and_tier_unlocks) ... ok
+test_retained_run_clear_and_migration_reconcile_without_duplicate_currency (test_foundation.BuildcraftFoundationTests.test_retained_run_clear_and_migration_reconcile_without_duplicate_currency) ... ok
+test_two_bay_loadout_validates_and_resumes_both_fittings (test_foundation.BuildcraftFoundationTests.test_two_bay_loadout_validates_and_resumes_both_fittings) ... ok
+test_typed_bundles_grant_shared_permanent_entitlements (test_foundation.BuildcraftFoundationTests.test_typed_bundles_grant_shared_permanent_entitlements) ... ok
+test_unearned_preset_is_rejected_without_overwriting_save (test_foundation.BuildcraftFoundationTests.test_unearned_preset_is_rejected_without_overwriting_save) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 6.221s
+
+OK
+RUN last_stand_buildcraft/test_sensitivity.py
+test_catalog_shape_change_is_rejected_before_counterfactual_compilation (test_sensitivity.BuildcraftSensitivityTests.test_catalog_shape_change_is_rejected_before_counterfactual_compilation) ... ok
+test_disposable_parameter_changes_affect_only_current_prices_and_weapon_damage (test_sensitivity.BuildcraftSensitivityTests.test_disposable_parameter_changes_affect_only_current_prices_and_weapon_damage) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 2.547s
+
+OK
+RUN last_stand_buildcraft_ui/test_armory_session.py
+test_preview_presets_cancel_names_and_replacement_protection (test_armory_session.ArmorySessionTests.test_preview_presets_cancel_names_and_replacement_protection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.786s
+
+OK
+RUN last_stand_buildcraft_ui/test_wave_information.py
+test_finite_support_details_and_secondary_bay_ownership (test_wave_information.BuildcraftWaveInformationTests.test_finite_support_details_and_secondary_bay_ownership) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.828s
+
+OK
+RUN last_stand_combat_depth/test_armament_transactions.py
+test_locked_and_inapplicable_new_permanent_tracks_cannot_charge (test_armament_transactions.ArmamentTransactionTests.test_locked_and_inapplicable_new_permanent_tracks_cannot_charge) ... ok
+test_new_fitting_quote_and_failed_save_atomicity (test_armament_transactions.ArmamentTransactionTests.test_new_fitting_quote_and_failed_save_atomicity) ... ok
+test_new_weapon_boundary_failure_preserves_paid_state_on_retry (test_armament_transactions.ArmamentTransactionTests.test_new_weapon_boundary_failure_preserves_paid_state_on_retry) ... ok
+test_new_weapon_cards_match_purchase_admission (test_armament_transactions.ArmamentTransactionTests.test_new_weapon_cards_match_purchase_admission) ... ok
+test_new_weapon_paid_projection_cannot_be_forged (test_armament_transactions.ArmamentTransactionTests.test_new_weapon_paid_projection_cannot_be_forged) ... ok
+test_new_weapon_run_bulk_stale_cap_and_wrong_fitting (test_armament_transactions.ArmamentTransactionTests.test_new_weapon_run_bulk_stale_cap_and_wrong_fitting) ... ok
+test_new_weapon_schema_requires_exact_fields_and_retains_old_shape (test_armament_transactions.ArmamentTransactionTests.test_new_weapon_schema_requires_exact_fields_and_retains_old_shape) ... ok
+test_paid_new_weapon_checkpoint_close_reopen_is_exact (test_armament_transactions.ArmamentTransactionTests.test_paid_new_weapon_checkpoint_close_reopen_is_exact) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.753s
+
+OK
+RUN last_stand_combat_depth/test_armaments.py
+SOURCE_BINDING {"sources": {"C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Tools\\last_stand_combat_depth\\ArmamentChecks.cs": "cbcb3ff1da3ec86a3c5c2fdb265dbe2e1232894c9eb851bcb45404bcfe979b64", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunCheckpoint.cs": "dc4223891365724a7e79030528c05217509241bc58ab5a14fdb2ed9e334ba23e", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSelection.cs": "376c87d7f6f740e3b8753366f1d2d00e26a338f2608431766b51fffbc8df3560", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7"}, "tools": {"C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\bin\\mono.exe": "8623ecf0d438f78a80db16f95d13364c17796c99743d8052edc1220ee28d8375", "C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\lib\\mono\\msbuild\\Current\\bin\\Roslyn\\csc.exe": "7228085c2028c2426f8ae4272c9ba7efdcaa76b08b8ea8ea9168c203bb0bcb15"}}
+test_checkpoint_rejects_impossible_armament_cadence_timer (test_armaments.ArmamentTests.test_checkpoint_rejects_impossible_armament_cadence_timer) ... ok
+test_checkpoint_rejects_impossible_armament_shot_count (test_armaments.ArmamentTests.test_checkpoint_rejects_impossible_armament_shot_count) ... ok
+test_current_scatter_interception_preserves_every_retained_range (test_armaments.ArmamentTests.test_current_scatter_interception_preserves_every_retained_range) ... ok
+test_inactive_armament_damage_remains_neutral_on_restore (test_armaments.ArmamentTests.test_inactive_armament_damage_remains_neutral_on_restore) ... ok
+test_inactive_armament_timers_remain_neutral_on_restore (test_armaments.ArmamentTests.test_inactive_armament_timers_remain_neutral_on_restore) ... ok
+test_integer_geometry_edges_symmetry_and_maximum_distance (test_armaments.ArmamentTests.test_integer_geometry_edges_symmetry_and_maximum_distance) ... ok
+test_mortar_dead_center_keeps_aim_and_unique_kill_identities (test_armaments.ArmamentTests.test_mortar_dead_center_keeps_aim_and_unique_kill_identities) ... ok
+test_mortar_hits_each_target_once (test_armaments.ArmamentTests.test_mortar_hits_each_target_once) ... ok
+test_mortar_paid_projection_covers_its_calibrated_area (test_armaments.ArmamentTests.test_mortar_paid_projection_covers_its_calibrated_area) ... ok
+test_new_auxiliary_cadence_is_exactly_sixty_ticks (test_armaments.ArmamentTests.test_new_auxiliary_cadence_is_exactly_sixty_ticks) ... ok
+test_new_weapon_timing_and_paid_projection_resume (test_armaments.ArmamentTests.test_new_weapon_timing_and_paid_projection_resume) ... ok
+test_railgun_penetration_and_old_weapon_mitigation (test_armaments.ArmamentTests.test_railgun_penetration_and_old_weapon_mitigation) ... ok
+test_railgun_priority_uses_armor_then_distance_then_id (test_armaments.ArmamentTests.test_railgun_priority_uses_armor_then_distance_then_id) ... ok
+test_unfired_armament_cannot_change_initial_timer (test_armaments.ArmamentTests.test_unfired_armament_cannot_change_initial_timer) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 1.777s
+
+OK
+RUN last_stand_combat_depth/test_campaign.py
+test_compact_goal_names_actual_bonus_and_unlock (test_campaign.CampaignTests.test_compact_goal_names_actual_bonus_and_unlock) ... ok
+test_each_fitting_receipt_waits_for_the_actual_saved_milestone (test_campaign.CampaignTests.test_each_fitting_receipt_waits_for_the_actual_saved_milestone) ... ok
+test_manual_roadmap_is_shared_readonly_and_retains_run_edition (test_campaign.CampaignTests.test_manual_roadmap_is_shared_readonly_and_retains_run_edition) ... ok
+test_milestone_unlock_and_receipt_exactly_once (test_campaign.CampaignTests.test_milestone_unlock_and_receipt_exactly_once) ... ok
+test_only_first_locked_tier_visible (test_campaign.CampaignTests.test_only_first_locked_tier_visible) ... ok
+test_tier_unlock_does_not_promote_active_run (test_campaign.CampaignTests.test_tier_unlock_does_not_promote_active_run) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 16.105s
+
+OK
+RUN last_stand_combat_depth/test_combat_balance.py
+SOURCE_BINDING {"Tools/last_stand_combat_depth/CombatBalanceChecks.cs": "47b9697ab711db98a32225d2c40d2d4b1c410176e7f1fb1d4c43064c74bad3cb", "Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": "b1cfd145f96986de141c0372d34deec3229fc92b8fcac2288570d0ae249ac97c", "Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": "9e33d4351f7651539d1ef12200a57f09ff7041269958b11787c5d49d04890afe", "Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948", "Unity/Assets/Scripts/Content/LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a", "Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "890f1b208f256ab87a535e0164741e4dc47067f61ecad3d5d14d8ec0dbd4afdf", "Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf", "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6", "Unity/Assets/Scripts/EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d", "Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d", "Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98", "Unity/Assets/Scripts/EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7", "Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47", "Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967", "Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950", "Unity/Assets/Scripts/LastStandProgression.cs": "e379c288d709da7c783eee68af5197207379bce211d6fe02ab933933c3e55b54", "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2", "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e", "Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "ec73224676728da3d9e633886865f828b72448c4426a1498942ee01edc4d8f35", "Unity/Assets/Scripts/LastStandProgressionResearch.cs": "45ee05f70b7e27f9ebf8cbf36594c243106ff98dee8c4fa8faef5dc98d200be3", "Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a", "Unity/Assets/Scripts/LastStandProgressionSave.cs": "1cb177179981d29d6537261d35669a723aca497cb4a098973a02943d97227552", "Unity/Assets/Scripts/LastStandResearchCatalog.cs": "a58024b2e7aa80d2339d8ff76b1ae5dfc2e9b72fbf15c2d319fcdcc0dd7feb80", "Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b", "Unity/Assets/Scripts/LastStandResearchPresentation.cs": "0621d4211f82b48949b0af54912afa10782134b6af5ed36f34598112f78b734a", "Unity/Assets/Scripts/LastStandResearchState.cs": "98480e9fb4ac2a730777f33762aa73123f9e0b0f4496da35f8f746bbbd7d40ca", "Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510", "Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "dc4223891365724a7e79030528c05217509241bc58ab5a14fdb2ed9e334ba23e", "Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a", "Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848", "Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5", "Unity/Assets/Scripts/LastStandSelection.cs": "376c87d7f6f740e3b8753366f1d2d00e26a338f2608431766b51fffbc8df3560", "Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed", "Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505", "Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d", "Unity/Assets/Scripts/LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f", "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc", "Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0", "Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7"}
+test_actual_milestone_award_is_not_repeatable_farm_income (test_combat_balance.CombatBalanceTests.test_actual_milestone_award_is_not_repeatable_farm_income) ... ok
+test_actual_wave_transactions_and_repeat_deployments_conserve_earned_currency (test_combat_balance.CombatBalanceTests.test_actual_wave_transactions_and_repeat_deployments_conserve_earned_currency) ... ok
+test_changed_speed_time_bins_match_per_observation_history (test_combat_balance.CombatBalanceTests.test_changed_speed_time_bins_match_per_observation_history) ... ok
+test_confirmed_active_checkpoint_fork_abandons_without_new_rewards (test_combat_balance.CombatBalanceTests.test_confirmed_active_checkpoint_fork_abandons_without_new_rewards) ... ok
+test_early_income_cannot_cap_long_term_tracks (test_combat_balance.CombatBalanceTests.test_early_income_cannot_cap_long_term_tracks) ... ok
+test_equal_investment_matchup_tradeoffs (test_combat_balance.CombatBalanceTests.test_equal_investment_matchup_tradeoffs) ... ok
+test_large_measurement_report_preserves_complete_nested_records (test_combat_balance.CombatBalanceTests.test_large_measurement_report_preserves_complete_nested_records) ... ok
+test_lower_tier_farming_rate_excludes_first_clear (test_combat_balance.CombatBalanceTests.test_lower_tier_farming_rate_excludes_first_clear) ... ok
+test_production_spawn_and_reward_baselines_are_not_accelerated (test_combat_balance.CombatBalanceTests.test_production_spawn_and_reward_baselines_are_not_accelerated) ... ok
+test_reject_free_currency_research_and_first_clear_double_count (test_combat_balance.CombatBalanceTests.test_reject_free_currency_research_and_first_clear_double_count) ... ok
+test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases (test_combat_balance.CombatBalanceTests.test_report_rejects_missing_cells_foreign_profiles_and_extra_purchases) ... ok
+test_research_cost_and_real_calendar_gate_speed (test_combat_balance.CombatBalanceTests.test_research_cost_and_real_calendar_gate_speed) ... ok
+test_role_effects_bind_actual_continuous_model_hits_and_unique_kills (test_combat_balance.CombatBalanceTests.test_role_effects_bind_actual_continuous_model_hits_and_unique_kills) ... ok
+test_single_max_purchase_uses_real_time_without_catchup_replay (test_combat_balance.CombatBalanceTests.test_single_max_purchase_uses_real_time_without_catchup_replay) ... ok
+test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks (test_combat_balance.CombatBalanceTests.test_supplemental_equal_budget_policy_pays_actual_auxiliary_tracks) ... ok
+test_support_buffers_and_healing_preserve_penetration_attribution (test_combat_balance.CombatBalanceTests.test_support_buffers_and_healing_preserve_penetration_attribution) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.779s
+
+OK
+RUN last_stand_combat_depth/test_crowded_waves.py
+test_actual_report_rejects_foreign_funding_missing_wave_and_false_pressure (test_crowded_waves.CrowdedWaveTests.test_actual_report_rejects_foreign_funding_missing_wave_and_false_pressure) ... ok
+test_actual_wave_metrics_and_readonly_state_parity (test_crowded_waves.CrowdedWaveTests.test_actual_wave_metrics_and_readonly_state_parity) ... ok
+test_calibrated_and_historical_bindings_are_not_interchangeable (test_crowded_waves.CrowdedWaveTests.test_calibrated_and_historical_bindings_are_not_interchangeable) ... ok
+test_complete_crowded_parity_rejects_plausible_but_changed_role_measurements (test_crowded_waves.CrowdedWaveTests.test_complete_crowded_parity_rejects_plausible_but_changed_role_measurements) ... ok
+test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources (test_crowded_waves.CrowdedWaveTests.test_current_closure_cannot_add_omit_duplicate_or_redirect_measured_sources) ... ok
+test_current_execution_helper_does_not_relabel_frozen_capture (test_crowded_waves.CrowdedWaveTests.test_current_execution_helper_does_not_relabel_frozen_capture) ... ok
+test_fresh_lf_checkout_without_archive_creates_owned_destinations (test_crowded_waves.CrowdedWaveTests.test_fresh_lf_checkout_without_archive_creates_owned_destinations) ... ok
+test_observer_rejects_changed_or_missing_canonical_seam (test_crowded_waves.CrowdedWaveTests.test_observer_rejects_changed_or_missing_canonical_seam) ... ok
+test_rejects_impossible_currency_pressure_and_disconnected_hull (test_crowded_waves.CrowdedWaveTests.test_rejects_impossible_currency_pressure_and_disconnected_hull) ... ok
+test_retained_archive_refuses_changed_unsafe_or_duplicate_sources (test_crowded_waves.CrowdedWaveTests.test_retained_archive_refuses_changed_unsafe_or_duplicate_sources) ... ok
+test_retained_replay_cannot_replace_original_repository_reports (test_crowded_waves.CrowdedWaveTests.test_retained_replay_cannot_replace_original_repository_reports) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 58.214s
+
+OK
+RUN last_stand_combat_depth/test_enemies.py
+test_armor_damage_and_post_death_guards (test_enemies.EnemyRoleTests.test_armor_damage_and_post_death_guards) ... ok
+test_deterministic_role_composition_and_elite_replacement (test_enemies.EnemyRoleTests.test_deterministic_role_composition_and_elite_replacement) ... ok
+test_wave_checkpoint_replays_new_mechanics (test_enemies.EnemyRoleTests.test_wave_checkpoint_replays_new_mechanics) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.176s
+
+OK
+RUN last_stand_combat_depth/test_enemy_income.py
+test_atomic_boundary_faults_retry_and_reopen_exactly_once (test_enemy_income.EnemyIncomeTests.test_atomic_boundary_faults_retry_and_reopen_exactly_once) ... ok
+test_bounded_cohort_prefix_matches_independent_authored_values (test_enemy_income.EnemyIncomeTests.test_bounded_cohort_prefix_matches_independent_authored_values) ... ok
+test_empty_mask_still_requires_matching_edition (test_enemy_income.EnemyIncomeTests.test_empty_mask_still_requires_matching_edition) ... ok
+test_enemy_values_keep_exactly_once_checkpoint_accounting (test_enemy_income.EnemyIncomeTests.test_enemy_values_keep_exactly_once_checkpoint_accounting) ... ok
+test_foreign_replayed_or_overflowing_observation_changes_nothing (test_enemy_income.EnemyIncomeTests.test_foreign_replayed_or_overflowing_observation_changes_nothing) ... ok
+test_high_wave_projection_has_no_wallet_sized_overflow (test_enemy_income.EnemyIncomeTests.test_high_wave_projection_has_no_wallet_sized_overflow) ... ok
+test_legacy_tier_two_controller_path_retains_original_income (test_enemy_income.EnemyIncomeTests.test_legacy_tier_two_controller_path_retains_original_income) ... ok
+test_typed_checkpoint_tampering_preserves_original_bytes (test_enemy_income.EnemyIncomeTests.test_typed_checkpoint_tampering_preserves_original_bytes) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 4.281s
+
+OK
+RUN last_stand_combat_depth/test_enemy_information.py
+SOURCE_BINDING {"sources": {"C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Tools\\last_stand_combat_depth\\EnemyInformationChecks.cs": "fc7926da65e87493a625528f112f272fadf312395225c384bfe89267e0efc273", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandMilestonePresentation.cs": "15c1be4757b1074199200257cb36946efe2d081c6ef3ecf6a0983f0c5f553cee", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSelection.cs": "376c87d7f6f740e3b8753366f1d2d00e26a338f2608431766b51fffbc8df3560", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandWaveInformation.cs": "c4c0d1207e4ef7769b1735027b632ded5fb92c2f5a0fd5cd843fad2f6f5f121c", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7"}, "tools": {"C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\bin\\mono.exe": "8623ecf0d438f78a80db16f95d13364c17796c99743d8052edc1220ee28d8375", "C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\lib\\mono\\msbuild\\Current\\bin\\Roslyn\\csc.exe": "7228085c2028c2426f8ae4272c9ba7efdcaa76b08b8ea8ea9168c203bb0bcb15"}}
+test_per_type_rewards_match_actual_kills_and_shared_fractional_carry (test_enemy_information.EnemyInformationTests.test_per_type_rewards_match_actual_kills_and_shared_fractional_carry) ... ok
+test_per_type_wave_information_matches_actual_spawned_cohorts (test_enemy_information.EnemyInformationTests.test_per_type_wave_information_matches_actual_spawned_cohorts) ... ok
+test_rejects_mismatched_economy_without_state_mutation (test_enemy_information.EnemyInformationTests.test_rejects_mismatched_economy_without_state_mutation) ... ok
+test_rejects_mismatched_fitting_without_state_mutation (test_enemy_information.EnemyInformationTests.test_rejects_mismatched_fitting_without_state_mutation) ... ok
+test_rejects_mismatched_rules_and_content_without_state_mutation (test_enemy_information.EnemyInformationTests.test_rejects_mismatched_rules_and_content_without_state_mutation) ... ok
+test_rejects_mismatched_tier_without_state_mutation (test_enemy_information.EnemyInformationTests.test_rejects_mismatched_tier_without_state_mutation) ... ok
+test_retained_wave_information_preserves_exact_combat_values (test_enemy_information.EnemyInformationTests.test_retained_wave_information_preserves_exact_combat_values) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 8.150s
+
+OK
+RUN last_stand_combat_depth/test_presentation_fixtures.py
+test_commander_fixture_is_a_real_wave99_boundary_with_disclosed_strength (test_presentation_fixtures.PresentationFixtureTests.test_commander_fixture_is_a_real_wave99_boundary_with_disclosed_strength) ... ok
+test_elite_fixture_is_a_real_wave49_boundary_with_disclosed_strength (test_presentation_fixtures.PresentationFixtureTests.test_elite_fixture_is_a_real_wave49_boundary_with_disclosed_strength) ... ok
+test_output_is_fresh_contained_and_preserves_exact_save_bytes (test_presentation_fixtures.PresentationFixtureTests.test_output_is_fresh_contained_and_preserves_exact_save_bytes) ... ok
+test_roster_unlocks_follow_continuous_actual_transactions (test_presentation_fixtures.PresentationFixtureTests.test_roster_unlocks_follow_continuous_actual_transactions) ... ok
+test_sources_tools_and_legacy_bytes_remain_bound (test_presentation_fixtures.PresentationFixtureTests.test_sources_tools_and_legacy_bytes_remain_bound) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 10.577s
+
+OK
+RUN last_stand_combat_depth/test_rules.py
+test_atomic_profile_migration_and_unlock_backfill (test_rules.RulesCompatibilityTests.test_atomic_profile_migration_and_unlock_backfill) ... ok
+test_commit_refuses_a_different_valid_model_edition (test_rules.RulesCompatibilityTests.test_commit_refuses_a_different_valid_model_edition) ... ok
+test_failed_legacy_migration_keeps_neutral_read_projection (test_rules.RulesCompatibilityTests.test_failed_legacy_migration_keeps_neutral_read_projection) ... ok
+test_legacy_run_retains_complete_rules (test_rules.RulesCompatibilityTests.test_legacy_run_retains_complete_rules) ... ok
+test_migration_oracle_rejects_research_history_reset (test_rules.RulesCompatibilityTests.test_migration_oracle_rejects_research_history_reset) ... ok
+test_paid_legacy_prices_and_fractional_income_survive (test_rules.RulesCompatibilityTests.test_paid_legacy_prices_and_fractional_income_survive) ... ok
+test_unavailable_content_remains_neutral_and_rejected (test_rules.RulesCompatibilityTests.test_unavailable_content_remains_neutral_and_rejected) ... ok
+test_unknown_version_preserves_bytes (test_rules.RulesCompatibilityTests.test_unknown_version_preserves_bytes) ... ok
+test_unlock_backfill_waits_for_actual_available_definitions (test_rules.RulesCompatibilityTests.test_unlock_backfill_waits_for_actual_available_definitions) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.578s
+
+OK
+RUN last_stand_continuity/test_backup.py
+test_ambiguous_write_reconciles_once_and_preserves_previous_save (test_backup.BackupTests.test_ambiguous_write_reconciles_once_and_preserves_previous_save) ... ok
+test_bounded_corrupt_destination_requires_preview_and_explicit_restore (test_backup.BackupTests.test_bounded_corrupt_destination_requires_preview_and_explicit_restore) ... ok
+test_confirmed_profile_round_trip_preserves_retained_checkpoint (test_backup.BackupTests.test_confirmed_profile_round_trip_preserves_retained_checkpoint) ... ok
+test_corrupt_destination_conflict_and_oversize_refuse_replacement (test_backup.BackupTests.test_corrupt_destination_conflict_and_oversize_refuse_replacement) ... ok
+test_corrupt_destination_uncertain_restore_retries_same_candidate (test_backup.BackupTests.test_corrupt_destination_uncertain_restore_retries_same_candidate) ... ok
+test_damaged_future_and_unreadable_destination_fail_closed (test_backup.BackupTests.test_damaged_future_and_unreadable_destination_fail_closed) ... ok
+test_external_change_after_preview_is_rejected (test_backup.BackupTests.test_external_change_after_preview_is_rejected) ... ok
+test_failed_write_exports_confirmed_profile_and_retries_same_restore (test_backup.BackupTests.test_failed_write_exports_confirmed_profile_and_retries_same_restore) ... ok
+test_invalid_future_oversize_and_malformed_utf8_leave_profile_unchanged (test_backup.BackupTests.test_invalid_future_oversize_and_malformed_utf8_leave_profile_unchanged) ... ok
+test_lost_ownership_never_writes (test_backup.BackupTests.test_lost_ownership_never_writes) ... ok
+test_predecessor_write_and_readback_are_required_before_replacement (test_backup.BackupTests.test_predecessor_write_and_readback_are_required_before_replacement) ... ok
+test_preview_has_no_mutation_and_is_bound_to_owner (test_backup.BackupTests.test_preview_has_no_mutation_and_is_bound_to_owner) ... ok
+test_previous_backup_restores_through_same_explicit_transaction (test_backup.BackupTests.test_previous_backup_restores_through_same_explicit_transaction) ... ok
+test_restart_retains_restored_profile_and_predecessor (test_backup.BackupTests.test_restart_retains_restored_profile_and_predecessor) ... ok
+test_restored_research_clock_completes_once_without_duplicate_charge (test_backup.BackupTests.test_restored_research_clock_completes_once_without_duplicate_charge) ... ok
+test_successful_ordinary_save_does_not_erase_restore_predecessor (test_backup.BackupTests.test_successful_ordinary_save_does_not_erase_restore_predecessor) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.706s
+
+OK
+RUN last_stand_continuity/test_backup_transport.py
+test_actual_webgl_file_and_predecessor_adapters (test_backup_transport.BackupTransportTests.test_actual_webgl_file_and_predecessor_adapters) ... ok
+test_bounded_strict_utf8_and_unseekable_stream (test_backup_transport.BackupTransportTests.test_bounded_strict_utf8_and_unseekable_stream) ... ok
+test_cancelled_duplicate_and_stale_callbacks (test_backup_transport.BackupTransportTests.test_cancelled_duplicate_and_stale_callbacks) ... ok
+test_canonical_base64_cannot_expand_past_document_limit (test_backup_transport.BackupTransportTests.test_canonical_base64_cannot_expand_past_document_limit) ... ok
+test_durable_predecessor_is_separate_and_requires_live_ownership (test_backup_transport.BackupTransportTests.test_durable_predecessor_is_separate_and_requires_live_ownership) ... ok
+test_invalid_callback_cannot_report_success (test_backup_transport.BackupTransportTests.test_invalid_callback_cannot_report_success) ... ok
+test_native_fallback_is_exposed_to_recovery_owner (test_backup_transport.BackupTransportTests.test_native_fallback_is_exposed_to_recovery_owner) ... ok
+test_selected_file_roundtrip_atomic_replacement_and_refusal (test_backup_transport.BackupTransportTests.test_selected_file_roundtrip_atomic_replacement_and_refusal) ... ok
+test_single_request_and_disposed_receiver (test_backup_transport.BackupTransportTests.test_single_request_and_disposed_receiver) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.371s
+
+OK
+RUN last_stand_continuity/test_native_profile.py
+test_ascii_identifiers_accept_the_length_bound_and_unrelated_host_flags (test_native_profile.NativeProfileTests.test_ascii_identifiers_accept_the_length_bound_and_unrelated_host_flags) ... ok
+test_default_root_and_records_are_unchanged_without_option (test_native_profile.NativeProfileTests.test_default_root_and_records_are_unchanged_without_option) ... ok
+test_development_profile_isolates_every_owner_and_reopens (test_native_profile.NativeProfileTests.test_development_profile_isolates_every_owner_and_reopens) ... ok
+test_identifier_bounds_and_reserved_device_names_are_refused (test_native_profile.NativeProfileTests.test_identifier_bounds_and_reserved_device_names_are_refused) ... ok
+test_linked_profile_or_parent_refuses_all_owners_and_preserves_target (test_native_profile.NativeProfileTests.test_linked_profile_or_parent_refuses_all_owners_and_preserves_target) ... ok
+test_malformed_profile_stays_rejected_without_normal_root_fallback (test_native_profile.NativeProfileTests.test_malformed_profile_stays_rejected_without_normal_root_fallback) ... ok
+test_profile_root_is_cached_across_all_storage_owners (test_native_profile.NativeProfileTests.test_profile_root_is_cached_across_all_storage_owners) ... ok
+test_release_flag_is_refused_without_storage_access (test_native_profile.NativeProfileTests.test_release_flag_is_refused_without_storage_access) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 5.388s
+
+OK
+RUN last_stand_controls/test_appearance_layout.py
+test_invalid_viewports_refuse (test_appearance_layout.AppearanceLayoutTests.test_invalid_viewports_refuse) ... ok
+test_world_preview_and_controls_remain_separate (test_appearance_layout.AppearanceLayoutTests.test_world_preview_and_controls_remain_separate) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.657s
+
+OK
+RUN last_stand_controls/test_audio_settings.py
+test_actual_step_batches_audio_without_suppressing_hit_telemetry (test_audio_settings.AudioSettingsTests.test_actual_step_batches_audio_without_suppressing_hit_telemetry) ... ok
+test_each_combat_cue_uses_its_own_fresh_playback_boundary (test_audio_settings.AudioSettingsTests.test_each_combat_cue_uses_its_own_fresh_playback_boundary) ... ok
+test_effect_preview_requires_a_live_gesture_context (test_audio_settings.AudioSettingsTests.test_effect_preview_requires_a_live_gesture_context) ... ok
+test_existing_effect_admission (test_audio_settings.AudioSettingsTests.test_existing_effect_admission) ... ok
+test_generated_new_clips_and_sources_are_released (test_audio_settings.AudioSettingsTests.test_generated_new_clips_and_sources_are_released) ... ok
+test_initialize_does_not_duplicate_sources (test_audio_settings.AudioSettingsTests.test_initialize_does_not_duplicate_sources) ... ok
+test_invalid_blast_batch_cannot_mutate_voices (test_audio_settings.AudioSettingsTests.test_invalid_blast_batch_cannot_mutate_voices) ... ok
+test_master_and_channel_gains_change_active_sources (test_audio_settings.AudioSettingsTests.test_master_and_channel_gains_change_active_sources) ... ok
+test_mortar_batch_is_one_firing_and_aggregate_impact (test_audio_settings.AudioSettingsTests.test_mortar_batch_is_one_firing_and_aggregate_impact) ... ok
+test_music_is_deterministic_bounded_and_seamless (test_audio_settings.AudioSettingsTests.test_music_is_deterministic_bounded_and_seamless) ... ok
+test_music_requires_gesture_and_ignores_combat_pause (test_audio_settings.AudioSettingsTests.test_music_requires_gesture_and_ignores_combat_pause) ... ok
+test_music_transition_uses_unscaled_time_and_normal_pitch (test_audio_settings.AudioSettingsTests.test_music_transition_uses_unscaled_time_and_normal_pitch) ... ok
+test_new_batch_keeps_freshness_holds_and_no_replay (test_audio_settings.AudioSettingsTests.test_new_batch_keeps_freshness_holds_and_no_replay) ... ok
+test_new_weapons_have_distinct_finite_cues (test_audio_settings.AudioSettingsTests.test_new_weapons_have_distinct_finite_cues) ... ok
+test_playback_boundary_clocks_preparation_and_diagnostics (test_audio_settings.AudioSettingsTests.test_playback_boundary_clocks_preparation_and_diagnostics) ... ok
+test_scattergun_feedback_and_holds (test_audio_settings.AudioSettingsTests.test_scattergun_feedback_and_holds) ... ok
+test_visibility_and_failure_stop_without_effect_replay (test_audio_settings.AudioSettingsTests.test_visibility_and_failure_stop_without_effect_replay) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 8.910s
+
+OK
+RUN last_stand_controls/test_environments.py
+test_active_model_and_presentation_refuse_changes (test_environments.EnvironmentSourceTests.test_active_model_and_presentation_refuse_changes) ... ok
+test_authored_catalog_is_readonly_and_exact (test_environments.EnvironmentSourceTests.test_authored_catalog_is_readonly_and_exact) ... ok
+test_campaign_bindings_preserve_idempotence_and_combat (test_environments.EnvironmentSourceTests.test_campaign_bindings_preserve_idempotence_and_combat) ... ok
+test_cleanup_ownership_fault_is_detected (test_environments.EnvironmentSourceTests.test_cleanup_ownership_fault_is_detected) ... ok
+test_combat_guard_fault_is_detected (test_environments.EnvironmentSourceTests.test_combat_guard_fault_is_detected) ... ok
+test_definition_routes_roots_and_lighting (test_environments.EnvironmentSourceTests.test_definition_routes_roots_and_lighting) ... ok
+test_duplicate_bindings_and_missing_light_refuse (test_environments.EnvironmentSourceTests.test_duplicate_bindings_and_missing_light_refuse) ... ok
+test_non_awarding_comparison_retains_treatment_switch (test_environments.EnvironmentSourceTests.test_non_awarding_comparison_retains_treatment_switch) ... ok
+test_render_cleanup_preserves_later_pipeline_owner (test_environments.EnvironmentSourceTests.test_render_cleanup_preserves_later_pipeline_owner) ... ok
+test_render_cleanup_restores_only_owned_fields (test_environments.EnvironmentSourceTests.test_render_cleanup_restores_only_owned_fields) ... ok
+test_reused_identity_does_not_recreate_environment (test_environments.EnvironmentSourceTests.test_reused_identity_does_not_recreate_environment) ... ok
+test_unknown_or_missing_content_does_not_mutate (test_environments.EnvironmentSourceTests.test_unknown_or_missing_content_does_not_mutate) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 3.076s
+
+OK
+RUN last_stand_controls/test_fullscreen.py
+test_actual_jslib_notifications (test_fullscreen.FullscreenBridgeTests.test_actual_jslib_notifications) ... ok
+test_atomic_refusal_replaces_stale_state (test_fullscreen.FullscreenBridgeTests.test_atomic_refusal_replaces_stale_state) ... ok
+test_change_event_clears_refusal_and_unsupported_disables (test_fullscreen.FullscreenBridgeTests.test_change_event_clears_refusal_and_unsupported_disables) ... ok
+test_enter_refusal_preserves_actual_off_state (test_fullscreen.FullscreenBridgeTests.test_enter_refusal_preserves_actual_off_state) ... ok
+test_exit_refusal_preserves_actual_on_state (test_fullscreen.FullscreenBridgeTests.test_exit_refusal_preserves_actual_on_state) ... ok
+test_legacy_refusal_preserves_observed_fullscreen (test_fullscreen.FullscreenBridgeTests.test_legacy_refusal_preserves_observed_fullscreen) ... ok
+test_unknown_callback_does_not_invent_state (test_fullscreen.FullscreenBridgeTests.test_unknown_callback_does_not_invent_state) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.065s
+
+OK
+RUN last_stand_controls/test_guidance.py
+test_confirmed_first_cannon_only (test_guidance.GuidanceTests.test_confirmed_first_cannon_only) ... ok
+test_context_guidance_follows_confirmed_progress (test_guidance.GuidanceTests.test_context_guidance_follows_confirmed_progress) ... ok
+test_context_guidance_is_read_only_and_fail_closed (test_guidance.GuidanceTests.test_context_guidance_is_read_only_and_fail_closed) ... ok
+test_context_guidance_opt_outs_and_dismissal (test_guidance.GuidanceTests.test_context_guidance_opt_outs_and_dismissal) ... ok
+test_dismiss_and_new_session_do_not_recreate_suggestion (test_guidance.GuidanceTests.test_dismiss_and_new_session_do_not_recreate_suggestion) ... ok
+test_explicit_help_survives_opt_out (test_guidance.GuidanceTests.test_explicit_help_survives_opt_out) ... ok
+test_fault_navigation_without_confirmed_save_is_detected (test_guidance.GuidanceTests.test_fault_navigation_without_confirmed_save_is_detected) ... ok
+test_guidance_opt_outs_dismiss_independently (test_guidance.GuidanceTests.test_guidance_opt_outs_dismiss_independently) ... ok
+test_help_topics_are_ordered_and_available (test_guidance.GuidanceTests.test_help_topics_are_ordered_and_available) ... ok
+test_navigation_confirmation_tracks_active_run (test_guidance.GuidanceTests.test_navigation_confirmation_tracks_active_run) ... ok
+test_navigation_requires_ready_noncatchup (test_guidance.GuidanceTests.test_navigation_requires_ready_noncatchup) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 2.035s
+
+OK
+RUN last_stand_controls/test_preferences.py
+test_cross_tab_conflict_does_not_overwrite (test_preferences.PreferencesTests.test_cross_tab_conflict_does_not_overwrite) ... ok
+test_defaults_and_immutable_copy (test_preferences.PreferencesTests.test_defaults_and_immutable_copy) ... ok
+test_denied_write_applies_session_and_retry (test_preferences.PreferencesTests.test_denied_write_applies_session_and_retry) ... ok
+test_fault_external_record_overwrite_is_detected (test_preferences.PreferencesTests.test_fault_external_record_overwrite_is_detected) ... ok
+test_fault_gameplay_key_write_is_detected (test_preferences.PreferencesTests.test_fault_gameplay_key_write_is_detected) ... ok
+test_fault_protected_record_overwrite_is_detected (test_preferences.PreferencesTests.test_fault_protected_record_overwrite_is_detected) ... ok
+test_pinned_goal_roundtrip_and_protection (test_preferences.PreferencesTests.test_pinned_goal_roundtrip_and_protection) ... ok
+test_protected_records_need_confirmed_reset (test_preferences.PreferencesTests.test_protected_records_need_confirmed_reset) ... ok
+test_read_failure_cannot_overwrite_unseen_settings (test_preferences.PreferencesTests.test_read_failure_cannot_overwrite_unseen_settings) ... ok
+test_readback_mismatch_is_not_saved (test_preferences.PreferencesTests.test_readback_mismatch_is_not_saved) ... ok
+test_roundtrip_all_preferences (test_preferences.PreferencesTests.test_roundtrip_all_preferences) ... ok
+test_store_isolates_gameplay_key (test_preferences.PreferencesTests.test_store_isolates_gameplay_key) ... ok
+test_strict_types_bounds_and_versions (test_preferences.PreferencesTests.test_strict_types_bounds_and_versions) ... ok
+test_uncertain_write_and_later_edits (test_preferences.PreferencesTests.test_uncertain_write_and_later_edits) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 3.695s
+
+OK
+RUN last_stand_controls/test_selection.py
+test_immutable_capture (test_selection.SelectionTests.test_immutable_capture) ... ok
+test_invalid_catalog (test_selection.SelectionTests.test_invalid_catalog) ... ok
+test_invalid_input (test_selection.SelectionTests.test_invalid_input) ... ok
+test_large_catalog (test_selection.SelectionTests.test_large_catalog) ... ok
+test_locked_preview (test_selection.SelectionTests.test_locked_preview) ... ok
+test_negative_control_hidden_tiers_are_detected (test_selection.SelectionTests.test_negative_control_hidden_tiers_are_detected) ... ok
+test_negative_control_locked_commit_is_detected (test_selection.SelectionTests.test_negative_control_locked_commit_is_detected) ... ok
+test_real_fitting_catalog (test_selection.SelectionTests.test_real_fitting_catalog) ... ok
+test_single_choice (test_selection.SelectionTests.test_single_choice) ... ok
+test_stable_identity (test_selection.SelectionTests.test_stable_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 2.608s
+
+OK
+RUN last_stand_controls/test_speed.py
+test_cue_callback_lifetime (test_speed.SpeedTests.test_cue_callback_lifetime) ... ok
+test_earned_cap_preserves_debt_pause_and_preference (test_speed.SpeedTests.test_earned_cap_preserves_debt_pause_and_preference) ... ok
+test_focus_background_and_legacy_preserved (test_speed.SpeedTests.test_focus_background_and_legacy_preserved) ... ok
+test_future_policy_fixture_and_horizon (test_speed.SpeedTests.test_future_policy_fixture_and_horizon) ... ok
+test_half_speed_weighted_combat_parity (test_speed.SpeedTests.test_half_speed_weighted_combat_parity) ... ok
+test_pause_holds_resume_and_plus_from_zero (test_speed.SpeedTests.test_pause_holds_resume_and_plus_from_zero) ... ok
+test_production_cap_and_invalid_rates (test_speed.SpeedTests.test_production_cap_and_invalid_rates) ... ok
+test_rate_boundary_fraction_and_retained_debt (test_speed.SpeedTests.test_rate_boundary_fraction_and_retained_debt) ... ok
+test_save_hold_during_clock_action (test_speed.SpeedTests.test_save_hold_during_clock_action) ... ok
+test_terminal_settling_uses_wall_seconds (test_speed.SpeedTests.test_terminal_settling_uses_wall_seconds) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.494s
+
+OK
+RUN last_stand_loop/test_build_receipt_binding.py
+test_changed_package_manifest_invalidates_reused_export (test_build_receipt_binding.BuildReceiptBindingTests.test_changed_package_manifest_invalidates_reused_export) ... ok
+test_rejects_unexpected_package_file (test_build_receipt_binding.BuildReceiptBindingTests.test_rejects_unexpected_package_file) ... ok
+test_wrapper_refresh_preserves_original_export_pins (test_build_receipt_binding.BuildReceiptBindingTests.test_wrapper_refresh_preserves_original_export_pins) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.088s
+
+OK
+Refreshed wrapper only; original evidence unchanged: C:\Users\brenn\AppData\Local\Temp\st-wrapper-refresh-5llj536c\campaign-unity\Evidence\build-fixture\wrapper-refresh-39d95b1ac56b49b59b41fbf16e96f8ff.json
+RUN last_stand_loop/test_console_classification.py
+test_aborted_304_cache_revalidation_requires_same_load_success (test_console_classification.ConsoleClassificationTests.test_aborted_304_cache_revalidation_requires_same_load_success) ... ok
+test_clean_telemetry_passes (test_console_classification.ConsoleClassificationTests.test_clean_telemetry_passes) ... ok
+test_split_renderer_shader_errors_fail_across_three_page_loads (test_console_classification.ConsoleClassificationTests.test_split_renderer_shader_errors_fail_across_three_page_loads) ... ok
+test_unity_cache_failed_operation_is_an_error (test_console_classification.ConsoleClassificationTests.test_unity_cache_failed_operation_is_an_error) ... ok
+test_unity_cache_store_and_revalidation_pass (test_console_classification.ConsoleClassificationTests.test_unity_cache_store_and_revalidation_pass) ... ok
+test_unknown_shader_and_exception_fail_closed (test_console_classification.ConsoleClassificationTests.test_unknown_shader_and_exception_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK
+RUN last_stand_loop/test_loop_model.py
+test_defeat_reward_idempotence (test_loop_model.LastStandModelTests) ... ok
+test_non_defeat_no_reward (test_loop_model.LastStandModelTests) ... ok
+test_save_shape_and_reload (test_loop_model.LastStandModelTests) ... ok
+test_storage_failure_retry (test_loop_model.LastStandModelTests) ... ok
+test_uncertain_write_reconciliation (test_loop_model.LastStandModelTests) ... ok
+test_upgrade_prices_cap_and_next_run (test_loop_model.LastStandModelTests) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.309s
+
+OK
+RUN last_stand_loop/test_shader_build_log.py
+test_build_rejects_real_shader_compiler_errors (test_shader_build_log.ShaderBuildLogTests.test_build_rejects_real_shader_compiler_errors) ... ok
+test_clean_build_log_is_accepted (test_shader_build_log.ShaderBuildLogTests.test_clean_build_log_is_accepted) ... ok
+test_explicit_refresh_requires_exact_completed_import_phase (test_shader_build_log.ShaderBuildLogTests.test_explicit_refresh_requires_exact_completed_import_phase) ... ok
+test_next_importer_cannot_inherit_editor_warning_admission (test_shader_build_log.ShaderBuildLogTests.test_next_importer_cannot_inherit_editor_warning_admission) ... ok
+test_review_never_covers_errors_other_shaders_or_changed_source (test_shader_build_log.ShaderBuildLogTests.test_review_never_covers_errors_other_shaders_or_changed_source) ... ok
+test_review_requires_complete_unambiguous_import_and_player_phases (test_shader_build_log.ShaderBuildLogTests.test_review_requires_complete_unambiguous_import_and_player_phases) ... ok
+test_reviewed_editor_import_is_reported_without_rejecting_player (test_shader_build_log.ShaderBuildLogTests.test_reviewed_editor_import_is_reported_without_rejecting_player) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+RUN last_stand_research/test_combat_research.py
+test_completion_keeps_active_snapshot_and_updates_next_deployment (test_combat_research.CombatResearchTests.test_completion_keeps_active_snapshot_and_updates_next_deployment) ... ok
+test_earned_tracks_three_labs_and_six_prepaid_completions (test_combat_research.CombatResearchTests.test_earned_tracks_three_labs_and_six_prepaid_completions) ... ok
+test_lab_planner_quotes_share_cost_effects_and_applicability (test_combat_research.CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability) ... ok
+test_legacy_two_lab_paid_work_migrates_losslessly (test_combat_research.CombatResearchTests.test_legacy_two_lab_paid_work_migrates_losslessly) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.108s
+
+OK
+RUN last_stand_research/test_history.py
+test_checkpoint_copy_and_resume (test_history.HistoryTests.test_checkpoint_copy_and_resume) ... ok
+test_failed_terminal_wave_is_counted (test_history.HistoryTests.test_failed_terminal_wave_is_counted) ... ok
+test_immutable_snapshots (test_history.HistoryTests.test_immutable_snapshots) ... ok
+test_invalid_and_overflow_inputs (test_history.HistoryTests.test_invalid_and_overflow_inputs) ... ok
+test_negative_control_milestone_rate (test_history.HistoryTests.test_negative_control_milestone_rate) ... ok
+test_real_time_median_and_limits (test_history.HistoryTests.test_real_time_median_and_limits) ... ok
+test_recent_bound_and_finalize_once (test_history.HistoryTests.test_recent_bound_and_finalize_once) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.588s
+
+OK
+RUN last_stand_research/test_history_comparison.py
+test_exact_conditions_and_normalized_speed (test_history_comparison.HistoryComparisonTests.test_exact_conditions_and_normalized_speed) ... ok
+test_legacy_short_and_provisional_exclusions (test_history_comparison.HistoryComparisonTests.test_legacy_short_and_provisional_exclusions) ... ok
+test_minimum_samples_and_per_tier_medians (test_history_comparison.HistoryComparisonTests.test_minimum_samples_and_per_tier_medians) ... ok
+test_mixed_edition_median_is_withheld (test_history_comparison.HistoryComparisonTests.test_mixed_edition_median_is_withheld) ... ok
+test_negative_control_mixed_edition_pooling (test_history_comparison.HistoryComparisonTests.test_negative_control_mixed_edition_pooling) ... ok
+test_negative_control_provisional_rate (test_history_comparison.HistoryComparisonTests.test_negative_control_provisional_rate) ... ok
+test_negative_control_two_sample_median (test_history_comparison.HistoryComparisonTests.test_negative_control_two_sample_median) ... ok
+test_pair_measurement_limits (test_history_comparison.HistoryComparisonTests.test_pair_measurement_limits) ... ok
+test_pair_rates_and_condition_differences (test_history_comparison.HistoryComparisonTests.test_pair_rates_and_condition_differences) ... ok
+test_projection_never_mutates_history (test_history_comparison.HistoryComparisonTests.test_projection_never_mutates_history) ... ok
+test_signed_cleared_wave_deltas_and_boundaries (test_history_comparison.HistoryComparisonTests.test_signed_cleared_wave_deltas_and_boundaries) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 3.208s
+
+OK
+RUN last_stand_research/test_presentation.py
+test_action_legality_uses_actual_engine (test_presentation.ResearchPresentationTests.test_action_legality_uses_actual_engine) ... ok
+test_bulk_shop_geometry (test_presentation.ResearchPresentationTests.test_bulk_shop_geometry) ... ok
+test_forty_project_filtering (test_presentation.ResearchPresentationTests.test_forty_project_filtering) ... ok
+test_garage_targets_and_battle_separation (test_presentation.ResearchPresentationTests.test_garage_targets_and_battle_separation) ... ok
+test_suspended_time_and_cost_disclosed (test_presentation.ResearchPresentationTests.test_suspended_time_and_cost_disclosed) ... ok
+test_timer_and_effect_readouts (test_presentation.ResearchPresentationTests.test_timer_and_effect_readouts) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.174s
+
+OK
+RUN last_stand_research/test_progression_planner.py
+test_active_queued_and_suspended_research_funding (test_progression_planner.ProgressionPlannerTests.test_active_queued_and_suspended_research_funding) ... ok
+test_caps_fitting_save_failure_and_active_checkpoint (test_progression_planner.ProgressionPlannerTests.test_caps_fitting_save_failure_and_active_checkpoint) ... ok
+test_catalog_goal_provenance_and_no_mutation (test_progression_planner.ProgressionPlannerTests.test_catalog_goal_provenance_and_no_mutation) ... ok
+test_completed_and_unsupported_research_snapshot (test_progression_planner.ProgressionPlannerTests.test_completed_and_unsupported_research_snapshot) ... ok
+test_exact_shared_budget_effects_and_shortfall (test_progression_planner.ProgressionPlannerTests.test_exact_shared_budget_effects_and_shortfall) ... ok
+test_fixed_pin_completion_clear_and_missing_catalog (test_progression_planner.ProgressionPlannerTests.test_fixed_pin_completion_clear_and_missing_catalog) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.520s
+
+OK
+RUN last_stand_research/test_qualification_fixtures.py
+test_bound_sources_relative_paths_and_exact_saved_bytes (test_qualification_fixtures.QualificationFixtureTests.test_bound_sources_relative_paths_and_exact_saved_bytes) ... ok
+test_default_generation_honors_explicit_toolchain (test_qualification_fixtures.QualificationFixtureTests.test_default_generation_honors_explicit_toolchain) ... ok
+test_explicit_editor_is_not_replaced_by_discovery (test_qualification_fixtures.QualificationFixtureTests.test_explicit_editor_is_not_replaced_by_discovery) ... ok
+test_lab_funded_active_and_queue_near_actual_completion (test_qualification_fixtures.QualificationFixtureTests.test_lab_funded_active_and_queue_near_actual_completion) ... ok
+test_mature_ranks_funding_and_deployment_seed (test_qualification_fixtures.QualificationFixtureTests.test_mature_ranks_funding_and_deployment_seed) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.923s
+
+OK
+RUN last_stand_research/test_research_engine.py
+test_catalog_and_reward_remainders (test_research_engine.ResearchEngineTests.test_catalog_and_reward_remainders) ... ok
+test_clock_closed_rollback_bounds_and_fraction (test_research_engine.ResearchEngineTests.test_clock_closed_rollback_bounds_and_fraction) ... ok
+test_clock_monotonic_open_and_retry (test_research_engine.ResearchEngineTests.test_clock_monotonic_open_and_retry) ... ok
+test_four_prepaid_offline_completions (test_research_engine.ResearchEngineTests.test_four_prepaid_offline_completions) ... ok
+test_simultaneous_completion_before_queue_start (test_research_engine.ResearchEngineTests.test_simultaneous_completion_before_queue_start) ... ok
+test_snapshot_validation_and_copy_isolation (test_research_engine.ResearchEngineTests.test_snapshot_validation_and_copy_isolation) ... ok
+test_started_partial_and_queued_duration_ownership (test_research_engine.ResearchEngineTests.test_started_partial_and_queued_duration_ownership) ... ok
+test_suspended_queued_partial_retains_progress (test_research_engine.ResearchEngineTests.test_suspended_queued_partial_retains_progress) ... ok
+test_switch_queue_validity_and_atomic_affordability (test_research_engine.ResearchEngineTests.test_switch_queue_validity_and_atomic_affordability) ... ok
+test_switch_refund_resume_and_locked_duration (test_research_engine.ResearchEngineTests.test_switch_refund_resume_and_locked_duration) ... ok
+test_unlock_funding_and_noops (test_research_engine.ResearchEngineTests.test_unlock_funding_and_noops) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.557s
+
+OK
+RUN last_stand_research/test_research_profile.py
+test_completion_precedes_stale_action_and_no_duplicate_grant (test_research_profile.ResearchProfileTests.test_completion_precedes_stale_action_and_no_duplicate_grant) ... ok
+test_fresh_envelope_and_reload (test_research_profile.ResearchProfileTests.test_fresh_envelope_and_reload) ... ok
+test_midwave_research_save_preserves_boundary (test_research_profile.ResearchProfileTests.test_midwave_research_save_preserves_boundary) ... ok
+test_real_v4_run_economy_migration (test_research_profile.ResearchProfileTests.test_real_v4_run_economy_migration) ... ok
+test_research_charge_refund_completion_storage_faults (test_research_profile.ResearchProfileTests.test_research_charge_refund_completion_storage_faults) ... ok
+test_retained_v2_paid_run_full_profile_reload_and_next_deployment (test_research_profile.ResearchProfileTests.test_retained_v2_paid_run_full_profile_reload_and_next_deployment) ... ok
+test_run_upgrade_contexts_follow_deployment_and_boundaries (test_research_profile.ResearchProfileTests.test_run_upgrade_contexts_follow_deployment_and_boundaries) ... ok
+test_salvage_carry_history_and_duplicate_finalization (test_research_profile.ResearchProfileTests.test_salvage_carry_history_and_duplicate_finalization) ... ok
+test_v1_v2_v3_claim_migrations (test_research_profile.ResearchProfileTests.test_v1_v2_v3_claim_migrations) ... ok
+test_workshop_and_research_shared_wallet_conflicts (test_research_profile.ResearchProfileTests.test_workshop_and_research_shared_wallet_conflicts) ... ok
+test_writer_ownership_guards_migration_and_pending_confirmation (test_research_profile.ResearchProfileTests.test_writer_ownership_guards_migration_and_pending_confirmation) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 2.336s
+
+OK
+RUN last_stand_research/test_research_save.py
+test_malformed_history_rejected (test_research_save.ResearchSaveTests.test_malformed_history_rejected) ... ok
+test_malformed_research_rejected (test_research_save.ResearchSaveTests.test_malformed_research_rejected) ... ok
+test_research_roundtrip_and_next_completion (test_research_save.ResearchSaveTests.test_research_roundtrip_and_next_completion) ... ok
+test_twenty_recent_history_and_large_counters_roundtrip (test_research_save.ResearchSaveTests.test_twenty_recent_history_and_large_counters_roundtrip) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.030s
+
+OK
+RUN last_stand_research/test_save_codec.py
+test_utc_and_lifetime_milliseconds_preserve_exact_integers (test_save_codec.SaveCodecTests.test_utc_and_lifetime_milliseconds_preserve_exact_integers) ... ok
+test_wide_numbers_remain_bounded_without_coercing_old_fields (test_save_codec.SaveCodecTests.test_wide_numbers_remain_bounded_without_coercing_old_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.341s
+
+OK
+RUN last_stand_research/test_upgrade_economy.py
+test_bounded_income_prefix_matches_individual_production_wave_events (test_upgrade_economy.UpgradeEconomyTests.test_bounded_income_prefix_matches_individual_production_wave_events) ... ok
+test_bulk_intent_commits_once_rejects_stale_and_restores_paid_levels (test_upgrade_economy.UpgradeEconomyTests.test_bulk_intent_commits_once_rejects_stale_and_restores_paid_levels) ... ok
+test_bulk_quotes_are_exact_partial_affordable_and_cap_bounded (test_upgrade_economy.UpgradeEconomyTests.test_bulk_quotes_are_exact_partial_affordable_and_cap_bounded) ... ok
+test_early_wave_bounty_increases_without_repricing_saved_runs (test_upgrade_economy.UpgradeEconomyTests.test_early_wave_bounty_increases_without_repricing_saved_runs) ... ok
+test_fractional_income_research_epochs_and_checkpoint_rollback (test_upgrade_economy.UpgradeEconomyTests.test_fractional_income_research_epochs_and_checkpoint_rollback) ... ok
+test_late_wave_base_income_outgrows_flat_scrap_ceiling (test_upgrade_economy.UpgradeEconomyTests.test_late_wave_base_income_outgrows_flat_scrap_ceiling) ... ok
+test_legacy_prices_roster_and_prospective_research_income_restore (test_upgrade_economy.UpgradeEconomyTests.test_legacy_prices_roster_and_prospective_research_income_restore) ... ok
+test_no_track_maxes_from_first_pass_wave_300_budget (test_upgrade_economy.UpgradeEconomyTests.test_no_track_maxes_from_first_pass_wave_300_budget) ... ok
+test_permanent_starting_benefit_and_matched_build_scrap_savings (test_upgrade_economy.UpgradeEconomyTests.test_permanent_starting_benefit_and_matched_build_scrap_savings) ... ok
+test_pinned_run_cards_and_bulk_effects_match_actual_combat (test_upgrade_economy.UpgradeEconomyTests.test_pinned_run_cards_and_bulk_effects_match_actual_combat) ... ok
+test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation (test_upgrade_economy.UpgradeEconomyTests.test_reward_preview_matches_paid_kills_and_fractional_carry_without_mutation) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 8.115s
+
+OK
+RUN last_stand_research/test_wave_information.py
+test_current_wave_stats_rewards_and_read_only_projection (test_wave_information.WaveInformationTests.test_current_wave_stats_rewards_and_read_only_projection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.789s
+
+OK
+RUN last_stand_research/test_writer_lock.py
+test_only_lock_owner_can_write_and_boot_waits_for_ownership (test_writer_lock.WriterLockTests.test_only_lock_owner_can_write_and_boot_waits_for_ownership) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+OK
+RUN last_stand_shop/test_shop.py
+test_cap_refusal (test_shop.ShopModelTests) ... ok
+test_current_level_cap (test_shop.ShopModelTests) ... ok
+test_invalid_config (test_shop.ShopModelTests) ... ok
+test_new_run_reset_and_resume (test_shop.ShopModelTests) ... ok
+test_next_price_independent_of_persistent (test_shop.ShopModelTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.890s
+
+OK
+RUN last_stand_shop/test_shop_journey_guards.py
+test_current_control_fixture_matches_authored_hud_inventory (test_shop_journey_guards.ShopJourneyGuardTests)
+Keep parser fixtures bound to current authored control identities. ... ok
+test_current_player_receipt_requires_native_and_portable_outcomes (test_shop_journey_guards.ShopJourneyGuardTests) ... ok
+test_recovery_current_control_inventory_is_exact (test_shop_journey_guards.ShopJourneyGuardTests)
+Execute the actual recovery inventory block on synthetic current inputs. ... ok
+test_shop_controls_only_complete_prefix (test_shop_journey_guards.ShopJourneyGuardTests)
+Synthetic current inventory and truncation, never browser qualification. ... ok
+test_shop_controls_only_python_replay (test_shop_journey_guards.ShopJourneyGuardTests)
+PASS synthetic_current_controls_python_full_and_rejected_truncation_exact_union
+Replay synthetic current inputs through the actual pure reader. ... ok
+test_shop_guard_vertical_admission_entrypoint (test_shop_journey_guards.ShopJourneyGuardTests) ... ok
+test_shop_observer_output_is_external_and_preserves_closed_evidence (test_shop_journey_guards.ShopJourneyGuardTests)
+OUTPUT_SETUP_PASS actual observer setup/selection/mkdir captured; source=4baef9f1deeaf25443a9df0fc586b931653cd393d370e48de4d47522243fcbe9
+PASS observer_output_rejects absent
+PASS observer_output_rejects closed-input
+PASS observer_output_rejects repository
+PASS observer_output_rejects escaped
+PASS observer_output_rejects relative
+PASS observer_output_rejects inert-closed-external-ancestor; filesystem observation only
+PASS observer_output_selected_external actual mkdir intercepted; zero writes
+Exercise actual selection/mkdir code; intercept before any write. ... ok
+test_coherent_mutations_preserve_raw_records_and_all_witness_copies (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_integration_accepts_confirmed_partial_publications (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_integration_committed_levels_publish_even_without_cards (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_integration_early_wallet_while_retry (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_integration_partial_level_with_old_wallet (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_integration_preserves_ready_publication_bound (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_confirmation_requires_application_read_before_publication (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_denied_confirmation_requires_set_then_read (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_historical_v3_contract_rejects_wave_saves_and_inconsistent_tier_state (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_method_admission_requires_both_layers (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_method_caught_up_purchase_is_distinct_from_pending_debt (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_method_claim_waits_for_result_and_current_control (test_shop_journey_guards.ShopRecoveryUnitTests)
+Execute the real readiness closure, with bounded observed transitions. ... ok
+test_method_compiled_layers_reject_missing_failed_stale_and_wrong_binding (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_method_terminal_accepts_truthful_zero_kill_and_actual_spending (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_pending_debt_accepts_real_boundary_shapes_and_rejects_bad_order_or_effect (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_pending_debt_cannot_be_replaced_by_a_settled_purchase (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_pointer_edges_must_be_inside_named_projected_control (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_pointer_geometry_must_match_document_and_observation_order (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_checkpoints_do_not_serialize_full_active_evidence (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_deploy_selects_actual_ready_run_projection (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_document_origin_retains_delayed_old_observations (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_empty_projection_requires_actual_committed_levels_and_closed_controls (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_finally_retains_complete_failure_evidence (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_native_inputs_keep_all_foreground_witnesses (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_recovery_ready_projection_keeps_all_six_cards_and_committed_values (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_semantic_guards_do_not_accept_detached_witness_errors (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_terminal_away_admission_rejects_stale_dead_or_foreign_pre_hide (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_terminal_away_waits_for_actual_living_combat_before_hiding (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_terminal_boundary_accepts_complete_unit_trace_and_rejects_missing_final_income (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_terminal_contract_updates_independent_maxima_and_exact_goal_unlock (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_terminal_requires_a_kill_in_the_final_admitted_step (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_uncertain_confirmation_cannot_use_a_later_candidate_write (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+test_unfocused_terminal_requires_actual_document_and_unclaimed_storage (test_shop_journey_guards.ShopRecoveryUnitTests) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 0.815s
+
+OK
+RUN last_stand_shop/test_shop_layout.py
+Actual-source C# compilation exit=0
+test_shop_compact_meaningful_summary (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_five_profiles_scroll_and_required_controls (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_measured_header (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_measured_long_notice (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_short_landscape_closed_recovery (test_shop_layout.ShopLayoutTests) ... ok
+test_shop_text_contrast_targets_and_refusal_bounds (test_shop_layout.ShopLayoutTests) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.670s
+
+OK
+RUN last_stand_shop/test_shop_persistence.py
+Actual-source C# compilation exit=0
+test_migration_exact_v1_wallet_run_and_pending (test_shop_persistence.ShopPersistenceTests) ... ok
+test_migration_strict_v2_and_invalid_records (test_shop_persistence.ShopPersistenceTests) ... ok
+test_permanent_all_tracks_prices_caps_and_reload (test_shop_persistence.ShopPersistenceTests) ... ok
+test_permanent_run_pending_and_fitting_boundaries (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_denied_and_uncertain_write_retry (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_external_conflict_preserves_original (test_shop_persistence.ShopPersistenceTests) ... ok
+test_storage_reward_claim_idempotence (test_shop_persistence.ShopPersistenceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.659s
+
+OK
+RUN last_stand_shop/test_shop_player_portable.py
+test_shop_player_headless_launch_is_explicit (test_shop_player_portable.ShopPlayerTests)
+Actual launch argument function; preexisting native defaults stay exact. ... ok
+test_shop_player_option_dispatch (test_shop_player_portable.ShopPlayerTests)
+Execute the actual CLI branch with inert process/browser boundaries. ... ok
+test_shop_terminal_retry_observation_waits_for_current_defeat (test_shop_player_portable.ShopPlayerTests)
+PASS terminal_retry_observation observed-stale-reservation
+PASS terminal_retry_observation foreign-load
+PASS terminal_retry_observation foreign-document
+PASS terminal_retry_observation foreign-run
+PASS terminal_retry_observation preterminal-tick
+PASS terminal_retry_observation preterminal-clock
+PASS terminal_retry_observation preterminal-sequence
+PASS terminal_retry_observation unconfirmed-ready
+PASS terminal_retry_observation already-current
+Actual wait/capture rejects an earlier reservation retry before defeat. ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.116s
+
+OK
+RUN last_stand_shop/test_shop_vertical.py
+Actual-source C# compilation exit=0
+test_attack_cannon_exact_damage (test_shop_vertical.ShopVerticalTests) ... ok
+test_attack_launcher_fitting_isolation (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_caps_prices_and_fitting (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_exact_tracks_and_effects (test_shop_vertical.ShopVerticalTests) ... ok
+test_catalog_intervals_use_seconds_without_rounding_levels (test_shop_vertical.ShopVerticalTests) ... ok
+test_cycle_future_schedule_and_next_tick (test_shop_vertical.ShopVerticalTests) ... ok
+test_cycle_partition_and_legacy_parity (test_shop_vertical.ShopVerticalTests) ... ok
+test_defense_armor_close_and_ranged_hits (test_shop_vertical.ShopVerticalTests) ... ok
+test_defense_hull_purchase_and_clamp (test_shop_vertical.ShopVerticalTests) ... ok
+test_ledger_independent_prices_and_caps (test_shop_vertical.ShopVerticalTests) ... ok
+test_ledger_unique_kill_income (test_shop_vertical.ShopVerticalTests) ... ok
+test_presentation_levels_effects_prices_and_reasons (test_shop_vertical.ShopVerticalTests) ... ok
+test_repair_amount_and_maximum (test_shop_vertical.ShopVerticalTests) ... ok
+test_repair_fitting_and_terminal_refusal (test_shop_vertical.ShopVerticalTests) ... ok
+test_transaction_atomic_charge_and_level (test_shop_vertical.ShopVerticalTests) ... ok
+test_transaction_stale_replay_and_refusal (test_shop_vertical.ShopVerticalTests) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 11.090s
+
+OK
+RUN last_stand_tank/test_appearance.py
+test_all_256_compositions_and_five_exact_legacy_paints (test_appearance.AppearanceTests.test_all_256_compositions_and_five_exact_legacy_paints) ... ok
+test_ambiguous_write_reconciles_without_duplicate_write (test_appearance.AppearanceTests.test_ambiguous_write_reconciles_without_duplicate_write) ... ok
+test_backup_preview_restore_and_predecessor_retain_appearance (test_appearance.AppearanceTests.test_backup_preview_restore_and_predecessor_retain_appearance) ... ok
+test_cosmetics_leave_checkpoint_and_every_gameplay_field_unchanged (test_appearance.AppearanceTests.test_cosmetics_leave_checkpoint_and_every_gameplay_field_unchanged) ... ok
+test_external_raw_change_and_lost_ownership_refuse_apply (test_appearance.AppearanceTests.test_external_raw_change_and_lost_ownership_refuse_apply) ... ok
+test_failed_write_retains_confirmed_appearance_until_retry (test_appearance.AppearanceTests.test_failed_write_retains_confirmed_appearance_until_retry) ... ok
+test_fresh_profile_defaults_and_restart_preserves_applied_appearance (test_appearance.AppearanceTests.test_fresh_profile_defaults_and_restart_preserves_applied_appearance) ... ok
+test_future_schema_remains_protected (test_appearance.AppearanceTests.test_future_schema_remains_protected) ... ok
+test_legacy_profiles_receive_default_without_changing_retained_rules (test_appearance.AppearanceTests.test_legacy_profiles_receive_default_without_changing_retained_rules) ... ok
+test_new_schema_rejects_missing_extra_malformed_and_unknown_appearance (test_appearance.AppearanceTests.test_new_schema_rejects_missing_extra_malformed_and_unknown_appearance) ... ok
+test_old_backup_preview_defaults_without_rewriting_original_bytes (test_appearance.AppearanceTests.test_old_backup_preview_defaults_without_rewriting_original_bytes) ... ok
+test_read_failure_preserves_confirmed_profile (test_appearance.AppearanceTests.test_read_failure_preserves_confirmed_profile) ... ok
+test_stale_revision_is_rejected_without_mutating_other_progress (test_appearance.AppearanceTests.test_stale_revision_is_rejected_without_mutating_other_progress) ... ok
+test_unchanged_apply_checks_authority_without_extra_save (test_appearance.AppearanceTests.test_unchanged_apply_checks_authority_without_extra_save) ... ok
+test_v6_migration_preserves_all_other_profile_fields (test_appearance.AppearanceTests.test_v6_migration_preserves_all_other_profile_fields) ... ok
+test_value_is_immutable_and_rejects_unknown_ids (test_appearance.AppearanceTests.test_value_is_immutable_and_rejects_unknown_ids) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.153s
+
+OK
+RUN last_stand_tank_art/test_appearance_draft.py
+test_preview_apply_cancel_and_replacement_profile (test_appearance_draft.AppearanceDraftTests.test_preview_apply_cancel_and_replacement_profile) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.660s
+
+OK
+RUN last_stand_tank_art/test_tank_art.py
+test_all_compositions_require_all_slots_and_budget (test_tank_art.TankArtTests.test_all_compositions_require_all_slots_and_budget) ... ok
+test_generated_models_and_textures_match_authored_manifest (test_tank_art.TankArtTests.test_generated_models_and_textures_match_authored_manifest) ... ok
+test_refuses_existing_source_or_output_without_modifying_them (test_tank_art.TankArtTests.test_refuses_existing_source_or_output_without_modifying_them) ... ok
+test_rejects_displaced_muzzle_or_duplicate_family (test_tank_art.TankArtTests.test_rejects_displaced_muzzle_or_duplicate_family) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.205s
+
+OK
+RUN last_stand_tiers/test_tier_calibration.py
+CALIBRATION [{"completed_wave": 8, "fitting": "repair", "hull": 0, "kills": 50, "level": 0, "seconds": 244.35, "status": "Defeated", "ticks": 4887, "tier": 1}, {"completed_wave": 22, "fitting": "repair", "hull": 0, "kills": 138, "level": 3, "seconds": 529.5, "status": "Defeated", "ticks": 10590, "tier": 1}, {"completed_wave": 53, "fitting": "repair", "hull": 0, "kills": 370, "level": 8, "seconds": 1166.85, "status": "Defeated", "ticks": 23337, "tier": 1}, {"completed_wave": 300, "fitting": "repair", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 7316.9, "status": "Running", "ticks": 146338, "tier": 1}, {"completed_wave": 8, "fitting": "launcher", "hull": 0, "kills": 53, "level": 0, "seconds": 185.5, "status": "Defeated", "ticks": 3710, "tier": 1}, {"completed_wave": 20, "fitting": "launcher", "hull": 0, "kills": 126, "level": 3, "seconds": 367.35, "status": "Defeated", "ticks": 7347, "tier": 1}, {"completed_wave": 44, "fitting": "launcher", "hull": 0, "kills": 298, "level": 8, "seconds": 730.1, "status": "Defeated", "ticks": 14602, "tier": 1}, {"completed_wave": 300, "fitting": "launcher", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 6520.25, "status": "Running", "ticks": 130405, "tier": 1}, {"completed_wave": 10, "fitting": "scattergun", "hull": 0, "kills": 62, "level": 0, "seconds": 218.6, "status": "Defeated", "ticks": 4372, "tier": 1}, {"completed_wave": 23, "fitting": "scattergun", "hull": 0, "kills": 146, "level": 3, "seconds": 423.95, "status": "Defeated", "ticks": 8479, "tier": 1}, {"completed_wave": 48, "fitting": "scattergun", "hull": 0, "kills": 330, "level": 8, "seconds": 820.75, "status": "Defeated", "ticks": 16415, "tier": 1}, {"completed_wave": 300, "fitting": "scattergun", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 7316.9, "status": "Running", "ticks": 146338, "tier": 1}, {"completed_wave": 1, "fitting": "repair", "hull": 0, "kills": 10, "level": 0, "seconds": 80.65, "status": "Defeated", "ticks": 1613, "tier": 2}, {"completed_wave": 10, "fitting": "repair", "hull": 0, "kills": 63, "level": 3, "seconds": 362.95, "status": "Defeated", "ticks": 7259, "tier": 2}, {"completed_wave": 25, "fitting": "repair", "hull": 0, "kills": 159, "level": 8, "seconds": 711.3, "status": "Defeated", "ticks": 14226, "tier": 2}, {"completed_wave": 300, "fitting": "repair", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 7507.9, "status": "Running", "ticks": 150158, "tier": 2}, {"completed_wave": 3, "fitting": "launcher", "hull": 0, "kills": 23, "level": 0, "seconds": 149.95, "status": "Defeated", "ticks": 2999, "tier": 2}, {"completed_wave": 10, "fitting": "launcher", "hull": 0, "kills": 63, "level": 3, "seconds": 294.5, "status": "Defeated", "ticks": 5890, "tier": 2}, {"completed_wave": 26, "fitting": "launcher", "hull": 0, "kills": 167, "level": 8, "seconds": 662.35, "status": "Defeated", "ticks": 13247, "tier": 2}, {"completed_wave": 300, "fitting": "launcher", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 6421.15, "status": "Running", "ticks": 128423, "tier": 2}, {"completed_wave": 3, "fitting": "scattergun", "hull": 0, "kills": 23, "level": 0, "seconds": 148.15, "status": "Defeated", "ticks": 2963, "tier": 2}, {"completed_wave": 12, "fitting": "scattergun", "hull": 0, "kills": 76, "level": 3, "seconds": 370.4, "status": "Defeated", "ticks": 7408, "tier": 2}, {"completed_wave": 28, "fitting": "scattergun", "hull": 0, "kills": 180, "level": 8, "seconds": 737.35, "status": "Defeated", "ticks": 14747, "tier": 2}, {"completed_wave": 300, "fitting": "scattergun", "hull": 12535152, "kills": 3900, "level": 5000, "seconds": 7507.9, "status": "Running", "ticks": 150158, "tier": 2}]
+test_tier_two_harder_for_matched_builds (test_tier_calibration.TierCalibrationTests.test_tier_two_harder_for_matched_builds) ... ok
+test_wave_advancement_attainable_at_current_per_track_caps (test_tier_calibration.TierCalibrationTests.test_wave_advancement_attainable_at_current_per_track_caps) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 2.487s
+
+OK
+RUN last_stand_tiers/test_tier_progression.py
+test_terminal_records_unlock_and_recovery (test_tier_progression.TierProgressionTests.test_terminal_records_unlock_and_recovery) ... ok
+test_tier_migration_strict_schema_and_failure_recovery (test_tier_progression.TierProgressionTests.test_tier_migration_strict_schema_and_failure_recovery) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.387s
+
+OK
+RUN last_stand_tiers/test_tier_rules.py
+test_exact_tier_hull_scaling_and_legacy_parity (test_tier_rules.TierRulesTests.test_exact_tier_hull_scaling_and_legacy_parity) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.696s
+
+OK
+RUN last_stand_tiers/test_tier_ui.py
+test_live_wave_heading_never_claims_saved_credit (test_tier_ui.TierHudTests.test_live_wave_heading_never_claims_saved_credit) ... ok
+test_tier_targets_and_summaries_fit_profiles (test_tier_ui.TierHudTests.test_tier_targets_and_summaries_fit_profiles) ... ok
+test_tier_text_reports_saved_and_unsaved_outcomes (test_tier_ui.TierHudTests.test_tier_text_reports_saved_and_unsaved_outcomes) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.892s
+
+OK
+RUN last_stand_ui/test_background_clock.py
+test_budget_retains_debt (test_background_clock.BackgroundClockTests) ... ok
+test_clock_partition_equivalence (test_background_clock.BackgroundClockTests) ... ok
+test_fractional_carry_and_duplicate_callbacks (test_background_clock.BackgroundClockTests) ... ok
+test_invalid_clock_is_rejected (test_background_clock.BackgroundClockTests) ... ok
+test_pause_excludes_elapsed_time (test_background_clock.BackgroundClockTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.005s
+
+OK
+RUN last_stand_ui/test_hud_layout.py
+test_battle_center_and_area_limits (test_hud_layout.HudLayoutTests) ... ok
+test_profiles_fit_without_overlap (test_hud_layout.HudLayoutTests) ... ok
+test_short_garage_reserves_menu_and_all_actions (test_hud_layout.HudLayoutTests) ... ok
+test_short_recovery_preserves_summary_and_actions (test_hud_layout.HudLayoutTests) ... ok
+test_text_targets_and_long_notice_bounds (test_hud_layout.HudLayoutTests) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.015s
+
+OK
+RUN last_stand_ui/test_journey_contracts.py
+test_actual_python_wrapper_preserves_both_host_time_budgets (test_journey_contracts.JourneyContractTests) ... ok
+ST_LS_GUARD_TAP=C:\Users\brenn\AppData\Local\Temp\ciWorkflow.test-2cqdgir2\stdout.tap
+TAP version 13
+# Subtest: every CI and Pages browser installer prepares the official Ubuntu archive
+ok 1 - every CI and Pages browser installer prepares the official Ubuntu archive
+  ---
+  duration_ms: 1.8791
+  type: 'test'
+  ...
+# Subtest: Ubuntu mirror repair preserves priorities, unrelated feeds and line endings
+ok 2 - Ubuntu mirror repair preserves priorities, unrelated feeds and line endings
+  ---
+  duration_ms: 0.272
+  type: 'test'
+  ...
+# Subtest: Ubuntu mirror repair refuses unknown layouts and does not rewrite lookalike endpoints
+ok 3 - Ubuntu mirror repair refuses unknown layouts and does not rewrite lookalike endpoints
+  ---
+  duration_ms: 0.1805
+  type: 'test'
+  ...
+# Subtest: Ubuntu mirror file preparation changes only its admitted regular file
+ok 4 - Ubuntu mirror file preparation changes only its admitted regular file
+  ---
+  duration_ms: 3.9969
+  type: 'test'
+  ...
+# Subtest: 15-minute CI partitions core, product, tier and every Campaigns viewport
+ok 5 - 15-minute CI partitions core, product, tier and every Campaigns viewport
+  ---
+  duration_ms: 0.2118
+  type: 'test'
+  ...
+# Subtest: required CI runs current wave gate and checkpoint reader regressions
+ok 6 - required CI runs current wave gate and checkpoint reader regressions
+  ---
+  duration_ms: 2.6626
+  type: 'test'
+  ...
+# Subtest: required CI runs public parent configuration regressions
+ok 7 - required CI runs public parent configuration regressions
+  ---
+  duration_ms: 0.4329
+  type: 'test'
+  ...
+# Subtest: every required check validates classified work and the complete browser matrix
+ok 8 - every required check validates classified work and the complete browser matrix
+  ---
+  duration_ms: 0.5418
+  type: 'test'
+  ...
+# Subtest: product CI supplies required FFmpeg tools before the Last Stand journey
+ok 9 - product CI supplies required FFmpeg tools before the Last Stand journey
+  ---
+  duration_ms: 0.4664
+  type: 'test'
+  ...
+# Subtest: product CI supplies the compiler for fresh current-source model qualification
+ok 10 - product CI supplies the compiler for fresh current-source model qualification
+  ---
+  duration_ms: 0.312
+  type: 'test'
+  ...
+# Subtest: product CI executes the complete inventoried portable domain regressions
+ok 11 - product CI executes the complete inventoried portable domain regressions
+  ---
+  duration_ms: 0.4777
+  type: 'test'
+  ...
+# Subtest: maintained checks retain parity, verifier negatives and background admission
+ok 12 - maintained checks retain parity, verifier negatives and background admission
+  ---
+  duration_ms: 0.7965
+  type: 'test'
+  ...
+# Subtest: CI runs the combat and research evidence admission contracts
+ok 13 - CI runs the combat and research evidence admission contracts
+  ---
+  duration_ms: 0.2297
+  type: 'test'
+  ...
+# Subtest: product CI proves its pinned browser sandbox before expensive UI checks
+ok 14 - product CI proves its pinned browser sandbox before expensive UI checks
+  ---
+  duration_ms: 0.5008
+  type: 'test'
+  ...
+# Subtest: Last Stand has one maintained shared journey and both entrypoints
+ok 15 - Last Stand has one maintained shared journey and both entrypoints
+  ---
+  duration_ms: 0.443
+  type: 'test'
+  ...
+# Subtest: removed classification, result validation, shards and optionalized work are rejected
+ok 16 - removed classification, result validation, shards and optionalized work are rejected
+  ---
+  duration_ms: 1.8138
+  type: 'test'
+  ...
+# Subtest: all candidate shards prove the same bytes before and after execution
+ok 17 - all candidate shards prove the same bytes before and after execution
+  ---
+  duration_ms: 0.2034
+  type: 'test'
+  ...
+# Subtest: candidate matrix rejects omitted coverage or digest verification
+ok 18 - candidate matrix rejects omitted coverage or digest verification
+  ---
+  duration_ms: 0.9144
+  type: 'test'
+  ...
+# Subtest: rejects nonlocal, wrong-base and credentialed journey admission
+ok 19 - rejects nonlocal, wrong-base and credentialed journey admission
+  ---
+  duration_ms: 0.2521
+  type: 'test'
+  ...
+# Subtest: native Chrome enforces deny-external proxy before startup
+ok 20 - native Chrome enforces deny-external proxy before startup
+  ---
+  duration_ms: 0.1171
+  type: 'test'
+  ...
+# Subtest: rejects escaped evidence parent before writing
+ok 21 - rejects escaped evidence parent before writing
+  ---
+  duration_ms: 0.8172
+  type: 'test'
+  ...
+# Subtest: rejects resolved evidence junction escape before writing
+ok 22 - rejects resolved evidence junction escape before writing
+  ---
+  duration_ms: 3.0371
+  type: 'test'
+  ...
+# Subtest: rejects external origin before fault or rejoin fixtures
+ok 23 - rejects external origin before fault or rejoin fixtures
+  ---
+  duration_ms: 0.5834
+  type: 'test'
+  ...
+# Subtest: rejects unexpected backend methods, endpoints and awarding requests
+ok 24 - rejects unexpected backend methods, endpoints and awarding requests
+  ---
+  duration_ms: 0.2928
+  type: 'test'
+  ...
+# Subtest: only the exact same-origin GET rejoin fixture is fulfilled
+ok 25 - only the exact same-origin GET rejoin fixture is fulfilled
+  ---
+  duration_ms: 0.1135
+  type: 'test'
+  ...
+# Subtest: rejects preflight redirects without following them
+ok 26 - rejects preflight redirects without following them
+  ---
+  duration_ms: 22.3222
+  type: 'test'
+  ...
+# PRIVATE_MATCHER_CAPTURE={"owner":"lastStandProcessOwnership.mjs","adapter":"direct-import"}
+# Subtest: bounds preflight response size and lifetime
+ok 27 - bounds preflight response size and lifetime
+  ---
+  duration_ms: 119.3892
+  type: 'test'
+  ...
+# Subtest: rejects missing or drifted served runtime and absent readiness
+ok 28 - rejects missing or drifted served runtime and absent readiness
+  ---
+  duration_ms: 0.8488
+  type: 'test'
+  ...
+# Subtest: rejects unplanned gameplay keys, cancels, edges, coordinates and hidden input
+ok 29 - rejects unplanned gameplay keys, cancels, edges, coordinates and hidden input
+  ---
+  duration_ms: 0.5218
+  type: 'test'
+  ...
+# Subtest: JS cache revalidation accepts only exact same-load successful 304 fetch
+ok 30 - JS cache revalidation accepts only exact same-load successful 304 fetch
+  ---
+  duration_ms: 0.4072
+  type: 'test'
+  ...
+# Subtest: rejects unrelated console, page, HTTP and request errors in every fault scope
+ok 31 - rejects unrelated console, page, HTTP and request errors in every fault scope
+  ---
+  duration_ms: 0.1387
+  type: 'test'
+  ...
+# Subtest: only exact induced fault evidence is accepted while every unrelated error still fails
+ok 32 - only exact induced fault evidence is accepted while every unrelated error still fails
+  ---
+  duration_ms: 0.1553
+  type: 'test'
+  ...
+# Subtest: process ancestry rejects reused parent PID and profile deletion rejects an owned wrong-prefix fixture
+ok 33 - process ancestry rejects reused parent PID and profile deletion rejects an owned wrong-prefix fixture
+  ---
+  duration_ms: 2.0121
+  type: 'test'
+  ...
+# Subtest: process ownership chronology rejects stale and ambiguous branches while retaining proven children
+    # Subtest: stale branch cannot authorize its descendants
+    ok 1 - stale branch cannot authorize its descendants
+      ---
+      duration_ms: 0.1319
+      type: 'test'
+      ...
+    # Subtest: retained stale branch is pruned before destructive selection
+    ok 2 - retained stale branch is pruned before destructive selection
+      ---
+      duration_ms: 0.0656
+      type: 'test'
+      ...
+    # Subtest: parent exit preserves proven valid children and prunes retained stale branch
+    ok 3 - parent exit preserves proven valid children and prunes retained stale branch
+      ---
+      duration_ms: 0.0571
+      type: 'test'
+      ...
+    # Subtest: reused live parent cannot adopt new children but proven children survive
+    ok 4 - reused live parent cannot adopt new children but proven children survive
+      ---
+      duration_ms: 0.037
+      type: 'test'
+      ...
+    # Subtest: changed executable is not the recorded live parent
+    ok 5 - changed executable is not the recorded live parent
+      ---
+      duration_ms: 0.0226
+      type: 'test'
+      ...
+    # Subtest: Windows submillisecond precision rejects earlier and admits equal or later stamps
+    ok 6 - Windows submillisecond precision rejects earlier and admits equal or later stamps
+      ---
+      duration_ms: 0.0318
+      type: 'test'
+      ...
+    # Subtest: Linux decimal tick widths compare numerically
+    ok 7 - Linux decimal tick widths compare numerically
+      ---
+      duration_ms: 0.0226
+      type: 'test'
+      ...
+    # Subtest: Linux tick ordering retains integer precision
+    ok 8 - Linux tick ordering retains integer precision
+      ---
+      duration_ms: 0.0311
+      type: 'test'
+      ...
+    # Subtest: retained ambiguous branch is pruned
+    ok 9 - retained ambiguous branch is pruned
+      ---
+      duration_ms: 0.0238
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 
+    ok 10 - ambiguous child clock 
+      ---
+      duration_ms: 0.0245
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock undefined
+    ok 11 - ambiguous child clock undefined
+      ---
+      duration_ms: 0.0212
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock unknown
+    ok 12 - ambiguous child clock unknown
+      ---
+      duration_ms: 0.0224
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 2026-02-30T22:10:56.0000000Z
+    ok 13 - ambiguous child clock 2026-02-30T22:10:56.0000000Z
+      ---
+      duration_ms: 0.0186
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 2026-10-10T22:10:56
+    ok 14 - ambiguous child clock 2026-10-10T22:10:56
+      ---
+      duration_ms: 0.018
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 2026-10-10T22:10:56.0000000+00:00
+    ok 15 - ambiguous child clock 2026-10-10T22:10:56.0000000+00:00
+      ---
+      duration_ms: 0.0194
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 2026-10-10T22:10:56.12345678Z
+    ok 16 - ambiguous child clock 2026-10-10T22:10:56.12345678Z
+      ---
+      duration_ms: 0.0172
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 100
+    ok 17 - ambiguous child clock 100
+      ---
+      duration_ms: 0.0192
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 100.1
+    ok 18 - ambiguous child clock 100.1
+      ---
+      duration_ms: 0.0243
+      type: 'test'
+      ...
+    # Subtest: ambiguous child clock 1e2
+    ok 19 - ambiguous child clock 1e2
+      ---
+      duration_ms: 0.0201
+      type: 'test'
+      ...
+    # Subtest: ambiguous or mixed parent clock unknown
+    ok 20 - ambiguous or mixed parent clock unknown
+      ---
+      duration_ms: 0.0731
+      type: 'test'
+      ...
+    # Subtest: ambiguous or mixed parent clock 100
+    ok 21 - ambiguous or mixed parent clock 100
+      ---
+      duration_ms: 0.0494
+      type: 'test'
+      ...
+    1..21
+ok 34 - process ownership chronology rejects stale and ambiguous branches while retaining proven children
+  ---
+  duration_ms: 1.3871
+  type: 'test'
+  ...
+# Subtest: teardown error is retained as a failed result before it propagates
+ok 35 - teardown error is retained as a failed result before it propagates
+  ---
+  duration_ms: 1.1693
+  type: 'test'
+  ...
+# Subtest: audio diagnostics retain missing capture before the original sample failure
+ok 36 - audio diagnostics retain missing capture before the original sample failure
+  ---
+  duration_ms: 1.28
+  type: 'test'
+  ...
+# Subtest: audio diagnostics retain stopped capture and exact inclusive window before failure
+ok 37 - audio diagnostics retain stopped capture and exact inclusive window before failure
+  ---
+  duration_ms: 0.5541
+  type: 'test'
+  ...
+# Subtest: audio diagnostics retain unavailable page errors without replacing the original read failure
+ok 38 - audio diagnostics retain unavailable page errors without replacing the original read failure
+  ---
+  duration_ms: 0.4684
+  type: 'test'
+  ...
+# Subtest: audio diagnostics retain absent observer without inventing a successful sample read
+ok 39 - audio diagnostics retain absent observer without inventing a successful sample read
+  ---
+  duration_ms: 0.5088
+  type: 'test'
+  ...
+# Subtest: audio diagnostics preserve sufficient sample energy and distinguish silence
+ok 40 - audio diagnostics preserve sufficient sample energy and distinguish silence
+  ---
+  duration_ms: 0.845
+  type: 'test'
+  ...
+# Subtest: audio sample failure survives cleanup failure with both errors retained
+ok 41 - audio sample failure survives cleanup failure with both errors retained
+  ---
+  duration_ms: 0.4706
+  type: 'test'
+  ...
+# Subtest: audio capture diagnostics observe lifecycle without starting stopped capture
+ok 42 - audio capture diagnostics observe lifecycle without starting stopped capture
+  ---
+  duration_ms: 2.7829
+  type: 'test'
+  ...
+# Subtest: audio diagnostics bound capture details and errors while identifying the current document
+ok 43 - audio diagnostics bound capture details and errors while identifying the current document
+  ---
+  duration_ms: 0.5515
+  type: 'test'
+  ...
+# Subtest: journey error survives persistence failure after successful cleanup
+ok 44 - journey error survives persistence failure after successful cleanup
+  ---
+  duration_ms: 0.5106
+  type: 'test'
+  ...
+# Subtest: journey error survives cleanup and persistence failures
+ok 45 - journey error survives cleanup and persistence failures
+  ---
+  duration_ms: 0.1094
+  type: 'test'
+  ...
+# Subtest: cleanup error takes precedence over persistence failure
+ok 46 - cleanup error takes precedence over persistence failure
+  ---
+  duration_ms: 0.0795
+  type: 'test'
+  ...
+# Subtest: standalone persistence failure is retained in memory and propagates
+ok 47 - standalone persistence failure is retained in memory and propagates
+  ---
+  duration_ms: 0.089
+  type: 'test'
+  ...
+# Subtest: standalone cleanup failure still persists its failed report and propagates
+ok 48 - standalone cleanup failure still persists its failed report and propagates
+  ---
+  duration_ms: 0.08
+  type: 'test'
+  ...
+# Subtest: actual journey final evidence callback retains later raw files and failed report after console write failure
+ok 49 - actual journey final evidence callback retains later raw files and failed report after console write failure
+  ---
+  duration_ms: 0.4489
+  type: 'test'
+  ...
+# Subtest: actual journey final evidence callback preserves raw records when classification rejects
+ok 50 - actual journey final evidence callback preserves raw records when classification rejects
+  ---
+  duration_ms: 0.1699
+  type: 'test'
+  ...
+# Subtest: actual journey final evidence callback retains compact failure when full result write fails
+ok 51 - actual journey final evidence callback retains compact failure when full result write fails
+  ---
+  duration_ms: 0.1449
+  type: 'test'
+  ...
+# Subtest: actual journey final evidence callback attempts every artifact and stderr even when storage rejects all writes
+ok 52 - actual journey final evidence callback attempts every artifact and stderr even when storage rejects all writes
+  ---
+  duration_ms: 0.1939
+  type: 'test'
+  ...
+# Subtest: actual journey final evidence callback preserves successful raw evidence without failure diagnostics
+ok 53 - actual journey final evidence callback preserves successful raw evidence without failure diagnostics
+  ---
+  duration_ms: 0.0927
+  type: 'test'
+  ...
+# Subtest: actual journey compact retention diagnostic bounds error text without truncating the full failed report
+ok 54 - actual journey compact retention diagnostic bounds error text without truncating the full failed report
+  ---
+  duration_ms: 0.1565
+  type: 'test'
+  ...
+# Subtest: actual journey evidence writer streams complete nested records without aggregate JSON stringification
+    # Subtest: LF
+    ok 1 - LF
+      ---
+      duration_ms: 22.0464
+      type: 'test'
+      ...
+    # Subtest: CRLF
+    ok 2 - CRLF
+      ---
+      duration_ms: 21.8106
+      type: 'test'
+      ...
+    1..2
+ok 55 - actual journey evidence writer streams complete nested records without aggregate JSON stringification
+  ---
+  duration_ms: 44.1131
+  type: 'test'
+  ...
+# Subtest: audio diagnostics retain latest sixteen snapshots and exact dropped count
+ok 56 - audio diagnostics retain latest sixteen snapshots and exact dropped count
+  ---
+  duration_ms: 1.1326
+  type: 'test'
+  ...
+# Subtest: audio diagnostics bound long pathname and follow replacement document identity
+ok 57 - audio diagnostics bound long pathname and follow replacement document identity
+  ---
+  duration_ms: 0.6899
+  type: 'test'
+  ...
+# Subtest: audio read failure retains recovered current document and the original error
+ok 58 - audio read failure retains recovered current document and the original error
+  ---
+  duration_ms: 0.4366
+  type: 'test'
+  ...
+# Subtest: process ownership rejects incomplete executable identities before retention and fresh adoption
+    # Subtest: absent: new incomplete child and its grandchild rejected
+    ok 1 - absent: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0909
+      type: 'test'
+      ...
+    # Subtest: absent: retained incomplete child cannot authorize new grandchild
+    ok 2 - absent: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.027
+      type: 'test'
+      ...
+    # Subtest: absent: exited incomplete retained child and deeper branch pruned
+    ok 3 - absent: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0215
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete recorded root and matching live root rejected
+    ok 4 - absent: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0175
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete recorded root cannot retain complete descendants
+    ok 5 - absent: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0211
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete live root cannot authorize fresh adoption
+    ok 6 - absent: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0188
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete live retained parent cannot authorize fresh grandchild
+    ok 7 - absent: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0198
+      type: 'test'
+      ...
+    # Subtest: undefined: new incomplete child and its grandchild rejected
+    ok 8 - undefined: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0223
+      type: 'test'
+      ...
+    # Subtest: undefined: retained incomplete child cannot authorize new grandchild
+    ok 9 - undefined: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0197
+      type: 'test'
+      ...
+    # Subtest: undefined: exited incomplete retained child and deeper branch pruned
+    ok 10 - undefined: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0225
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete recorded root and matching live root rejected
+    ok 11 - undefined: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0154
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete recorded root cannot retain complete descendants
+    ok 12 - undefined: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0154
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete live root cannot authorize fresh adoption
+    ok 13 - undefined: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0158
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete live retained parent cannot authorize fresh grandchild
+    ok 14 - undefined: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0171
+      type: 'test'
+      ...
+    # Subtest: empty: new incomplete child and its grandchild rejected
+    ok 15 - empty: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0196
+      type: 'test'
+      ...
+    # Subtest: empty: retained incomplete child cannot authorize new grandchild
+    ok 16 - empty: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.015
+      type: 'test'
+      ...
+    # Subtest: empty: exited incomplete retained child and deeper branch pruned
+    ok 17 - empty: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0161
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete recorded root and matching live root rejected
+    ok 18 - empty: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0163
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete recorded root cannot retain complete descendants
+    ok 19 - empty: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0166
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete live root cannot authorize fresh adoption
+    ok 20 - empty: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0154
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete live retained parent cannot authorize fresh grandchild
+    ok 21 - empty: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0201
+      type: 'test'
+      ...
+    # Subtest: null: new incomplete child and its grandchild rejected
+    ok 22 - null: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0166
+      type: 'test'
+      ...
+    # Subtest: null: retained incomplete child cannot authorize new grandchild
+    ok 23 - null: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0154
+      type: 'test'
+      ...
+    # Subtest: null: exited incomplete retained child and deeper branch pruned
+    ok 24 - null: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0176
+      type: 'test'
+      ...
+    # Subtest: null: incomplete recorded root and matching live root rejected
+    ok 25 - null: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0141
+      type: 'test'
+      ...
+    # Subtest: null: incomplete recorded root cannot retain complete descendants
+    ok 26 - null: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0752
+      type: 'test'
+      ...
+    # Subtest: null: incomplete live root cannot authorize fresh adoption
+    ok 27 - null: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0208
+      type: 'test'
+      ...
+    # Subtest: null: incomplete live retained parent cannot authorize fresh grandchild
+    ok 28 - null: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0288
+      type: 'test'
+      ...
+    # Subtest: number: new incomplete child and its grandchild rejected
+    ok 29 - number: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0206
+      type: 'test'
+      ...
+    # Subtest: number: retained incomplete child cannot authorize new grandchild
+    ok 30 - number: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0331
+      type: 'test'
+      ...
+    # Subtest: number: exited incomplete retained child and deeper branch pruned
+    ok 31 - number: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0227
+      type: 'test'
+      ...
+    # Subtest: number: incomplete recorded root and matching live root rejected
+    ok 32 - number: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0135
+      type: 'test'
+      ...
+    # Subtest: number: incomplete recorded root cannot retain complete descendants
+    ok 33 - number: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0135
+      type: 'test'
+      ...
+    # Subtest: number: incomplete live root cannot authorize fresh adoption
+    ok 34 - number: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0149
+      type: 'test'
+      ...
+    # Subtest: number: incomplete live retained parent cannot authorize fresh grandchild
+    ok 35 - number: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.016
+      type: 'test'
+      ...
+    # Subtest: boolean: new incomplete child and its grandchild rejected
+    ok 36 - boolean: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0191
+      type: 'test'
+      ...
+    # Subtest: boolean: retained incomplete child cannot authorize new grandchild
+    ok 37 - boolean: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0192
+      type: 'test'
+      ...
+    # Subtest: boolean: exited incomplete retained child and deeper branch pruned
+    ok 38 - boolean: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0223
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete recorded root and matching live root rejected
+    ok 39 - boolean: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0139
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete recorded root cannot retain complete descendants
+    ok 40 - boolean: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0125
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete live root cannot authorize fresh adoption
+    ok 41 - boolean: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0136
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete live retained parent cannot authorize fresh grandchild
+    ok 42 - boolean: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0152
+      type: 'test'
+      ...
+    # Subtest: object: new incomplete child and its grandchild rejected
+    ok 43 - object: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0147
+      type: 'test'
+      ...
+    # Subtest: object: retained incomplete child cannot authorize new grandchild
+    ok 44 - object: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0125
+      type: 'test'
+      ...
+    # Subtest: object: exited incomplete retained child and deeper branch pruned
+    ok 45 - object: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0155
+      type: 'test'
+      ...
+    # Subtest: object: incomplete recorded root and matching live root rejected
+    ok 46 - object: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0165
+      type: 'test'
+      ...
+    # Subtest: object: incomplete recorded root cannot retain complete descendants
+    ok 47 - object: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.015
+      type: 'test'
+      ...
+    # Subtest: object: incomplete live root cannot authorize fresh adoption
+    ok 48 - object: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0135
+      type: 'test'
+      ...
+    # Subtest: object: incomplete live retained parent cannot authorize fresh grandchild
+    ok 49 - object: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0152
+      type: 'test'
+      ...
+    # Subtest: array: new incomplete child and its grandchild rejected
+    ok 50 - array: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0162
+      type: 'test'
+      ...
+    # Subtest: array: retained incomplete child cannot authorize new grandchild
+    ok 51 - array: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0146
+      type: 'test'
+      ...
+    # Subtest: array: exited incomplete retained child and deeper branch pruned
+    ok 52 - array: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0157
+      type: 'test'
+      ...
+    # Subtest: array: incomplete recorded root and matching live root rejected
+    ok 53 - array: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0141
+      type: 'test'
+      ...
+    # Subtest: array: incomplete recorded root cannot retain complete descendants
+    ok 54 - array: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0176
+      type: 'test'
+      ...
+    # Subtest: array: incomplete live root cannot authorize fresh adoption
+    ok 55 - array: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0175
+      type: 'test'
+      ...
+    # Subtest: array: incomplete live retained parent cannot authorize fresh grandchild
+    ok 56 - array: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0172
+      type: 'test'
+      ...
+    # Subtest: boxed string: new incomplete child and its grandchild rejected
+    ok 57 - boxed string: new incomplete child and its grandchild rejected
+      ---
+      duration_ms: 0.0163
+      type: 'test'
+      ...
+    # Subtest: boxed string: retained incomplete child cannot authorize new grandchild
+    ok 58 - boxed string: retained incomplete child cannot authorize new grandchild
+      ---
+      duration_ms: 0.0126
+      type: 'test'
+      ...
+    # Subtest: boxed string: exited incomplete retained child and deeper branch pruned
+    ok 59 - boxed string: exited incomplete retained child and deeper branch pruned
+      ---
+      duration_ms: 0.0157
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete recorded root and matching live root rejected
+    ok 60 - boxed string: incomplete recorded root and matching live root rejected
+      ---
+      duration_ms: 0.0125
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete recorded root cannot retain complete descendants
+    ok 61 - boxed string: incomplete recorded root cannot retain complete descendants
+      ---
+      duration_ms: 0.0119
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete live root cannot authorize fresh adoption
+    ok 62 - boxed string: incomplete live root cannot authorize fresh adoption
+      ---
+      duration_ms: 0.0133
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete live retained parent cannot authorize fresh grandchild
+    ok 63 - boxed string: incomplete live retained parent cannot authorize fresh grandchild
+      ---
+      duration_ms: 0.0135
+      type: 'test'
+      ...
+    # Subtest: complete Linux identity chain is admitted
+    ok 64 - complete Linux identity chain is admitted
+      ---
+      duration_ms: 0.0425
+      type: 'test'
+      ...
+    # Subtest: complete proven Linux orphans survive and live child adopts grandchild
+    ok 65 - complete proven Linux orphans survive and live child adopts grandchild
+      ---
+      duration_ms: 0.0274
+      type: 'test'
+      ...
+    # Subtest: complete proven descendants survive all parent exits
+    ok 66 - complete proven descendants survive all parent exits
+      ---
+      duration_ms: 0.0364
+      type: 'test'
+      ...
+    # Subtest: changed live executable cannot authorize a fresh child
+    ok 67 - changed live executable cannot authorize a fresh child
+      ---
+      duration_ms: 0.0273
+      type: 'test'
+      ...
+    # Subtest: complete proven Windows orphan remains owned after root exits
+    ok 68 - complete proven Windows orphan remains owned after root exits
+      ---
+      duration_ms: 0.0432
+      type: 'test'
+      ...
+    1..68
+ok 59 - process ownership rejects incomplete executable identities before retention and fresh adoption
+  ---
+  duration_ms: 2.7366
+  type: 'test'
+  ...
+# Subtest: process ownership private matcher rejects incomplete executable identities
+    # Subtest: actual private matcher capture succeeds in an inert context
+    ok 1 - actual private matcher capture succeeds in an inert context
+      ---
+      duration_ms: 0.0502
+      type: 'test'
+      ...
+    # Subtest: absent: equal incomplete executable values on both sides
+    ok 2 - absent: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0416
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete left identity
+    ok 3 - absent: incomplete left identity
+      ---
+      duration_ms: 0.0173
+      type: 'test'
+      ...
+    # Subtest: absent: incomplete right identity
+    ok 4 - absent: incomplete right identity
+      ---
+      duration_ms: 0.015
+      type: 'test'
+      ...
+    # Subtest: undefined: equal incomplete executable values on both sides
+    ok 5 - undefined: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0144
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete left identity
+    ok 6 - undefined: incomplete left identity
+      ---
+      duration_ms: 0.0149
+      type: 'test'
+      ...
+    # Subtest: undefined: incomplete right identity
+    ok 7 - undefined: incomplete right identity
+      ---
+      duration_ms: 0.0117
+      type: 'test'
+      ...
+    # Subtest: empty: equal incomplete executable values on both sides
+    ok 8 - empty: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0115
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete left identity
+    ok 9 - empty: incomplete left identity
+      ---
+      duration_ms: 0.0111
+      type: 'test'
+      ...
+    # Subtest: empty: incomplete right identity
+    ok 10 - empty: incomplete right identity
+      ---
+      duration_ms: 0.0127
+      type: 'test'
+      ...
+    # Subtest: null: equal incomplete executable values on both sides
+    ok 11 - null: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0169
+      type: 'test'
+      ...
+    # Subtest: null: incomplete left identity
+    ok 12 - null: incomplete left identity
+      ---
+      duration_ms: 0.0132
+      type: 'test'
+      ...
+    # Subtest: null: incomplete right identity
+    ok 13 - null: incomplete right identity
+      ---
+      duration_ms: 0.0112
+      type: 'test'
+      ...
+    # Subtest: number: equal incomplete executable values on both sides
+    ok 14 - number: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0145
+      type: 'test'
+      ...
+    # Subtest: number: incomplete left identity
+    ok 15 - number: incomplete left identity
+      ---
+      duration_ms: 0.0304
+      type: 'test'
+      ...
+    # Subtest: number: incomplete right identity
+    ok 16 - number: incomplete right identity
+      ---
+      duration_ms: 0.0149
+      type: 'test'
+      ...
+    # Subtest: boolean: equal incomplete executable values on both sides
+    ok 17 - boolean: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0173
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete left identity
+    ok 18 - boolean: incomplete left identity
+      ---
+      duration_ms: 0.0283
+      type: 'test'
+      ...
+    # Subtest: boolean: incomplete right identity
+    ok 19 - boolean: incomplete right identity
+      ---
+      duration_ms: 0.0122
+      type: 'test'
+      ...
+    # Subtest: object: equal incomplete executable values on both sides
+    ok 20 - object: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0111
+      type: 'test'
+      ...
+    # Subtest: object: incomplete left identity
+    ok 21 - object: incomplete left identity
+      ---
+      duration_ms: 0.0132
+      type: 'test'
+      ...
+    # Subtest: object: incomplete right identity
+    ok 22 - object: incomplete right identity
+      ---
+      duration_ms: 0.0142
+      type: 'test'
+      ...
+    # Subtest: array: equal incomplete executable values on both sides
+    ok 23 - array: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0112
+      type: 'test'
+      ...
+    # Subtest: array: incomplete left identity
+    ok 24 - array: incomplete left identity
+      ---
+      duration_ms: 0.0131
+      type: 'test'
+      ...
+    # Subtest: array: incomplete right identity
+    ok 25 - array: incomplete right identity
+      ---
+      duration_ms: 0.0123
+      type: 'test'
+      ...
+    # Subtest: boxed string: equal incomplete executable values on both sides
+    ok 26 - boxed string: equal incomplete executable values on both sides
+      ---
+      duration_ms: 0.0133
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete left identity
+    ok 27 - boxed string: incomplete left identity
+      ---
+      duration_ms: 0.0106
+      type: 'test'
+      ...
+    # Subtest: boxed string: incomplete right identity
+    ok 28 - boxed string: incomplete right identity
+      ---
+      duration_ms: 0.0115
+      type: 'test'
+      ...
+    # Subtest: exact complete identity authorizes
+    ok 29 - exact complete identity authorizes
+      ---
+      duration_ms: 0.0894
+      type: 'test'
+      ...
+    # Subtest: different left PID refuses
+    ok 30 - different left PID refuses
+      ---
+      duration_ms: 0.0135
+      type: 'test'
+      ...
+    # Subtest: different right PID refuses
+    ok 31 - different right PID refuses
+      ---
+      duration_ms: 0.0149
+      type: 'test'
+      ...
+    # Subtest: different left start refuses
+    ok 32 - different left start refuses
+      ---
+      duration_ms: 0.0111
+      type: 'test'
+      ...
+    # Subtest: different right start refuses
+    ok 33 - different right start refuses
+      ---
+      duration_ms: 0.0112
+      type: 'test'
+      ...
+    # Subtest: different left executable refuses
+    ok 34 - different left executable refuses
+      ---
+      duration_ms: 0.0212
+      type: 'test'
+      ...
+    # Subtest: different right executable refuses
+    ok 35 - different right executable refuses
+      ---
+      duration_ms: 0.0185
+      type: 'test'
+      ...
+    # Subtest: absent left identity refuses
+    ok 36 - absent left identity refuses
+      ---
+      duration_ms: 0.0146
+      type: 'test'
+      ...
+    # Subtest: absent right identity refuses
+    ok 37 - absent right identity refuses
+      ---
+      duration_ms: 0.0122
+      type: 'test'
+      ...
+    # Subtest: null left identity refuses
+    ok 38 - null left identity refuses
+      ---
+      duration_ms: 0.0126
+      type: 'test'
+      ...
+    # Subtest: null right identity refuses
+    ok 39 - null right identity refuses
+      ---
+      duration_ms: 0.0132
+      type: 'test'
+      ...
+    # Subtest: both absent identities refuse
+    ok 40 - both absent identities refuse
+      ---
+      duration_ms: 0.0108
+      type: 'test'
+      ...
+    # Subtest: both null identities refuse
+    ok 41 - both null identities refuse
+      ---
+      duration_ms: 0.0105
+      type: 'test'
+      ...
+    # Subtest: null and absent identities refuse
+    ok 42 - null and absent identities refuse
+      ---
+      duration_ms: 0.0105
+      type: 'test'
+      ...
+    1..42
+ok 60 - process ownership private matcher rejects incomplete executable identities
+  ---
+  duration_ms: 1.8021
+  type: 'test'
+  ...
+1..60
+# tests 193
+# suites 0
+# pass 193
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 627.5153
+test_maintained_journey_guards (test_journey_contracts.JourneyContractTests) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.801s
+
+OK
+RUN last_stand_waves/test_catalogs.py
+test_eighteen_tiers_use_bounded_selection_and_keyed_records (test_catalogs.CatalogTests.test_eighteen_tiers_use_bounded_selection_and_keyed_records) ... ok
+test_finite_rosters_and_stable_reward_ids (test_catalogs.CatalogTests.test_finite_rosters_and_stable_reward_ids) ... ok
+test_generator_scales_beyond_two_thousand_waves (test_catalogs.CatalogTests.test_generator_scales_beyond_two_thousand_waves) ... ok
+test_invalid_catalogs_are_rejected (test_catalogs.CatalogTests.test_invalid_catalogs_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.771s
+
+OK
+RUN last_stand_waves/test_checkpoint_store.py
+test_checkpoint_rewards_commit_once_under_write_faults (test_checkpoint_store.CheckpointStoreTests.test_checkpoint_rewards_commit_once_under_write_faults) ... ok
+test_first_clear_rewards_and_unlocks_across_runs (test_checkpoint_store.CheckpointStoreTests.test_first_clear_rewards_and_unlocks_across_runs) ... ok
+test_five_thousand_wave_save_restore_and_bounded_size (test_checkpoint_store.CheckpointStoreTests.test_five_thousand_wave_save_restore_and_bounded_size) ... ok
+test_future_or_conflicting_save_preserves_original_bytes (test_checkpoint_store.CheckpointStoreTests.test_future_or_conflicting_save_preserves_original_bytes) ... ok
+test_legacy_migration_preserves_pending_claim_once (test_checkpoint_store.CheckpointStoreTests.test_legacy_migration_preserves_pending_claim_once) ... ok
+test_midwave_purchase_and_cost_roll_back_together (test_checkpoint_store.CheckpointStoreTests.test_midwave_purchase_and_cost_roll_back_together) ... ok
+test_mutual_death_banks_and_finalizes_atomically (test_checkpoint_store.CheckpointStoreTests.test_mutual_death_banks_and_finalizes_atomically) ... ok
+test_permanent_purchases_preserve_active_deployment_stats (test_checkpoint_store.CheckpointStoreTests.test_permanent_purchases_preserve_active_deployment_stats) ... ok
+test_starting_checkpoint_survives_reload (test_checkpoint_store.CheckpointStoreTests.test_starting_checkpoint_survives_reload) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 26.255s
+
+OK
+RUN last_stand_waves/test_earned_milestone_fixtures.py
+ST_LS_MILESTONE_GENERATOR_EVIDENCE={"sourceSha256": {"campaign-unity/Unity/Assets/Scripts/EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7", "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47", "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "e379c288d709da7c783eee68af5197207379bce211d6fe02ab933933c3e55b54", "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d", "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a", "campaign-unity/Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505", "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed", "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0", "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc", "campaign-unity/Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98", "campaign-unity/Unity/Assets/Scripts/EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d", "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f", "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf", "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "dc4223891365724a7e79030528c05217509241bc58ab5a14fdb2ed9e334ba23e", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs": "1cb177179981d29d6537261d35669a723aca497cb4a098973a02943d97227552", "campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950", "campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5", "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearch.cs": "45ee05f70b7e27f9ebf8cbf36594c243106ff98dee8c4fa8faef5dc98d200be3", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a", "campaign-unity/Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848", "campaign-unity/Unity/Assets/Scripts/LastStandResearchState.cs": "98480e9fb4ac2a730777f33762aa73123f9e0b0f4496da35f8f746bbbd7d40ca", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "ec73224676728da3d9e633886865f828b72448c4426a1498942ee01edc4d8f35", "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7", "campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967", "campaign-unity/Unity/Assets/Scripts/Content/LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a", "campaign-unity/Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948", "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs": "376c87d7f6f740e3b8753366f1d2d00e26a338f2608431766b51fffbc8df3560", "campaign-unity/Unity/Assets/Scripts/LastStandResearchCatalog.cs": "a58024b2e7aa80d2339d8ff76b1ae5dfc2e9b72fbf15c2d319fcdcc0dd7feb80", "campaign-unity/Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b", "campaign-unity/Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2", "campaign-unity/Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6", "campaign-unity/Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d", "campaign-unity/Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "890f1b208f256ab87a535e0164741e4dc47067f61ecad3d5d14d8ec0dbd4afdf", "campaign-unity/Tools/last_stand_waves/EarnedMilestoneFixtures.cs": "bc0c4c251ceef33022e0dab728d2d24b1865e6a9d10721343188fa5839f1678a", "campaign-unity/Tools/last_stand_waves/generate_earned_milestone_fixtures.py": "5995d5a39c22e1706501c1067c71b7fa5a0a1d0dd7f555dfbe007f25b4cc7e64", "campaign-unity/Tools/last_stand_source_closure.py": "646af650e4633e1614b9f155128c8f8c9306105343e2bbaf1e65e46366d6cf21", "campaign-unity/Tools/last_stand_test_runtime.py": "d7fb107fd5f4c64e13189a20038926e8982cd6a3105a8a1307bfcb006993c15c"}, "commands": [["C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\bin\\mono.exe", "C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\lib\\mono\\msbuild\\Current\\bin\\Roslyn\\csc.exe", "-nologo", "-warnaserror+", "-out:C:\\Users\\brenn\\AppData\\Local\\Temp\\st-earned-milestones-1o3er9ri\\EarnedMilestones.exe", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterModel.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterProfile.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgression.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandStore.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunClock.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSpeedPolicy.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandShopState.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandWaveCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandUpgradeCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterGeometry.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterBuildcraft.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandTierCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandRunEdition.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunCheckpoint.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionSave.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandLegacySave.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSaveJson.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRewardCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionResearch.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionResearchSave.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandRunHistory.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandResearchState.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionBackup.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionLoadouts.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\MechanicsShopModel.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandEconomyCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandLoadout.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandEnemyCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandSelection.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandResearchCatalog.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandResearchClock.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\LastStandProgressionAppearance.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandTankAppearance.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\EncounterFoeKind.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Unity\\Assets\\Scripts\\Content\\LastStandResearchDefinitions.cs", "C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Tools\\last_stand_waves\\EarnedMilestoneFixtures.cs"], ["C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\bin\\mono.exe", "C:\\Users\\brenn\\AppData\\Local\\Temp\\st-earned-milestones-1o3er9ri\\EarnedMilestones.exe"]], "commandWorkingDirectory": "C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra", "cases": [{"fitting": "repair", "targetWave": 100, "trajectoryRun": 1, "totalPermanentPurchases": 0, "totalPermanentSpend": 0, "totalEarnedSalvage": 141, "permanentLevels": {"cannonAttack": 0, "launcherAttack": 0, "hullCapacity": 0, "armor": 0, "cannonCycle": 0, "fieldRepair": 0, "scattergunAttack": 0, "scrapYield": 0, "mortarAttack": 0, "railgunAttack": 0, "arcOutput": 0, "shieldCapacity": 0}}, {"fitting": "repair", "targetWave": 300, "trajectoryRun": 2, "totalPermanentPurchases": 57, "totalPermanentSpend": 225, "totalEarnedSalvage": 924, "permanentLevels": {"cannonAttack": 19, "launcherAttack": 0, "hullCapacity": 12, "armor": 3, "cannonCycle": 0, "fieldRepair": 23, "scattergunAttack": 0, "scrapYield": 0, "mortarAttack": 0, "railgunAttack": 0, "arcOutput": 0, "shieldCapacity": 0}}, {"fitting": "launcher", "targetWave": 100, "trajectoryRun": 2, "totalPermanentPurchases": 21, "totalPermanentSpend": 58, "totalEarnedSalvage": 182, "permanentLevels": {"cannonAttack": 9, "launcherAttack": 9, "hullCapacity": 3, "armor": 0, "cannonCycle": 0, "fieldRepair": 0, "scattergunAttack": 0, "scrapYield": 0, "mortarAttack": 0, "railgunAttack": 0, "arcOutput": 0, "shieldCapacity": 0}}, {"fitting": "launcher", "targetWave": 300, "trajectoryRun": 3, "totalPermanentPurchases": 78, "totalPermanentSpend": 388, "totalEarnedSalvage": 1093, "permanentLevels": {"cannonAttack": 23, "launcherAttack": 27, "hullCapacity": 19, "armor": 9, "cannonCycle": 0, "fieldRepair": 0, "scattergunAttack": 0, "scrapYield": 0, "mortarAttack": 0, "railgunAttack": 0, "arcOutput": 0, "shieldCapacity": 0}}]}
+test_all_four_setups_precede_the_first_actual_unlock (test_earned_milestone_fixtures.EarnedMilestoneFixtureTests.test_all_four_setups_precede_the_first_actual_unlock) ... ok
+test_current_generated_manifest_is_admitted_by_actual_browser_reader (test_earned_milestone_fixtures.EarnedMilestoneFixtureTests.test_current_generated_manifest_is_admitted_by_actual_browser_reader) ... ok
+test_every_compiled_production_and_generator_source_is_bound (test_earned_milestone_fixtures.EarnedMilestoneFixtureTests.test_every_compiled_production_and_generator_source_is_bound) ... ok
+test_permanent_investment_is_funded_by_naturally_completed_prior_runs (test_earned_milestone_fixtures.EarnedMilestoneFixtureTests.test_permanent_investment_is_funded_by_naturally_completed_prior_runs) ... ok
+test_saved_bytes_are_exact_and_existing_output_cannot_be_overwritten (test_earned_milestone_fixtures.EarnedMilestoneFixtureTests.test_saved_bytes_are_exact_and_existing_output_cannot_be_overwritten) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.400s
+
+OK
+RUN last_stand_waves/test_fitting_catalog.py
+test_explicit_identity_and_milestone_availability (test_fitting_catalog.FittingCatalogTests.test_explicit_identity_and_milestone_availability) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.779s
+
+OK
+RUN last_stand_waves/test_long_run_economy.py
+test_existing_investments_preserved (test_long_run_economy.LongRunEconomyTests.test_existing_investments_preserved) ... ok
+test_long_run_cost_and_effect_bounds (test_long_run_economy.LongRunEconomyTests.test_long_run_cost_and_effect_bounds) ... ok
+test_lower_tier_farming_remains_viable_after_unlock (test_long_run_economy.LongRunEconomyTests.test_lower_tier_farming_remains_viable_after_unlock) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.418s
+
+OK
+RUN last_stand_waves/test_save_review.py
+test_exhausted_restored_epoch_allows_kill_income (test_save_review.SaveReviewTests.test_exhausted_restored_epoch_allows_kill_income) ... ok
+test_exhausted_restored_epoch_allows_one_purchase (test_save_review.SaveReviewTests.test_exhausted_restored_epoch_allows_one_purchase) ... ok
+test_exhausted_restored_epoch_allows_pause_resume (test_save_review.SaveReviewTests.test_exhausted_restored_epoch_allows_pause_resume) ... ok
+test_exhausted_restored_epoch_allows_terminal_accounting (test_save_review.SaveReviewTests.test_exhausted_restored_epoch_allows_terminal_accounting) ... ok
+test_invalid_paid_evidence_and_stale_live_quote_still_fail (test_save_review.SaveReviewTests.test_invalid_paid_evidence_and_stale_live_quote_still_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 4.496s
+
+OK
+RUN last_stand_waves/test_wave_model.py
+test_authored_eighteen_tiers_resolve_and_restore_without_fallback (test_wave_model.WaveModelTests.test_authored_eighteen_tiers_resolve_and_restore_without_fallback) ... ok
+test_five_thousand_wave_restore_and_bounded_state (test_wave_model.WaveModelTests.test_five_thousand_wave_restore_and_bounded_state) ... ok
+test_long_run_has_bounded_state (test_wave_model.WaveModelTests.test_long_run_has_bounded_state) ... ok
+test_midwave_and_inconsistent_checkpoints_are_rejected (test_wave_model.WaveModelTests.test_midwave_and_inconsistent_checkpoints_are_rejected) ... ok
+test_pause_and_speed_preserve_wave_outcomes (test_wave_model.WaveModelTests.test_pause_and_speed_preserve_wave_outcomes) ... ok
+test_scattergun_hits_distinct_targets_without_repair (test_wave_model.WaveModelTests.test_scattergun_hits_distinct_targets_without_repair) ... ok
+test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull (test_wave_model.WaveModelTests.test_shop_checkpoint_does_not_replay_kill_income_or_refill_hull) ... ok
+test_simultaneous_last_kill_and_defeat (test_wave_model.WaveModelTests.test_simultaneous_last_kill_and_defeat) ... ok
+test_two_thousand_wave_checkpoint_and_numeric_bounds (test_wave_model.WaveModelTests.test_two_thousand_wave_checkpoint_and_numeric_bounds) ... ok
+test_unspawned_or_live_enemy_prevents_clear (test_wave_model.WaveModelTests.test_unspawned_or_live_enemy_prevents_clear) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 10.581s
+
+OK
+RUN last_stand_waves/test_wave_receipts.py
+test_open_shop_keeps_receipt_and_core_instruments_visible (test_wave_receipts.WaveReceiptTests.test_open_shop_keeps_receipt_and_core_instruments_visible) ... ok
+test_receipt_leaves_controls_and_battlefield_clear (test_wave_receipts.WaveReceiptTests.test_receipt_leaves_controls_and_battlefield_clear) ... ok
+test_receipt_names_actual_reward_and_unlock (test_wave_receipts.WaveReceiptTests.test_receipt_names_actual_reward_and_unlock) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 2.541s
+
+OK
+RUN test_build_web.py
+test_linked_resources_never_reach_outside_files (test_build_web.BuildResourceSafety.test_linked_resources_never_reach_outside_files) ... ok
+test_nonregular_reserved_resource_is_refused (test_build_web.BuildResourceSafety.test_nonregular_reserved_resource_is_refused) ... ok
+test_original_folder_meta_is_restored_exactly (test_build_web.BuildResourceSafety.test_original_folder_meta_is_restored_exactly) ... ok
+test_unknown_new_assets_are_preserved_and_cleanup_fails (test_build_web.BuildResourceSafety.test_unknown_new_assets_are_preserved_and_cleanup_fails) ... ok
+test_complete_source_closure_before_and_after_export (test_build_web.BuildWebTests.test_complete_source_closure_before_and_after_export) ... ok
+test_toolchain_inventory_rejects_changed_and_added_module_bytes (test_build_web.BuildWebTests.test_toolchain_inventory_rejects_changed_and_added_module_bytes) ... ok
+test_default_exports_legacy_saved_scene (test_build_web.SavedBuildContract.test_default_exports_legacy_saved_scene) ... ok
+test_existing_performance_resource_is_refused_before_player (test_build_web.SavedBuildContract.test_existing_performance_resource_is_refused_before_player) ... ok
+test_failed_player_cleans_only_owned_performance_outputs (test_build_web.SavedBuildContract.test_failed_player_cleans_only_owned_performance_outputs) ... ok
+test_gallery_exports_separate_saved_scene_with_its_own_checks (test_build_web.SavedBuildContract.test_gallery_exports_separate_saved_scene_with_its_own_checks) ... ok
+test_gallery_requires_its_own_fresh_checks (test_build_web.SavedBuildContract.test_gallery_requires_its_own_fresh_checks) ... ok
+test_legacy_also_binds_source_and_rejects_midbuild_mutation (test_build_web.SavedBuildContract.test_legacy_also_binds_source_and_rejects_midbuild_mutation) ... ok
+test_performance_outputs_are_restored_before_source_readback (test_build_web.SavedBuildContract.test_performance_outputs_are_restored_before_source_readback) ... ok
+test_review_exports_saved_scene_with_source_binding (test_build_web.SavedBuildContract.test_review_exports_saved_scene_with_source_binding) ... ok
+test_review_requires_its_own_fresh_checks (test_build_web.SavedBuildContract.test_review_requires_its_own_fresh_checks) ... ok
+test_unconfirmed_child_exit_preserves_resources_and_failed_receipt (test_build_web.SavedBuildContract.test_unconfirmed_child_exit_preserves_resources_and_failed_receipt) ... ok
+test_unknown_scene_is_refused_before_editor_launch (test_build_web.SavedBuildContract.test_unknown_scene_is_refused_before_editor_launch) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.570s
+
+OK
+RUN test_inspection_checks.py
+test_binding_and_visibility_fail (test_inspection_checks.InspectionChecks.test_binding_and_visibility_fail) ... ok
+test_corrupt_receipts_fail (test_inspection_checks.InspectionChecks.test_corrupt_receipts_fail) ... ok
+test_hidden_geometry_does_not_need_a_drawn_endpoint (test_inspection_checks.InspectionChecks.test_hidden_geometry_does_not_need_a_drawn_endpoint) ... ok
+test_invalid_projection_domain (test_inspection_checks.InspectionChecks.test_invalid_projection_domain) ... ok
+test_known_perspective (test_inspection_checks.InspectionChecks.test_known_perspective) ... ok
+test_missing_or_duplicate_parts_fail (test_inspection_checks.InspectionChecks.test_missing_or_duplicate_parts_fail) ... ok
+test_orbit_uses_actual_camera (test_inspection_checks.InspectionChecks.test_orbit_uses_actual_camera) ... ok
+test_valid_geometry (test_inspection_checks.InspectionChecks.test_valid_geometry) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK
+RUN test_make_web_entry.py
+test_generated_wrapper_preserves_native_tab_traversal (test_make_web_entry.WebEntryTests.test_generated_wrapper_preserves_native_tab_traversal)
+Generated owner keeps browser defaults despite a handled native return. ... ok
+test_last_stand_return_discloses_paused_wave_checkpoint_resume (test_make_web_entry.WebEntryTests.test_last_stand_return_discloses_paused_wave_checkpoint_resume) ... ok
+test_last_stand_return_stays_visible_above_loading_and_error (test_make_web_entry.WebEntryTests.test_last_stand_return_stays_visible_above_loading_and_error) ... ok
+test_other_scene_has_no_last_stand_return (test_make_web_entry.WebEntryTests.test_other_scene_has_no_last_stand_return) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.708s
+
+OK
+RUN test_native_chrome.py
+test_fallback_only_terminates_owned_child (test_native_chrome.NativeChromeCleanup.test_fallback_only_terminates_owned_child) ... ok
+test_graceful_owned_close (test_native_chrome.NativeChromeCleanup.test_graceful_owned_close) ... ok
+test_idempotent_close (test_native_chrome.NativeChromeCleanup.test_idempotent_close) ... ok
+test_partial_launch_cleanup (test_native_chrome.NativeChromeCleanup.test_partial_launch_cleanup) ... ok
+test_optional_headless_preserves_owned_command_and_focus_settings (test_native_chrome.NativeChromeLaunch.test_optional_headless_preserves_owned_command_and_focus_settings) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.016s
+
+OK
+RUN test_test_inventory.py
+test_alias_cannot_replace_its_executed_owner (test_test_inventory.TestInventoryTests.test_alias_cannot_replace_its_executed_owner) ... ok
+test_new_test_cannot_be_silently_omitted (test_test_inventory.TestInventoryTests.test_new_test_cannot_be_silently_omitted) ... ok
+test_removed_entry_or_removed_file_fails (test_test_inventory.TestInventoryTests.test_removed_entry_or_removed_file_fails) ... ok
+test_removed_or_unlisted_case_fails (test_test_inventory.TestInventoryTests.test_removed_or_unlisted_case_fails) ... ok
+test_repository_inventory_is_complete (test_test_inventory.TestInventoryTests.test_repository_inventory_is_complete) ... ok
+test_unknown_empty_and_duplicate_classification_fails (test_test_inventory.TestInventoryTests.test_unknown_empty_and_duplicate_classification_fails) ... ok
+test_valid_entry_has_exact_isolated_discovery_command (test_test_inventory.TestInventoryTests.test_valid_entry_has_exact_isolated_discovery_command) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.110s
+
+OK
+RUN test_visual_review_checks.py
+test_changed_comparison_variables_are_rejected (test_visual_review_checks.ReviewEvidenceChecks.test_changed_comparison_variables_are_rejected) ... ok
+test_clipped_nonfinite_or_incomplete_ring_rejected (test_visual_review_checks.ReviewEvidenceChecks.test_clipped_nonfinite_or_incomplete_ring_rejected) ... ok
+test_hud_occlusion_and_stale_resize_geometry_are_rejected (test_visual_review_checks.ReviewEvidenceChecks.test_hud_occlusion_and_stale_resize_geometry_are_rejected) ... ok
+test_layout_rejects_inspection_command_leaking_into_combat (test_visual_review_checks.ReviewEvidenceChecks.test_layout_rejects_inspection_command_leaking_into_combat) ... ok
+test_layout_requires_combat_controls_and_rejects_overlap (test_visual_review_checks.ReviewEvidenceChecks.test_layout_requires_combat_controls_and_rejects_overlap) ... ok
+test_matched_paused_pair_retains_fitting_and_snapshot_digest (test_visual_review_checks.ReviewEvidenceChecks.test_matched_paused_pair_retains_fitting_and_snapshot_digest) ... ok
+test_motion_preserves_real_time_and_refuses_bad_timeline (test_visual_review_checks.ReviewEvidenceChecks.test_motion_preserves_real_time_and_refuses_bad_timeline) ... ok
+test_pointer_refuses_inactive_disabled_duplicate_and_clipped_controls (test_visual_review_checks.ReviewEvidenceChecks.test_pointer_refuses_inactive_disabled_duplicate_and_clipped_controls) ... ok
+test_pointer_uses_actual_control_and_canvas_coordinates (test_visual_review_checks.ReviewEvidenceChecks.test_pointer_uses_actual_control_and_canvas_coordinates) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK
+Executed 85 portable modules; failed=[]

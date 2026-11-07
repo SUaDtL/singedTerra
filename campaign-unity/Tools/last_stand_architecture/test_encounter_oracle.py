@@ -52,7 +52,17 @@ console.log(JSON.stringify({sources:WAVE_ORACLE_SOURCES,profiles:Object.keys(pro
         self.assertEqual(result.returncode, 0, diagnostics)
         observed = json.loads(result.stdout)
         sources = observed["sources"]
-        self.assertEqual(len(sources), 16)
+        expected_sources = {
+            "EncounterModel.cs", "EncounterBuildcraft.cs", "EncounterProfile.cs", "EncounterGeometry.cs",
+            "EncounterFoeKind.cs", "LastStandTierCatalog.cs", "LastStandWaveCatalog.cs",
+            "LastStandRewardCatalog.cs", "LastStandSelection.cs", "LastStandUpgradeCatalog.cs",
+            "LastStandEconomyCatalog.cs", "MechanicsShopModel.cs", "LastStandShopState.cs",
+            "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "Content/LastStandRunEdition.cs",
+            "Content/LastStandLoadout.cs", "Content/LastStandEnemyCatalog.cs",
+        }
+        self.assertEqual(len(sources), len(expected_sources), "Current compilation has no duplicate or omitted owners")
+        self.assertEqual(set(sources), expected_sources,
+                         "Current closure includes buildcraft combat and captured loadout/research owners")
         self.assertEqual(len(observed["reference_sources"]), 2, "The immutable reference keeps its original provenance")
         self.assertEqual(len(observed["profiles"]), 8)
         self.assertEqual(len(qualifications), 1, "Current-source qualification must actually run")

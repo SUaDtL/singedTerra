@@ -262,11 +262,14 @@ public static class LastStandCombatFeedbackChecks
         using(var f=new Fixture())
         {
             var model=BoundModel(LastStandFitting.Repair);
-            for(int slot=0;slot<5;slot++)SetFoe(model.Foes[slot],slot+1,(FoeKind)slot,slot,18000);
+            for(int slot=0;slot<8;slot++)SetFoe(model.Foes[slot],slot+1,(FoeKind)slot,slot,18000);
             typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],30);
+            typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[7],30);
+            typeof(EncounterFoe).GetProperty("SupportRemaining").SetValue(model.Foes[5],40);
+            typeof(EncounterFoe).GetProperty("SupportRemaining").SetValue(model.Foes[6],40);
             string before=model.Snapshot();f.View.Render(model);f.ShotFrame(0);
             var silhouettes=new HashSet<Vector3Int>();
-            for(int slot=0;slot<5;slot++)
+            for(int slot=0;slot<8;slot++)
             {
                 var root=f.Pool.Find("Review foe "+slot);
                 var vertices=root.GetComponentsInChildren<MeshFilter>().SelectMany(m=>m.sharedMesh.vertices.Select(v=>root.InverseTransformPoint(m.transform.TransformPoint(v)))).ToArray();
@@ -274,13 +277,20 @@ public static class LastStandCombatFeedbackChecks
                 foreach(var point in vertices)bounds.Encapsulate(point);
                 silhouettes.Add(new Vector3Int(Mathf.RoundToInt(bounds.size.x*1000),Mathf.RoundToInt(bounds.size.y*1000),Mathf.RoundToInt(bounds.size.z*1000)));
             }
-            Require(silhouettes.Count==5,"all five roles have distinguishable geometric silhouettes");
+            Require(silhouettes.Count==8,"all eight roles have distinguishable geometric silhouettes");
             var warning=f.Pool.Find("Review foe 4/Elite attack warning");
             Require(model.TelegraphRemainingTicks(model.Foes[4])==30&&warning&&warning.gameObject.activeInHierarchy,"model telegraph has persistent visible warning geometry");
+            var commander=f.Pool.Find("Review foe 7/Elite attack warning");
+            Require(commander&&commander.gameObject.activeInHierarchy,"Commander telegraph uses the actual model warning window");
+            foreach(int slot in new[]{5,6})Require(f.Pool.Find("Review foe "+slot+"/Support reserve").gameObject.activeInHierarchy,"support reserve remains readable as geometry");
             f.Art.SetEncounterPaused(true);f.View.ToggleEffects();f.ShotFrame(0);
             Require(warning.gameObject.activeInHierarchy&&warning.GetComponent<LineRenderer>().enabled,"paused reduced mode retains non-color warning shape");
+            Require(commander.gameObject.activeInHierarchy,"Commander warning survives reduced effects and pause");
             f.View.ToggleEffects();Require(warning.gameObject.activeInHierarchy,"full effects toggle does not replay or remove warning");
             Require(model.Snapshot()==before,"role and warning projection cannot mutate combat");
+            foreach(int slot in new[]{5,6})typeof(EncounterFoe).GetProperty("SupportRemaining").SetValue(model.Foes[slot],0);
+            f.View.Render(model);
+            foreach(int slot in new[]{5,6})Require(!f.Pool.Find("Review foe "+slot+"/Support reserve").gameObject.activeInHierarchy,"spent finite support budget is visibly exhausted");
             typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],31);f.View.Render(model);
             Require(!warning.gameObject.activeInHierarchy,"warning cannot start before the model telegraph window");
             typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],30);f.View.Render(model);
@@ -290,6 +300,47 @@ public static class LastStandCombatFeedbackChecks
             SetFoe(model.Foes[4],41,FoeKind.Close,1,18000);f.View.Render(model);
             Require(!warning.gameObject.activeInHierarchy,"slot reuse cannot inherit elite warning");
             f.View.Clear();Require(!f.Pool.gameObject.GetComponentsInChildren<Renderer>().Any(),"clear hides warning and every role");
+        }
+    }
+
+    static void ArcChainAndShieldFeedback()
+    {
+        foreach(bool reduced in new[]{false,true})
+        using(var f=new Fixture(false,"arc"))
+        {
+            var model=BoundModel(LastStandFitting.Arc);
+            // Different formation columns must actually fit inside the 7m hop
+            // radius; equal lanes alone do not imply neighboring world points.
+            for(int slot=0;slot<3;slot++)SetFoe(model.Foes[slot],slot+1,FoeKind.Close,0,12000+slot*100);
+            model.Step();var hops=model.Events.Where(e=>e.Kind==EncounterEventKind.Arc).ToArray();
+            Require(hops.Length>1&&hops[0].AimSlot==hops[0].Slot,"actual model emits a multi-target chain beginning at the tank");
+            if(reduced)f.View.ToggleEffects();string before=model.Snapshot();
+            f.View.Present(model);var origin=f.Art.FittingMuzzle(LastStandFitting.Arc);
+            var trails=f.Trails.Where(t=>t.enabled).ToArray();
+            Require(trails.Length==(reduced?0:hops.Length),"bounded pool projects one trace per genuine chain hop");
+            if(!reduced)for(int i=0;i<hops.Length;i++)
+            {
+                var from=i==0?origin:f.View.Position(model.Foes[hops[i].AimSlot]);var to=f.View.Position(model.Foes[hops[i].Slot]);
+                Require(trails.Any(t=>Vector3.Distance(t.GetPosition(0),from)<.0001f&&Vector3.Distance(t.GetPosition(t.positionCount-1),to)<.0001f),"chain connects its actual prior victim, never all hops from tank");
+            }
+            Require(f.Feedback.Length>=hops.Length,"reduced mode still identifies every chain victim");
+            Require(model.Snapshot()==before,"Arc visuals preserve authority");
+        }
+        foreach(bool reduced in new[]{false,true})
+        using(var f=new Fixture(false,"shield"))
+        {
+            var model=BoundModel(LastStandFitting.Shield);SetFoe(model.Foes[0],1,FoeKind.Close,0,1000);
+            for(int tick=0;tick<100&&!model.Events.Any(e=>e.Kind==EncounterEventKind.ShieldAbsorb);tick++)model.Step();
+            Require(model.Events.Any(e=>e.Kind==EncounterEventKind.ShieldAbsorb&&e.Slot==-1),"real incoming hit consumes tank shield");
+            if(reduced)f.View.ToggleEffects();string before=model.Snapshot();
+            f.View.Present(model);f.View.Render(model);f.ShotFrame(.05f);
+            Require(f.Feedback.Length>0,"shield absorption is informative in both effects modes");
+            Require(model.Snapshot()==before,"slotless shield feedback cannot index or mutate an enemy");
+            typeof(EncounterFoe).GetProperty("Hull").SetValue(model.Foes[0],0);
+            for(int tick=0;tick<1000&&!model.Events.Any(e=>e.Kind==EncounterEventKind.ShieldRecharge);tick++)model.Step();
+            Require(model.Events.Any(e=>e.Kind==EncounterEventKind.ShieldRecharge&&e.Slot==-1),"actual model eventually recharges the depleted shield");
+            before=model.Snapshot();f.View.Present(model);f.View.Render(model);
+            Require(model.Snapshot()==before,"recharge presentation remains stat-free");
         }
     }
 
@@ -307,7 +358,8 @@ public static class LastStandCombatFeedbackChecks
                 ("test_model_and_pool_preservation", ModelAndPoolPreservation),
                 ("test_current_geometry_and_retained_position",CurrentGeometryAndRetainedPosition),
                 ("test_campaign_weapon_feedback",CampaignWeaponFeedback),
-                ("test_role_silhouettes_and_persistent_warning",RoleSilhouettesAndPersistentWarning) })
+                ("test_role_silhouettes_and_persistent_warning",RoleSilhouettesAndPersistentWarning),
+                ("test_arc_chain_and_shield_feedback",ArcChainAndShieldFeedback) })
             {
                 try { test.Item2(); Debug.Log("ST_LS_COMBAT_PASS " + test.Item1); }
                 catch (Exception error) { failed = true; Debug.LogError("ST_LS_COMBAT_FAIL " + test.Item1 + " " + error); }

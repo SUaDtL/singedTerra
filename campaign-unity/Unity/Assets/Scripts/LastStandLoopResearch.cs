@@ -12,6 +12,9 @@ namespace SingedTerra.LastStand
         public LastStandResearchSnapshot ResearchSnapshot => research?.Snapshot;
         public bool ResearchCanAct => research!=null && research.CanAct && !runs.ResearchPending && !HoldResearchForBackup;
         public string ResearchStatus => research?.Status ?? "";
+        public int ResearchLabCount => Progression?.UnlockedResearchLabCount??0;
+        public bool CombatResearchUnlocked => Progression!=null&&Progression.CombatResearchUnlocked;
+        public LastStandResearchQuote ResearchQuote(LastStandResearchTrackId track,int rank)=>research?.Quote(track,rank);
         public LastStandHistorySnapshot RunHistorySnapshot =>
             liveHistory?.Current!=null && Progression.HasCheckpoint?liveHistory.Snapshot():Progression?.HistorySnapshot;
         void InitializeResearch()

@@ -1,0 +1,99 @@
+{
+  "scope": "served local bytes only",
+  "url": "http://127.0.0.1:4174/singedTerra/last-stand/",
+  "build": "Web-20261107T072248Z-7c0959",
+  "files": [
+    {
+      "path": "asset-manifest.json",
+      "sha256": "02387b017a4dc5de97f36fbfd916be5b96a84bfca15336caf2a09dd7d1b5b47e",
+      "bytes": 2837
+    },
+    {
+      "path": "index.html",
+      "sha256": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+      "bytes": 6877
+    },
+    {
+      "path": "Build/Web-20261107T072248Z-7c0959.data",
+      "sha256": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
+      "bytes": 24609061
+    },
+    {
+      "path": "Build/Web-20261107T072248Z-7c0959.framework.js",
+      "sha256": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
+      "bytes": 460964
+    },
+    {
+      "path": "Build/Web-20261107T072248Z-7c0959.loader.js",
+      "sha256": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
+      "bytes": 26983
+    },
+    {
+      "path": "Build/Web-20261107T072248Z-7c0959.wasm",
+      "sha256": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+      "bytes": 30522066
+    },
+    {
+      "path": "TemplateData/MemoryProfiler.png",
+      "sha256": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
+      "bytes": 665
+    },
+    {
+      "path": "TemplateData/favicon.ico",
+      "sha256": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
+      "bytes": 2305
+    },
+    {
+      "path": "TemplateData/fullscreen-button.png",
+      "sha256": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+      "bytes": 175
+    },
+    {
+      "path": "TemplateData/progress-bar-empty-dark.png",
+      "sha256": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
+      "bytes": 96
+    },
+    {
+      "path": "TemplateData/progress-bar-empty-light.png",
+      "sha256": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
+      "bytes": 109
+    },
+    {
+      "path": "TemplateData/progress-bar-full-dark.png",
+      "sha256": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",
+      "bytes": 74
+    },
+    {
+      "path": "TemplateData/progress-bar-full-light.png",
+      "sha256": "12395ea785480c5cdf12fade6e6cbf49666d5bb1cef7240c113dbcba6bdc5c87",
+      "bytes": 84
+    },
+    {
+      "path": "TemplateData/style.css",
+      "sha256": "8e3625e108a61dcd1d31303376d9e02d7bdc08921d254e8f4359b892b3825caa",
+      "bytes": 1448
+    },
+    {
+      "path": "TemplateData/unity-logo-dark.png",
+      "sha256": "c1b72d26c096487dabc948b54bc203f8dac7ed4e3f5733918798e858acb4b159",
+      "bytes": 3042
+    },
+    {
+      "path": "TemplateData/unity-logo-light.png",
+      "sha256": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
+      "bytes": 3077
+    },
+    {
+      "path": "TemplateData/unity-logo-title-footer.png",
+      "sha256": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
+      "bytes": 1151
+    },
+    {
+      "path": "TemplateData/webmemd-icon.png",
+      "sha256": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
+      "bytes": 1670
+    }
+  ],
+  "status": "pass",
+  "utc": "2026-11-07T07:27:30.339567+00:00"
+}

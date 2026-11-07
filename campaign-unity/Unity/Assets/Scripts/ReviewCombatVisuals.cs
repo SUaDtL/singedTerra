@@ -15,7 +15,8 @@ namespace SingedTerra.VisualReview
         {
             public Transform root;
             public GameObject close, ranged;
-            public GameObject bruteArmor,eliteTurret;
+            public GameObject bruteArmor,eliteTurret,shieldProjector,repairCrane,commanderRig;
+            public Transform supportIndicator;
             public LineRenderer warning;
             public Vector3 closeScale,rangedScale;
             public Transform[] wheels;
@@ -68,6 +69,22 @@ namespace SingedTerra.VisualReview
                 LastStandModuleGeometry.Part("Elite high turret",v.eliteTurret.transform,new Vector3(0,1.65f,.05f),new Vector3(1.65f,.75f,1.2f),rolePlate,armor);
                 for(int side=-1;side<=1;side+=2)
                     LastStandModuleGeometry.Part("Elite heavy barrel "+side,v.eliteTurret.transform,new Vector3(side*.50f,1.85f,-1.1f),new Vector3(.30f,.32f,1.75f),rolePlate,steel);
+                var brass=LastStandModuleGeometry.Material(tank,"Brass");
+                v.shieldProjector=new GameObject("Shield carrier projector");v.shieldProjector.transform.SetParent(v.root,false);
+                LastStandModuleGeometry.Part("Carrier upright shield",v.shieldProjector.transform,new Vector3(0,1.25f,-.65f),new Vector3(2.4f,1.65f,.30f),rolePlate,armor).localRotation=Quaternion.Euler(-12,0,0);
+                for(int side=-1;side<=1;side+=2)
+                    LastStandModuleGeometry.Part("Carrier emitter "+side,v.shieldProjector.transform,new Vector3(side*.95f,2.05f,-.65f),new Vector3(.28f,.35f,.40f),rolePlate,brass);
+                v.repairCrane=new GameObject("Medic service crane");v.repairCrane.transform.SetParent(v.root,false);
+                LastStandModuleGeometry.Part("Medic raised mast",v.repairCrane.transform,new Vector3(0,1.55f,.45f),new Vector3(.36f,1.6f,.4f),rolePlate,steel);
+                LastStandModuleGeometry.Part("Medic lateral boom",v.repairCrane.transform,new Vector3(0,2.25f,.2f),new Vector3(2.65f,.28f,.35f),rolePlate,armor);
+                for(int side=-1;side<=1;side+=2)
+                    LastStandModuleGeometry.Part("Medic repair tool "+side,v.repairCrane.transform,new Vector3(side*1.18f,1.9f,.2f),new Vector3(.35f,.60f,.35f),rolePlate,brass);
+                v.commanderRig=new GameObject("Commander command rig");v.commanderRig.transform.SetParent(v.root,false);
+                LastStandModuleGeometry.Part("Commander siege turret",v.commanderRig.transform,new Vector3(0,1.95f,.05f),new Vector3(2.25f,.85f,1.55f),rolePlate,armor);
+                for(int barrel=-1;barrel<=1;barrel++)
+                    LastStandModuleGeometry.Part("Commander siege barrel "+barrel,v.commanderRig.transform,new Vector3(barrel*.62f,2.05f,-1.4f),new Vector3(.38f,.38f,2.15f),rolePlate,steel);
+                LastStandModuleGeometry.Part("Commander signal mast",v.commanderRig.transform,new Vector3(.88f,2.7f,.65f),new Vector3(.13f,1.25f,.13f),rolePlate,brass);
+                v.supportIndicator=LastStandModuleGeometry.Part("Support reserve",v.root,new Vector3(0,2.55f,.1f),new Vector3(1.2f,.13f,.16f),rolePlate,brass);
                 v.wheels=v.root.GetComponentsInChildren<Transform>(true).Where(t=>t.name.StartsWith("Wheel_")).ToArray();
                 v.paint=v.root.GetComponentsInChildren<Renderer>(true);
                 v.warning=new GameObject("Elite attack warning").AddComponent<LineRenderer>();v.warning.transform.SetParent(v.root,false);
@@ -123,12 +140,23 @@ namespace SingedTerra.VisualReview
                     v.root.position=v.goal;
                 }
                 v.root.gameObject.SetActive(true);
-                bool ranged=foe.Kind==FoeKind.Ranged||foe.Kind==FoeKind.SiegeElite;
+                bool ranged=foe.Kind==FoeKind.Ranged||foe.Kind==FoeKind.SiegeElite||foe.Kind==FoeKind.SiegeCommander;
                 v.close.SetActive(!ranged);v.ranged.SetActive(ranged);
                 v.close.transform.localScale=Vector3.Scale(v.closeScale,foe.Kind==FoeKind.Swarmer?new Vector3(.67f,.52f,.75f):
                     foe.Kind==FoeKind.ArmoredBrute?new Vector3(1.14f,1.12f,1.05f):Vector3.one);
-                v.ranged.transform.localScale=v.rangedScale*(foe.Kind==FoeKind.SiegeElite?1.12f:1f);
+                v.ranged.transform.localScale=v.rangedScale*(foe.Kind==FoeKind.SiegeCommander?1.28f:foe.Kind==FoeKind.SiegeElite?1.12f:1f);
                 v.bruteArmor.SetActive(foe.Kind==FoeKind.ArmoredBrute);v.eliteTurret.SetActive(foe.Kind==FoeKind.SiegeElite);
+                v.shieldProjector.SetActive(foe.Kind==FoeKind.ShieldCarrier);v.repairCrane.SetActive(foe.Kind==FoeKind.Medic);
+                v.commanderRig.SetActive(foe.Kind==FoeKind.SiegeCommander);
+                bool support=foe.Kind==FoeKind.ShieldCarrier||foe.Kind==FoeKind.Medic;
+                v.supportIndicator.gameObject.SetActive(support&&foe.SupportRemaining>0);
+                if(support&&foe.SupportRemaining>0)
+                {
+                    var stats=SingedTerra.LastStand.LastStandEnemyCatalog.ForKind(foe.Kind,
+                        SingedTerra.LastStand.LastStandWaveCatalog.ForWave(model.Profile.TierDefinition,model.Wave,model.Profile.Edition),model.Profile.Edition);
+                    float capacity=stats.ShieldBuffer+stats.HealingBudget;
+                    v.supportIndicator.localScale=new Vector3(1.2f*Mathf.Clamp01(foe.SupportRemaining/Mathf.Max(1,capacity)),.13f,.16f);
+                }
                 int warningTicks=model.Status==EncounterStatus.Running?model.TelegraphRemainingTicks(foe):0;
                 v.warning.gameObject.SetActive(warningTicks>0);
                 if(warningTicks>0)v.warning.transform.localScale=Vector3.one*(.9f+.1f*warningTicks/
@@ -146,9 +174,23 @@ namespace SingedTerra.VisualReview
             foreach(var e in model.Events)
             {
                 if(e.Kind==EncounterEventKind.Repair)continue;
+                if(e.Kind==EncounterEventKind.ShieldAbsorb||e.Kind==EncounterEventKind.ShieldRecharge)
+                {
+                    bool recharge=e.Kind==EncounterEventKind.ShieldRecharge;
+                    Emit(tank.tank.position+Vector3.up,full?.25f:.16f,full?.65f:.3f,full?1.7f:.8f,
+                        recharge?new Color(.4f,1f,.8f,.7f):new Color(.38f,.72f,1f,.8f),settings.flashMaterial,false,Vector3.zero);
+                    continue; // Tank events have no enemy slot.
+                }
                 bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher||e.Kind==EncounterEventKind.Scattergun||
-                    e.Kind==EncounterEventKind.Mortar||e.Kind==EncounterEventKind.Railgun;
+                    e.Kind==EncounterEventKind.Mortar||e.Kind==EncounterEventKind.Railgun||e.Kind==EncounterEventKind.Arc;
                 var foe=model.Foes[e.Slot];Vector3 position=Position(foe)+Vector3.up*.7f;
+                if(e.Kind==EncounterEventKind.EnemyShield||e.Kind==EncounterEventKind.EnemyRepair)
+                {
+                    Emit(position,full?.28f:.18f,.2f,full?1.3f:.6f,
+                        e.Kind==EncounterEventKind.EnemyShield?new Color(.38f,.72f,1f,.8f):new Color(.35f,.95f,.65f,.8f),
+                        settings.flashMaterial,false,Vector3.zero);
+                    continue;
+                }
                 if(outgoing)
                 {
                     vehicles[e.Slot].flash=full?.12f:0;

@@ -7,9 +7,10 @@ import {createHash} from 'node:crypto';
 import {mkdirSync,readFileSync,writeFileSync,realpathSync} from 'node:fs';
 import {resolve,dirname,isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,fetchBoundRuntime,assertServedBytes} from '../e2e/helpers/lastStandJourney.mjs';
+import {admitJourneyBase,packagedRuntimeSnapshot,assertPackagedRuntimeParity,fetchBoundRuntime,assertServedBytes,selectLastStandFitting} from '../e2e/helpers/lastStandJourney.mjs';
 import {createLastStandBrowserActor,lastStandObservedControls as controls} from '../e2e/helpers/lastStandBrowserActor.mjs';
 import {WAVE_JOURNEY_PROBE} from '../e2e/helpers/lastStandWaveJourney.mjs';
+import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION} from '../e2e/helpers/lastStandWaveOracle.mjs';
 
 const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototype.v1';
 const sha=value=>createHash('sha256').update(value).digest('hex');
@@ -19,24 +20,40 @@ const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastSta
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
-  'campaign-unity/Tools/contracts/last-stand-observation-v5.json'];
+  'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
-const fits=['repair','launcher','scattergun','mortar','railgun'];
-const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry'];
+export const PRESENTATION_FIXTURE_SOURCES=Object.freeze([
+  ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
+  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+    'LastStandSaveJson','LastStandProgressionAppearance','Content/LastStandTankAppearance','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
+    'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
+    .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
+  'campaign-unity/Tools/last_stand_research/QualificationFixtureGenerator.cs',
+  'campaign-unity/Tools/last_stand_combat_depth/PresentationFixtureGenerator.cs',
+  'campaign-unity/Tools/last_stand_combat_depth/generate_presentation_fixtures.py',
+  'campaign-unity/Tools/last_stand_research/generate_qualification_fixtures.py',
+  'campaign-unity/Tools/last_stand_source_closure.py','campaign-unity/Tools/last_stand_test_runtime.py',
+  'campaign-unity/Tools/last_stand_research/fixtures/legacy-v4.json',
+  'campaign-unity/Tools/last_stand_research/fixtures/legacy-v4.manifest.json']);
+const retainedFits=['repair','launcher','scattergun','mortar','railgun'];
+const environments=['sunlit-ash','iron-perimeter','cinder-basin','storm-foundry','glass-wastes','frostline-relay'];
 
 export function admitFixtures(manifest,path,sourceRoot=root){
-  assert.equal(manifest.schema,'last-stand-combat-depth-presentation-fixtures/v1');
+  assert.ok(['last-stand-combat-depth-presentation-fixtures/v1','last-stand-combat-depth-presentation-fixtures/v2'].includes(manifest.schema));
+  const current=manifest.schema.endsWith('/v2');
   assert.equal(manifest.storageKey,key);assert.match(manifest.scope,/development/i);
   assert.equal(manifest.clockMode,'current UTC final anchors; synthetic earlier training');
   assert.equal(manifest.sourceUnchanged,true);
   assert.ok(Object.keys(manifest.sourceSha256).length>=20);
+  if(current)assert.deepEqual(Object.keys(manifest.sourceSha256).sort(),[...PRESENTATION_FIXTURE_SOURCES].sort(),'Exact current production and generator source closure required');
   for(const [name,expected]of Object.entries(manifest.sourceSha256)){
     assert.ok(!isAbsolute(name)&&!name.includes('..')&&!name.includes('\\'));
     assert.equal(sha(readFileSync(resolve(sourceRoot,name))),expected,'Fixture source changed: '+name);
   }
   const directory=realpathSync(dirname(path));
-  const fixtureIds=['roster-ready','tier2-before-elite','legacy-v4'];
-  assert.deepEqual(manifest.cases.map(row=>row.id).sort(),[...fixtureIds].sort(),'Exactly the three declared fixture identities');
+  const fixtureIds=current?['roster-ready','tier2-before-elite','tier5-before-commander','legacy-v4']:['roster-ready','tier2-before-elite','legacy-v4'];
+  assert.deepEqual(manifest.cases.map(row=>row.id).sort(),[...fixtureIds].sort(),'Exact versioned fixture identities required');
   for(const row of manifest.cases){
     assert.equal(row.savePath,row.id+'.json');const file=resolve(directory,row.savePath);
     assert.equal(dirname(file),directory,'Fixture must be a direct sibling of its manifest');
@@ -44,15 +61,25 @@ export function admitFixtures(manifest,path,sourceRoot=root){
     const value=JSON.parse(readFileSync(file));assert.equal(value.version,row.version);
     if(row.id==='legacy-v4')assert.equal(value.version,4);
     if(row.id!=='legacy-v4'){
-      assert.equal(value.version,7);assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
+      assert.equal(value.version,current?8:7);assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
       assert.equal(value.research.lastObservedUtcMilliseconds,row.createdUtcMilliseconds);
+    }
+    if(row.id==='tier5-before-commander'){
+      assert.equal(row.tier,5);assert.equal(row.completedWave,99);assert.equal(row.nextWave,100);
+      assert.equal(row.hasCheckpoint,true);assert.equal(row.productionReloadValidated,true);assert.equal(row.nextCohortContainsCommander,true);
+      assert.equal(row.simulatedRuns.length,1);assert.equal(row.simulatedRuns[0].tier,5);
+      assert.equal(row.simulatedRuns[0].completedWave,99);assert.equal(row.simulatedRuns[0].committedBoundaries,99);
+      const encounter=value.checkpoint.encounter;
+      assert.equal(encounter.tier,5);assert.equal(encounter.wave,99);assert.equal(encounter.completedWave,99);
+      assert.ok(Number.isSafeInteger(encounter.hull)&&encounter.hull>0);
+      assert.ok(Number.isSafeInteger(row.commanderObservedTick)&&row.commanderObservedTick>encounter.tick);
     }
   }
   assert.ok(manifest.cases.some(c=>c.id==='roster-ready'));
 }
 
 export function assertFittingCallout(callout,{fitting,width,height}){
-  const targets={repair:'Attachment_Repair',launcher:'Attachment_Launcher',scattergun:'Attachment_Scattergun',mortar:'Attachment_Mortar',railgun:'Attachment_Railgun'};
+  const targets={repair:'Attachment_Repair',launcher:'Attachment_Launcher',scattergun:'Attachment_Scattergun',mortar:'Attachment_Mortar',railgun:'Attachment_Railgun',arc:'Attachment_Arc',shield:'Attachment_Shield'};
   assert.ok(Object.hasOwn(targets,fitting));assert.equal(callout.visible,true);
   assert.equal(callout.target,targets[fitting]);assert.equal(callout.width,width);assert.equal(callout.height,height);
   for(const point of [callout.projectedAnchor,callout.endpointScreen]){
@@ -71,6 +98,8 @@ async function main(){
   assert.ok(process.argv[2],'Usage: node scripts/last-stand-combat-depth-journey.mjs <fixture manifest> <fresh output>');
   const manifestPath=resolve(process.argv[2]),fixtureBytes=readFileSync(manifestPath),manifest=JSON.parse(fixtureBytes);
   admitFixtures(manifest,manifestPath);
+  const current=manifest.schema.endsWith('/v2'),fits=current?[...retainedFits,'arc','shield']:retainedFits;
+  const edition=current?CURRENT_WAVE_EDITION:COMBAT_DEPTH_WAVE_EDITION,tierCount=current?6:4;
   const base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
   for(const tool of ['verify-last-stand-source.mjs','verify-last-stand.mjs'])execFileSync(process.execPath,[resolve(root,'scripts/assets',tool)],{cwd:root,stdio:'pipe'});
   const packaged=packagedRuntimeSnapshot(),inputHashes=hashes();
@@ -95,6 +124,9 @@ async function main(){
     await seed.close();return createLastStandBrowserActor({context,id,report,output,base,persist});
   }
   async function selectFit(a,fit,touch=false){
+    if(a.layout().schema==='singedterra-last-stand-observation/v6'){
+      await selectLastStandFitting({fitting:fit,click:(name)=>a.click(name,{touch}),currentLayout:()=>a.layout(),currentState:()=>a.state(),waitFor:(condition)=>a.until(condition)});return;
+    }
     for(let n=0;a.state().fittingId!==fit&&n<5;n++){
       const current=fits.indexOf(a.state().fittingId);assert.ok(current>=0);
       await a.click(current<fits.indexOf(fit)?'FittingNext':'FittingPrevious',{touch});
@@ -102,7 +134,7 @@ async function main(){
     assert.equal(a.state().fittingId,fit);
   }
   async function selectTier(a,tier,touch=false){
-    for(let n=0;Number(a.state().garageTierId)!==tier&&n<4;n++)
+    for(let n=0;Number(a.state().garageTierId)!==tier&&n<tierCount;n++)
       await a.click(Number(a.state().garageTierId)<tier?'TierNext':'TierPrevious',{touch});
     assert.equal(Number(a.state().garageTierId),tier);assert.equal(a.state().environmentId,environments[tier-1]);
   }
@@ -126,7 +158,7 @@ async function main(){
           assertFittingCallout(callout,{fitting:fit,width:a.layout().width,height:a.layout().height});
         });await a.shot('garage-'+viewport.width+'-'+fit);
       }
-      for(let tier=1;tier<=4;tier++){await selectTier(a,tier,touch);await a.shot('environment-'+viewport.width+'-'+tier);}
+      for(let tier=1;tier<=tierCount;tier++){await selectTier(a,tier,touch);await a.shot('environment-'+viewport.width+'-'+tier);}
       await a.click('Menu',{touch});await a.shot('menu-'+viewport.width);await a.click('SettingsClose',{touch});
     }
     await a.page.setViewportSize({width:1366,height:768});await a.geometry();await selectTier(a,2);
@@ -136,8 +168,9 @@ async function main(){
       await a.until(()=>a.state().completedWave>=1,60);
       await a.click('SpeedRate');await a.until(()=>a.state().paused);
       check(fit+' uses current edition in actual player',()=>{
-        assert.equal(a.state().profileVersion,'last-stand-waves-v2');assert.equal(a.state().contentVersion,'last-stand-content-v2');
-        assert.equal(a.state().economyVersion,'combat-depth-economy-v4');assert.equal(a.state().fittingId,fit);
+        assert.equal(a.state().profileVersion,edition.rulesVersion);assert.equal(a.state().contentVersion,edition.contentVersion);
+        assert.equal(a.state().economyVersion,edition.economyVersion);assert.equal(a.state().fittingId,fit);
+        if(fit==='arc')assert.ok(a.state().arcShots>0);if(fit==='shield')assert.ok(a.state().shieldCapacity>0);
         if(fit==='mortar')assert.ok(a.state().mortarShots>0);if(fit==='railgun')assert.ok(a.state().railgunShots>0);
       });await a.shot('battle-'+fit);await a.click('WaveInfo');await a.shot('wave-stats-'+fit);
       const text=JSON.parse(a.layout().raw.slice('ST_LS_HUD_LAYOUT '.length)).graphics.map(g=>g.text??'').join('\n');

@@ -20,8 +20,11 @@ internal static class TierRulesChecks
             Require(EncounterProfile.PlayablePrototype.Horizon == 3600 && EncounterProfile.PlayablePrototype.Id == "playable-prototype-v1" && !EncounterProfile.PlayablePrototype.IsWaveBased, "Historical playable oracle retains its explicit fixture.");
             for (int hull = 1; hull < 101; hull++)
                 Require(LastStandTierCatalog.EnemyHull(2, hull) == (hull * 5 + 3) / 4, "Exact ceiling scale, including odd hull.");
-            try { factory.Invoke(null, new object[] { 5 }); throw new Exception("Unknown tier admitted."); }
+            try { factory.Invoke(null, new object[] { 7 }); throw new Exception("Unknown tier admitted."); }
             catch (TargetInvocationException e) { Require(e.InnerException is ArgumentException, "Unknown tier refusal."); }
+            foreach(int tier in new[]{5,6})Require(((EncounterProfile)factory.Invoke(null,new object[]{tier})).Tier==tier,"New authored tier admitted explicitly");
+            try { LastStandRunEdition.CombatDepth.Tier(5);throw new Exception("Retained edition admitted new tier."); }
+            catch(ArgumentException) { }
             // Repair fitting has no tick-one auxiliary shot, exposing initial hull.
             var a = new EncounterModel(false, first); var b = new EncounterModel(false, second);
             a.Step(); b.Step();

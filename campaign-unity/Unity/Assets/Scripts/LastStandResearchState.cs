@@ -21,7 +21,7 @@ namespace SingedTerra.LastStand
         public string catalogVersion = LastStandResearchCatalog.Version;
         public long revision, lastObservedUtcMilliseconds, nextProjectIdentity = 1, completionSequence;
         public int[] completedRanks = new int[LastStandResearchCatalog.TrackCount];
-        public LastStandResearchSlotSnapshot[] slots = { new LastStandResearchSlotSnapshot(), new LastStandResearchSlotSnapshot() };
+        public LastStandResearchSlotSnapshot[] slots = { new LastStandResearchSlotSnapshot(), new LastStandResearchSlotSnapshot(), new LastStandResearchSlotSnapshot() };
         public LastStandResearchProjectSnapshot[] partials = new LastStandResearchProjectSnapshot[LastStandResearchCatalog.TrackCount];
         public int Rank(LastStandResearchTrackId track,LastStandResearchDefinitions definitions=null)
             => completedRanks[(definitions??LastStandResearchCatalog.Definitions).Slot(track)];
@@ -96,12 +96,20 @@ namespace SingedTerra.LastStand
             if(!candidate.Valid(snapshot))return false;
             state=new LastStandResearchState(snapshot.Clone(),definitions);return true;
         }
-        public bool IsAvailableFor(int bestTierOneWave)
+        public bool IsAvailableFor(int bestTierOneWave,int bestTierTwoWave=0)
         {
-            int unlocked = LastStandResearchCatalog.UnlockedSlots(bestTierOneWave);
+            int unlocked = LastStandResearchCatalog.UnlockedSlots(bestTierOneWave,bestTierTwoWave);
             if (unlocked == 0 && (value.completionSequence > 0 || value.nextProjectIdentity != 1)) return false;
             for (int i = unlocked; i < value.slots.Length; i++)
                 if (value.slots[i].active != null || value.slots[i].queued != null) return false;
+            bool combatUnlocked=LastStandResearchCatalog.CombatUnlocked(bestTierOneWave);
+            foreach(var definition in definitions.Tracks)
+            {
+                if(!definition.IsCombatSnapshot||combatUnlocked)continue;
+                if(value.completedRanks[definition.StorageSlot]!=0||value.partials[definition.StorageSlot]!=null)return false;
+                foreach(var slot in value.slots)
+                    if(slot.active?.track==definition.Id||slot.queued?.track==definition.Id)return false;
+            }
             return true;
         }
         bool Valid(LastStandResearchSnapshot s)
@@ -208,11 +216,15 @@ namespace SingedTerra.LastStand
         }
 
         public bool TryApply(LastStandResearchIntent intent, long salvageBalance, int bestTierOneWave, out LastStandResearchTransition transition)
+            => TryApply(intent,salvageBalance,bestTierOneWave,0,out transition);
+        public bool TryApply(LastStandResearchIntent intent,long salvageBalance,int bestTierOneWave,int bestTierTwoWave,out LastStandResearchTransition transition)
         {
             transition = null;
             if (intent == null || salvageBalance < 0 || salvageBalance > MaximumIdentity || value.revision == MaximumIdentity ||
-                intent.ExpectedRevision != value.revision || intent.Slot < 0 || intent.Slot >= LastStandResearchCatalog.UnlockedSlots(bestTierOneWave) ||
-                !IsAvailableFor(bestTierOneWave)) return false;
+                intent.ExpectedRevision != value.revision || intent.Slot < 0 || intent.Slot >= LastStandResearchCatalog.UnlockedSlots(bestTierOneWave,bestTierTwoWave) ||
+                !IsAvailableFor(bestTierOneWave,bestTierTwoWave)) return false;
+            if((intent.Action==LastStandResearchAction.Start||intent.Action==LastStandResearchAction.Queue||intent.Action==LastStandResearchAction.Switch)&&
+                (!definitions.Contains(intent.Track)||!LastStandResearchCatalog.IsUnlocked(definitions.Get(intent.Track),bestTierOneWave)))return false;
             var currentSlot = value.slots[intent.Slot];
             if ((currentSlot.active?.identity ?? 0) != intent.ExpectedActiveIdentity || (currentSlot.queued?.identity ?? 0) != intent.ExpectedQueuedIdentity) return false;
             var next = value.Clone(); var slot = next.slots[intent.Slot]; long wallet = salvageBalance;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SingedTerra.LastStand
 {
-    public enum LastStandResearchEffect { GameSpeed, Salvage, ResearchSpeed, Scrap }
+    public enum LastStandResearchEffect { GameSpeed, Salvage, ResearchSpeed, Scrap, ArmorPiercing, AreaControl, FieldEngineering }
 
     // Authored numeric policy independent of identity, currency and UI.
     public sealed class LastStandResearchCurve
@@ -51,8 +51,12 @@ namespace SingedTerra.LastStand
                 if(row==null || byId.ContainsKey(row.Id) || byKey.ContainsKey(row.Key) || row.StorageSlot<0 || row.StorageSlot>=rows.Count || bySlot[row.StorageSlot]!=null)
                     throw new ArgumentException("Duplicate research identity or storage slot.");
                 if((row.Effect==LastStandResearchEffect.GameSpeed && row.Id!=LastStandResearchTrackId.GameSpeed) ||
-                    (row.Effect==LastStandResearchEffect.ResearchSpeed && row.Id!=LastStandResearchTrackId.ResearchSpeed))
+                    (row.Effect==LastStandResearchEffect.ResearchSpeed && row.Id!=LastStandResearchTrackId.ResearchSpeed) ||
+                    (row.Effect==LastStandResearchEffect.ArmorPiercing && row.Id!=LastStandResearchTrackId.ArmorPiercing) ||
+                    (row.Effect==LastStandResearchEffect.AreaControl && row.Id!=LastStandResearchTrackId.AreaControl) ||
+                    (row.Effect==LastStandResearchEffect.FieldEngineering && row.Id!=LastStandResearchTrackId.FieldEngineering))
                     throw new ArgumentException("Combat and research clocks each require one authoritative speed track.");
+                if(row.IsCombatSnapshot&&row.MaximumRank>20)throw new ArgumentException("Combat research exceeds the deployment snapshot bound.");
                 byId.Add(row.Id,row);byKey.Add(row.Key,row);bySlot[row.StorageSlot]=row;
             }
             var legacyKeys=new[]{"gameSpeed","salvageRecovery","researchSpeed","scrapLogistics"};

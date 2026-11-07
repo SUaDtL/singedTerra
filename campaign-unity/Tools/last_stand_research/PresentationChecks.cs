@@ -50,6 +50,17 @@ static class PresentationChecks
         Require(LastStandResearchPresentation.Effect(LastStandResearchTrackId.GameSpeed,8).Contains("5.0x"),"speed effect actual cap");
         Require(LastStandResearchPresentation.Effect(LastStandResearchTrackId.ResearchSpeed,1).Contains("Does not accelerate itself"),"self research exclusion disclosed");
         Require(LastStandResearchPresentation.Duration(1)=="1s" && LastStandResearchPresentation.Duration(86400001)=="1d 0h","ceil duration never claims complete early");
+        var snapshot=LastStandResearchState.Create(0).Snapshot();
+        foreach(var track in new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.SalvageRecovery,
+            LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.ScrapLogistics})
+        foreach(var loadout in new[]{new LastStandLoadout("repair"),new LastStandLoadout("launcher"),new LastStandLoadout("railgun"),
+            new LastStandLoadout("repair","shield"),new LastStandLoadout("arc","mortar"),new LastStandLoadout("shield","railgun")})
+        {
+            var quote=LastStandResearchPresentation.ProjectQuote(snapshot,track,1,loadout:loadout);
+            Require(quote.AppliesTo=="All loadouts."&&quote.LoadoutApplicability=="Applies to all loadouts.",
+                "Global current and next-upgrade applicability must agree for "+track+" with "+loadout);
+            Require(!quote.AppliesOnNextDeployment&&quote.AppliesToSelectedLoadout,"Global completion semantics stay automatic");
+        }
     }
     static void Garage()
     {

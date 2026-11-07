@@ -5,10 +5,47 @@ import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveTerminal,validateCheckpointResume} from '../../e2e/helpers/lastStandJourney.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
+import {assertProfilePreservedExceptResearchClock} from '../../e2e/helpers/lastStandWaveGuards.mjs';
 
 // Inert observations test rejection. They never qualify a browser or grant saves.
 const clone=x=>structuredClone(x);
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+
+test('earned-research preview preserves every field except monotonic clock metadata',()=>{
+ const before={...idleWaveFields(),credits:29,selectedFitting:'arc',secondaryFitting:'shield',loadoutPresets:[{name:'Storm Guard'}]};
+ before.research.completedRanks.gameSpeed=8;before.research.nextProjectIdentity=9;before.research.completionSequence=8;
+ const after=clone(before);after.revision+=2;after.research.revision+=2;after.research.lastObservedUtcMilliseconds+=15001;
+ assert.equal(assertProfilePreservedExceptResearchClock(before,after),true);
+ for(const mutate of [v=>v.credits++,v=>v.selectedFitting='repair',v=>v.secondaryFitting=null,
+  v=>v.loadoutPresets[0].name='changed',v=>v.research.completedRanks.gameSpeed--,
+  v=>v.research.slots[0].active={identity:10},v=>v.research.completionSequence++,
+  v=>v.revision--,v=>v.research.revision++,v=>v.research.lastObservedUtcMilliseconds=0,
+  v=>v.revision+=0.5,v=>v.research.revision+=0.5,
+  v=>v.research.lastObservedUtcMilliseconds=String(v.research.lastObservedUtcMilliseconds),
+  v=>v.research.lastObservedUtcMilliseconds+=0.5]){
+  const broken=clone(after);mutate(broken);assert.throws(()=>assertProfilePreservedExceptResearchClock(before,broken));
+ }
+});
+test('funded third-lab comparison preserves research business fields and both fittings',()=>{
+ const before={...idleWaveFields({profileVersion:8}),credits:700,selectedFitting:'arc',secondaryFitting:'shield'};
+ before.research.completedRanks.researchSpeed=25;before.research.nextProjectIdentity=85;
+ before.research.slots[2].active={identity:84,track:'armorPiercing',rank:1,chargedCost:300,
+  durationMilliseconds:2400000,earnedMilliseconds:0};
+ // The journey validates elapsed advancement separately and normalizes only it.
+ const compared=clone(before);compared.revision++;compared.research.revision++;
+ compared.research.lastObservedUtcMilliseconds+=8000;
+ assert.equal(assertProfilePreservedExceptResearchClock(before,compared),true);
+ for(const mutate of [v=>v.credits--,v=>v.selectedFitting='repair',v=>v.secondaryFitting='arc',
+  v=>v.research.completedRanks.researchSpeed--,v=>v.research.completedRanks.armorPiercing++,
+  v=>v.research.slots[2].active.identity++,v=>v.research.slots[2].active.track='areaControl',
+  v=>v.research.slots[2].active.rank++,v=>v.research.slots[2].active.chargedCost++,
+  v=>v.research.slots[2].active.durationMilliseconds++,v=>v.research.slots[2].active=null,
+  v=>v.research.slots[2].queued=clone(v.research.slots[2].active),v=>v.research.nextProjectIdentity++,
+  v=>v.research.completionSequence++]){
+  const broken=clone(compared);mutate(broken);
+  assert.throws(()=>assertProfilePreservedExceptResearchClock(before,broken),undefined,String(mutate));
+ }
+});
 test('current idle wave save accepts only clock metadata changes and rejects historical or altered progression',()=>{
  const before={...idleWaveFields(),credits:2,permanentLevels:{cannonAttack:0},checkpoint:{runId:1,wave:1,
   encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1}},pendingDefeat:null};

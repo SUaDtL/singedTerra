@@ -1,0 +1,4545 @@
+{
+  "farming": [
+    {
+      "lowerTier": 1,
+      "deepLower": {
+        "tier": 1,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 1320118,
+        "activeMilliseconds": 13201180,
+        "selectedWindowEndWave": 2000,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3719835938,
+        "kills": 37900,
+        "highestClearedWave": 2000,
+        "finalHull": 117255,
+        "purchaseIntents": 14,
+        "purchaseOpportunities": 14,
+        "earnedScrap": 8236211,
+        "spentScrap": 7639895,
+        "remainingScrap": 596316,
+        "repeatableSalvage": 21020,
+        "researchBonusSalvage": 2943,
+        "firstClearSalvage": 0,
+        "salvageGross": 23963,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 58,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 120,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 60,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 24005,
+            "activeMilliseconds": 240050,
+            "hull": 20328,
+            "earnedScrap": 21192,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 9667,
+                "kills": 7,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 4143,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "300": {
+            "outcome": "cleared",
+            "ticks": 130405,
+            "activeMilliseconds": 1304050,
+            "hull": 20328,
+            "earnedScrap": 245443,
+            "spentScrap": 143761,
+            "salvageGross": 688,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 66404,
+                "kills": 13,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 35756,
+                "kills": 7,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "500": {
+            "outcome": "cleared",
+            "ticks": 269205,
+            "activeMilliseconds": 2692050,
+            "hull": 71192,
+            "earnedScrap": 671249,
+            "spentScrap": 381396,
+            "salvageGross": 1716,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 132184,
+                "kills": 13,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 71176,
+                "kills": 7,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "2000": {
+            "outcome": "cleared",
+            "ticks": 1320118,
+            "activeMilliseconds": 13201180,
+            "hull": 117255,
+            "earnedScrap": 8236211,
+            "spentScrap": 7639895,
+            "salvageGross": 23963,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 164556,
+                "kills": 7,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 28512,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 1013478,
+                "kills": 6,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 605814,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 2000,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 15259427,
+              "kills": 1303,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 1407433,
+              "kills": 350,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 895527100,
+              "kills": 23959,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 454001975,
+              "kills": 12288,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 6534.779466684039
+      },
+      "shallowHigher30": {
+        "tier": 2,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 5411,
+        "activeMilliseconds": 54110,
+        "selectedWindowEndWave": 30,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706688868,
+        "kills": 190,
+        "highestClearedWave": 30,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 3093,
+        "spentScrap": 0,
+        "remainingScrap": 3093,
+        "repeatableSalvage": 30,
+        "researchBonusSalvage": 5,
+        "firstClearSalvage": 0,
+        "salvageGross": 35,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 68,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 180,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 90,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 82,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 216,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 3514,
+              "kills": 12,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 24213,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 24132,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 18783,
+              "kills": 64,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 59382,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 2328.589909443726
+      },
+      "shallowHigher100": {
+        "tier": 2,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 22053,
+        "activeMilliseconds": 220530,
+        "selectedWindowEndWave": 100,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706855288,
+        "kills": 800,
+        "highestClearedWave": 100,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 25855,
+        "spentScrap": 0,
+        "remainingScrap": 25855,
+        "repeatableSalvage": 101,
+        "researchBonusSalvage": 14,
+        "firstClearSalvage": 0,
+        "salvageGross": 115,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 68,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 180,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 90,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 82,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 216,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22053,
+            "activeMilliseconds": 220530,
+            "hull": 20328,
+            "earnedScrap": 25855,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 8286,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 8286,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 7460,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 9944,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 33144,
+                "kills": 1,
+                "armorPreventedDamage": 19
+              }
+            ]
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 77546,
+              "kills": 71,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 358419,
+              "kills": 160,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 355635,
+              "kills": 159,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 245500,
+              "kills": 249,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 850132,
+              "kills": 159,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 48936,
+              "kills": 2,
+              "armorPreventedDamage": 19
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 1877.2956060399945
+      }
+    },
+    {
+      "lowerTier": 2,
+      "deepLower": {
+        "tier": 2,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 1533242,
+        "activeMilliseconds": 15332420,
+        "selectedWindowEndWave": 2000,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3721967178,
+        "kills": 37900,
+        "highestClearedWave": 2000,
+        "finalHull": 154140,
+        "purchaseIntents": 17,
+        "purchaseOpportunities": 17,
+        "earnedScrap": 9936050,
+        "spentScrap": 9902158,
+        "remainingScrap": 33892,
+        "repeatableSalvage": 38139,
+        "researchBonusSalvage": 5340,
+        "firstClearSalvage": 2875,
+        "salvageGross": 46354,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 68,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 180,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 90,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 82,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 216,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22053,
+            "activeMilliseconds": 220530,
+            "hull": 20328,
+            "earnedScrap": 25855,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 8286,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 8286,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 7460,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 9944,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 33144,
+                "kills": 1,
+                "armorPreventedDamage": 19
+              }
+            ]
+          },
+          "300": {
+            "outcome": "cleared",
+            "ticks": 130995,
+            "activeMilliseconds": 1309950,
+            "hull": 20328,
+            "earnedScrap": 296922,
+            "spentScrap": 178738,
+            "salvageGross": 804,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 8698,
+                "kills": 0,
+                "armorPreventedDamage": 51
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 61296,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 61296,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 55168,
+                "kills": 8,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 110334,
+                "kills": 3,
+                "armorPreventedDamage": 69
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 113894,
+                "kills": 1,
+                "armorPreventedDamage": 255
+              }
+            ]
+          },
+          "500": {
+            "outcome": "cleared",
+            "ticks": 281315,
+            "activeMilliseconds": 2813150,
+            "hull": 74625,
+            "earnedScrap": 811735,
+            "spentScrap": 452702,
+            "salvageGross": 2655,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 78506,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 86456,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 57217,
+                "kills": 1,
+                "armorPreventedDamage": 240
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 95304,
+                "kills": 0,
+                "armorPreventedDamage": 935
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 43510,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 35560,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 109816,
+                "kills": 8,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 162413,
+                "kills": 2,
+                "armorPreventedDamage": 280
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 148728,
+                "kills": 1,
+                "armorPreventedDamage": 510
+              }
+            ]
+          },
+          "2000": {
+            "outcome": "cleared",
+            "ticks": 1533242,
+            "activeMilliseconds": 15332420,
+            "hull": 154140,
+            "earnedScrap": 9936050,
+            "spentScrap": 9902158,
+            "salvageGross": 46354,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 513163,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 718389,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 385320,
+                "kills": 5,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1255427,
+                "kills": 1,
+                "armorPreventedDamage": 12870
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 1308495,
+                "kills": 0,
+                "armorPreventedDamage": 27805
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 574253,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 369027,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 593360,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 701923,
+                "kills": 2,
+                "armorPreventedDamage": 1155
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 866337,
+                "kills": 1,
+                "armorPreventedDamage": 3350
+              }
+            ]
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 2000,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 430304545,
+              "kills": 3852,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 443304833,
+              "kills": 3900,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 353723417,
+              "kills": 5162,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 852372208,
+              "kills": 3506,
+              "armorPreventedDamage": 7807340
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 16940051,
+              "kills": 18,
+              "armorPreventedDamage": 317251
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 389413130,
+              "kills": 3728,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 376389109,
+              "kills": 3677,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 384030601,
+              "kills": 9998,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 1104822483,
+              "kills": 4037,
+              "armorPreventedDamage": 1688536
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 16992325,
+              "kills": 22,
+              "armorPreventedDamage": 57008
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 27524,
+          "incomingDamageByEnemy": [
+            {
+              "enemy": "SiegeElite",
+              "effectiveDamage": 27524,
+              "rawDamage": 28428
+            }
+          ],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 10208.721128171548
+      },
+      "shallowHigher30": {
+        "tier": 3,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 5511,
+        "activeMilliseconds": 55110,
+        "selectedWindowEndWave": 30,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706689868,
+        "kills": 190,
+        "highestClearedWave": 30,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 3365,
+        "spentScrap": 0,
+        "remainingScrap": 3365,
+        "repeatableSalvage": 30,
+        "researchBonusSalvage": 5,
+        "firstClearSalvage": 0,
+        "salvageGross": 35,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 300,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 150,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 68,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 720,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 3464,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 40355,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 40220,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 24502,
+              "kills": 50,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 147792,
+              "kills": 57,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 2286.336418072945
+      },
+      "shallowHigher100": {
+        "tier": 3,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 22653,
+        "activeMilliseconds": 226530,
+        "selectedWindowEndWave": 100,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706861288,
+        "kills": 800,
+        "highestClearedWave": 100,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 28050,
+        "spentScrap": 0,
+        "remainingScrap": 28050,
+        "repeatableSalvage": 101,
+        "researchBonusSalvage": 14,
+        "firstClearSalvage": 0,
+        "salvageGross": 115,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 300,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 150,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 68,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 720,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22653,
+            "activeMilliseconds": 226530,
+            "hull": 20328,
+            "earnedScrap": 28050,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 13810,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 13810,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 6216,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 49716,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 55240,
+                "kills": 1,
+                "armorPreventedDamage": 38
+              }
+            ]
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 100095,
+              "kills": 52,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 597365,
+              "kills": 160,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 592725,
+              "kills": 159,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 299681,
+              "kills": 187,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 2155284,
+              "kills": 240,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 81560,
+              "kills": 2,
+              "armorPreventedDamage": 49
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 1827.5725069527216
+      }
+    },
+    {
+      "lowerTier": 3,
+      "deepLower": {
+        "tier": 3,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 2076564,
+        "activeMilliseconds": 20765640,
+        "selectedWindowEndWave": 2000,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3727400398,
+        "kills": 37900,
+        "highestClearedWave": 2000,
+        "finalHull": 156368,
+        "purchaseIntents": 23,
+        "purchaseOpportunities": 23,
+        "earnedScrap": 10770110,
+        "spentScrap": 10720175,
+        "remainingScrap": 49935,
+        "repeatableSalvage": 56208,
+        "researchBonusSalvage": 7869,
+        "firstClearSalvage": 2875,
+        "salvageGross": 66952,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 300,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 150,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 68,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 720,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22653,
+            "activeMilliseconds": 226530,
+            "hull": 20328,
+            "earnedScrap": 28050,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 13810,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 13810,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 6216,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 49716,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 55240,
+                "kills": 1,
+                "armorPreventedDamage": 38
+              }
+            ]
+          },
+          "300": {
+            "outcome": "cleared",
+            "ticks": 138188,
+            "activeMilliseconds": 1381880,
+            "hull": 20328,
+            "earnedScrap": 321673,
+            "spentScrap": 182173,
+            "salvageGross": 1034,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 11004,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 86168,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 52023,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 52494,
+                "kills": 0,
+                "armorPreventedDamage": 138
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 69768,
+                "kills": 0,
+                "armorPreventedDamage": 408
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 91156,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 15992,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 5442,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 315282,
+                "kills": 6,
+                "armorPreventedDamage": 230
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 134552,
+                "kills": 1,
+                "armorPreventedDamage": 255
+              }
+            ]
+          },
+          "500": {
+            "outcome": "cleared",
+            "ticks": 302763,
+            "activeMilliseconds": 3027630,
+            "hull": 74240,
+            "earnedScrap": 881580,
+            "spentScrap": 451951,
+            "salvageGross": 3571,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 101697,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 119241,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 52721,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 417750,
+                "kills": 4,
+                "armorPreventedDamage": 1840
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 247792,
+                "kills": 1,
+                "armorPreventedDamage": 2380
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 101663,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 84119,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 61669,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 314346,
+                "kills": 2,
+                "armorPreventedDamage": 480
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 158928,
+                "kills": 0,
+                "armorPreventedDamage": 595
+              }
+            ]
+          },
+          "2000": {
+            "outcome": "cleared",
+            "ticks": 2076564,
+            "activeMilliseconds": 20765640,
+            "hull": 156368,
+            "earnedScrap": 10770110,
+            "spentScrap": 10720175,
+            "salvageGross": 66952,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 1056392,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 1139584,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 608936,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 3697784,
+                "kills": 3,
+                "armorPreventedDamage": 37785
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 2117004,
+                "kills": 1,
+                "armorPreventedDamage": 44555
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 755968,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 672776,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 410519,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 2826712,
+                "kills": 3,
+                "armorPreventedDamage": 5280
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 1507716,
+                "kills": 0,
+                "armorPreventedDamage": 6030
+              }
+            ]
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 2000,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 755970638,
+              "kills": 4351,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 800363479,
+              "kills": 4273,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 497140772,
+              "kills": 5371,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 2783524690,
+              "kills": 6199,
+              "armorPreventedDamage": 23892890
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 32781001,
+              "kills": 22,
+              "armorPreventedDamage": 583279
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 610225487,
+              "kills": 3229,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 565793091,
+              "kills": 3304,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 421887522,
+              "kills": 5963,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 2134750550,
+              "kills": 5170,
+              "armorPreventedDamage": 3287811
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 23772959,
+              "kills": 18,
+              "armorPreventedDamage": 78798
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 120732430,
+          "incomingDamageByEnemy": [
+            {
+              "enemy": "Close",
+              "effectiveDamage": 2556595,
+              "rawDamage": 2780615
+            },
+            {
+              "enemy": "Ranged",
+              "effectiveDamage": 102936996,
+              "rawDamage": 112517105
+            },
+            {
+              "enemy": "Swarmer",
+              "effectiveDamage": 12506,
+              "rawDamage": 14841
+            },
+            {
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 13489131,
+              "rawDamage": 14260115
+            },
+            {
+              "enemy": "SiegeElite",
+              "effectiveDamage": 1737202,
+              "rawDamage": 1776220
+            }
+          ],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 11108.600553606824
+      },
+      "shallowHigher30": {
+        "tier": 4,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 5541,
+        "activeMilliseconds": 55410,
+        "selectedWindowEndWave": 30,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706690168,
+        "kills": 190,
+        "highestClearedWave": 30,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 3617,
+        "spentScrap": 0,
+        "remainingScrap": 3617,
+        "repeatableSalvage": 30,
+        "researchBonusSalvage": 5,
+        "firstClearSalvage": 0,
+        "salvageGross": 35,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 420,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 210,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 95,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1008,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 3859,
+              "kills": 6,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 56497,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 56308,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 21813,
+              "kills": 32,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 278764,
+              "kills": 76,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 2273.957769355712
+      },
+      "shallowHigher100": {
+        "tier": 4,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 22934,
+        "activeMilliseconds": 229340,
+        "selectedWindowEndWave": 100,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706864098,
+        "kills": 800,
+        "highestClearedWave": 100,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 30107,
+        "spentScrap": 0,
+        "remainingScrap": 30107,
+        "repeatableSalvage": 101,
+        "researchBonusSalvage": 14,
+        "firstClearSalvage": 0,
+        "salvageGross": 115,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 420,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 210,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 95,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1008,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22934,
+            "activeMilliseconds": 229340,
+            "hull": 20328,
+            "earnedScrap": 30107,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 8702,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 19334,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 19334,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 69603,
+                "kills": 3,
+                "armorPreventedDamage": 21
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 77336,
+                "kills": 1,
+                "armorPreventedDamage": 57
+              }
+            ]
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 9562,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 128820,
+              "kills": 46,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 334,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 836311,
+              "kills": 160,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 820253,
+              "kills": 158,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 246689,
+              "kills": 114,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 3999196,
+              "kills": 317,
+              "armorPreventedDamage": 49
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 114184,
+              "kills": 2,
+              "armorPreventedDamage": 68
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 1805.1800819743612
+      }
+    },
+    {
+      "lowerTier": 4,
+      "deepLower": {
+        "tier": 4,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "defeat",
+        "ticks": 1567298,
+        "activeMilliseconds": 15672980,
+        "selectedWindowEndWave": 2000,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3722307738,
+        "kills": 26275,
+        "highestClearedWave": 1418,
+        "finalHull": 0,
+        "purchaseIntents": 17,
+        "purchaseOpportunities": 17,
+        "earnedScrap": 6204357,
+        "spentScrap": 6040682,
+        "remainingScrap": 163675,
+        "repeatableSalvage": 36212,
+        "researchBonusSalvage": 5070,
+        "firstClearSalvage": 875,
+        "salvageGross": 42157,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 78,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 420,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 210,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 95,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1008,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 22934,
+            "activeMilliseconds": 229340,
+            "hull": 20328,
+            "earnedScrap": 30107,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 8702,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 19334,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 19334,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 69603,
+                "kills": 3,
+                "armorPreventedDamage": 21
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 77336,
+                "kills": 1,
+                "armorPreventedDamage": 57
+              }
+            ]
+          },
+          "300": {
+            "outcome": "cleared",
+            "ticks": 148232,
+            "activeMilliseconds": 1482320,
+            "hull": 20328,
+            "earnedScrap": 346044,
+            "spentScrap": 175347,
+            "salvageGross": 1262,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 51868,
+                "kills": 4,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 87016,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 48273,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 236449,
+                "kills": 7,
+                "armorPreventedDamage": 552
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 130125,
+                "kills": 0,
+                "armorPreventedDamage": 765
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 91156,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 56008,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 16091,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 364256,
+                "kills": 0,
+                "armorPreventedDamage": 368
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 155923,
+                "kills": 1,
+                "armorPreventedDamage": 306
+              }
+            ]
+          },
+          "500": {
+            "outcome": "cleared",
+            "ticks": 352121,
+            "activeMilliseconds": 3521210,
+            "hull": 71272,
+            "earnedScrap": 951074,
+            "spentScrap": 440982,
+            "salvageGross": 4233,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 143793,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 175308,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 79049,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 737063,
+                "kills": 4,
+                "armorPreventedDamage": 3280
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 319717,
+                "kills": 0,
+                "armorPreventedDamage": 3145
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 140911,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 109396,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 49071,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 458698,
+                "kills": 3,
+                "armorPreventedDamage": 720
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeElite",
+                "effectiveDamage": 249691,
+                "kills": 1,
+                "armorPreventedDamage": 850
+              }
+            ]
+          },
+          "2000": {
+            "outcome": "defeated-before-checkpoint",
+            "highestClearedWave": 1418,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "defeated-before-checkpoint",
+            "highestClearedWave": 1418,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 443187054,
+              "kills": 2938,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 459234461,
+              "kills": 3087,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 196560036,
+              "kills": 2395,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 2175991510,
+              "kills": 5586,
+              "armorPreventedDamage": 14704592
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 18568693,
+              "kills": 13,
+              "armorPreventedDamage": 261043
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 335860145,
+              "kills": 2318,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 319019382,
+              "kills": 2163,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 154010258,
+              "kills": 2861,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 1553112152,
+              "kills": 4899,
+              "armorPreventedDamage": 2015683
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 13062403,
+              "kills": 15,
+              "armorPreventedDamage": 36451
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 94135861,
+          "incomingDamageByEnemy": [
+            {
+              "enemy": "Close",
+              "effectiveDamage": 1728507,
+              "rawDamage": 1871611
+            },
+            {
+              "enemy": "Ranged",
+              "effectiveDamage": 70609738,
+              "rawDamage": 76793759
+            },
+            {
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 20824047,
+              "rawDamage": 21963303
+            },
+            {
+              "enemy": "SiegeElite",
+              "effectiveDamage": 1097698,
+              "rawDamage": 1121428
+            }
+          ],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 9482.255448549031
+      },
+      "shallowHigher30": {
+        "tier": 5,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 5476,
+        "activeMilliseconds": 54760,
+        "selectedWindowEndWave": 30,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706689518,
+        "kills": 190,
+        "highestClearedWave": 30,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 3358,
+        "spentScrap": 0,
+        "remainingScrap": 3358,
+        "repeatableSalvage": 30,
+        "researchBonusSalvage": 5,
+        "firstClearSalvage": 0,
+        "salvageGross": 35,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 88,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 122,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 648,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 486,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 405,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 7064,
+              "kills": 9,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 74205,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 73296,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 43823,
+              "kills": 48,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 82781,
+              "kills": 19,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 70932,
+              "kills": 19,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Medic",
+              "effectiveDamage": 49858,
+              "kills": 19,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 2300.9495982468957
+      },
+      "shallowHigher100": {
+        "tier": 5,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 23015,
+        "activeMilliseconds": 230150,
+        "selectedWindowEndWave": 100,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706864908,
+        "kills": 800,
+        "highestClearedWave": 100,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 28213,
+        "spentScrap": 0,
+        "remainingScrap": 28213,
+        "repeatableSalvage": 101,
+        "researchBonusSalvage": 14,
+        "firstClearSalvage": 0,
+        "salvageGross": 115,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 88,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 122,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 648,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 486,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 405,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 23015,
+            "activeMilliseconds": 230150,
+            "hull": 20328,
+            "earnedScrap": 28213,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 12600,
+                "kills": 1,
+                "armorPreventedDamage": 62
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 12429,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 24858,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 16782,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 29830,
+                "kills": 1,
+                "armorPreventedDamage": 7
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 22373,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 18644,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 136548,
+                "kills": 0,
+                "armorPreventedDamage": 186
+              }
+            ]
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 232318,
+              "kills": 66,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Medic",
+              "effectiveDamage": 11254,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 12600,
+              "kills": 1,
+              "armorPreventedDamage": 62
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 1062594,
+              "kills": 159,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 1072683,
+              "kills": 160,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 493503,
+              "kills": 173,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 1282031,
+              "kills": 80,
+              "armorPreventedDamage": 130
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 47376,
+              "kills": 1,
+              "armorPreventedDamage": 22
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 978250,
+              "kills": 80,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Medic",
+              "effectiveDamage": 786462,
+              "kills": 80,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 136548,
+              "kills": 0,
+              "armorPreventedDamage": 186
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 1798.826852053009
+      }
+    },
+    {
+      "lowerTier": 5,
+      "deepLower": {
+        "tier": 5,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "defeat",
+        "ticks": 1166319,
+        "activeMilliseconds": 11663190,
+        "selectedWindowEndWave": 2000,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3718297948,
+        "kills": 21396,
+        "highestClearedWave": 1174,
+        "finalHull": 0,
+        "purchaseIntents": 12,
+        "purchaseOpportunities": 12,
+        "earnedScrap": 4115058,
+        "spentScrap": 3762582,
+        "remainingScrap": 352476,
+        "repeatableSalvage": 30074,
+        "researchBonusSalvage": 4211,
+        "firstClearSalvage": 875,
+        "salvageGross": 35160,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 88,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 270,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 122,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 648,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 486,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 405,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 23015,
+            "activeMilliseconds": 230150,
+            "hull": 20328,
+            "earnedScrap": 28213,
+            "spentScrap": 0,
+            "salvageGross": 115,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 12600,
+                "kills": 1,
+                "armorPreventedDamage": 62
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 12429,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 24858,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 16782,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 29830,
+                "kills": 1,
+                "armorPreventedDamage": 7
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 22373,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 18644,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 136548,
+                "kills": 0,
+                "armorPreventedDamage": 186
+              }
+            ]
+          },
+          "300": {
+            "outcome": "cleared",
+            "ticks": 144084,
+            "activeMilliseconds": 1440840,
+            "hull": 20328,
+            "earnedScrap": 322562,
+            "spentScrap": 171999,
+            "salvageGross": 1495,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 72475,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 78252,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 38094,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 129602,
+                "kills": 2,
+                "armorPreventedDamage": 322
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 51670,
+                "kills": 2,
+                "armorPreventedDamage": 115
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Medic",
+                "effectiveDamage": 69624,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 293216,
+                "kills": 0,
+                "armorPreventedDamage": 2686
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 65441,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 105636,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 86034,
+                "kills": 5,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 91064,
+                "kills": 0,
+                "armorPreventedDamage": 92
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 113830,
+                "kills": 0,
+                "armorPreventedDamage": 115
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 68292,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 258448,
+                "kills": 1,
+                "armorPreventedDamage": 869
+              }
+            ]
+          },
+          "500": {
+            "outcome": "cleared",
+            "ticks": 349286,
+            "activeMilliseconds": 3492860,
+            "hull": 72708,
+            "earnedScrap": 885695,
+            "spentScrap": 425460,
+            "salvageGross": 5154,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Close",
+                "effectiveDamage": 174060,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 236499,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 133146,
+                "kills": 4,
+                "armorPreventedDamage": 52212
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 242564,
+                "kills": 0,
+                "armorPreventedDamage": 1120
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 170201,
+                "kills": 2,
+                "armorPreventedDamage": 760
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Medic",
+                "effectiveDamage": 183380,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 644964,
+                "kills": 1,
+                "armorPreventedDamage": 9750
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 100476,
+                "kills": 3,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 136412,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 113940,
+                "kills": 2,
+                "armorPreventedDamage": 30149
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 196694,
+                "kills": 2,
+                "armorPreventedDamage": 280
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 159243,
+                "kills": 0,
+                "armorPreventedDamage": 280
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 91156,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 453180,
+                "kills": 0,
+                "armorPreventedDamage": 2600
+              }
+            ]
+          },
+          "2000": {
+            "outcome": "defeated-before-checkpoint",
+            "highestClearedWave": 1174,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "defeated-before-checkpoint",
+            "highestClearedWave": 1174,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 369458056,
+              "kills": 2391,
+              "armorPreventedDamage": 3937722
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 368778699,
+              "kills": 2269,
+              "armorPreventedDamage": 96607017
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 230216161,
+              "kills": 3071,
+              "armorPreventedDamage": 7698395
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 438459592,
+              "kills": 1264,
+              "armorPreventedDamage": 6532267
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 7851284,
+              "kills": 4,
+              "armorPreventedDamage": 99943
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 328619877,
+              "kills": 1210,
+              "armorPreventedDamage": 1973940
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Medic",
+              "effectiveDamage": 280330180,
+              "kills": 1292,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 10432885,
+              "kills": 5,
+              "armorPreventedDamage": 199812
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 250094095,
+              "kills": 1869,
+              "armorPreventedDamage": 2485061
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 272092033,
+              "kills": 2009,
+              "armorPreventedDamage": 46710964
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 187611084,
+              "kills": 3346,
+              "armorPreventedDamage": 4988912
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 306579517,
+              "kills": 876,
+              "armorPreventedDamage": 3004970
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 5267692,
+              "kills": 8,
+              "armorPreventedDamage": 14460
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 226922511,
+              "kills": 929,
+              "armorPreventedDamage": 277466
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Medic",
+              "effectiveDamage": 182602742,
+              "kills": 847,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 7226195,
+              "kills": 6,
+              "armorPreventedDamage": 29156
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 76447386,
+          "incomingDamageByEnemy": [
+            {
+              "enemy": "Close",
+              "effectiveDamage": 98605,
+              "rawDamage": 105957
+            },
+            {
+              "enemy": "Ranged",
+              "effectiveDamage": 51070383,
+              "rawDamage": 54935289
+            },
+            {
+              "enemy": "Swarmer",
+              "effectiveDamage": 100626,
+              "rawDamage": 115998
+            },
+            {
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 16899,
+              "rawDamage": 17631
+            },
+            {
+              "enemy": "SiegeElite",
+              "effectiveDamage": 419257,
+              "rawDamage": 426816
+            },
+            {
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 14793206,
+              "rawDamage": 16209742
+            },
+            {
+              "enemy": "Medic",
+              "effectiveDamage": 9612097,
+              "rawDamage": 10677093
+            },
+            {
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 436792,
+              "rawDamage": 442314
+            }
+          ],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 10582.525021027695
+      },
+      "shallowHigher30": {
+        "tier": 6,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 5606,
+        "activeMilliseconds": 56060,
+        "selectedWindowEndWave": 30,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706690818,
+        "kills": 190,
+        "highestClearedWave": 30,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 3881,
+        "spentScrap": 0,
+        "remainingScrap": 3881,
+        "repeatableSalvage": 30,
+        "researchBonusSalvage": 5,
+        "firstClearSalvage": 17,
+        "salvageGross": 52,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 98,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 330,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 330,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1584,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 594,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 495,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 30,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 2571,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 90695,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 86988,
+              "kills": 38,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 17421,
+              "kills": 16,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 328704,
+              "kills": 57,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 75883,
+              "kills": 19,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Medic",
+              "effectiveDamage": 72241,
+              "kills": 19,
+              "armorPreventedDamage": 0
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 2247.5918658580094
+      },
+      "shallowHigher100": {
+        "tier": 6,
+        "fitting": "launcher+repair",
+        "policy": "max900",
+        "speedHalfSteps": 10,
+        "outcome": "requested-boundary",
+        "ticks": 25762,
+        "activeMilliseconds": 257620,
+        "selectedWindowEndWave": 100,
+        "calendarStartMilliseconds": 3706634758,
+        "calendarEndMilliseconds": 3706892378,
+        "kills": 800,
+        "highestClearedWave": 100,
+        "finalHull": 20328,
+        "purchaseIntents": 0,
+        "purchaseOpportunities": 0,
+        "earnedScrap": 32465,
+        "spentScrap": 0,
+        "remainingScrap": 32465,
+        "repeatableSalvage": 101,
+        "researchBonusSalvage": 14,
+        "firstClearSalvage": 92,
+        "salvageGross": 207,
+        "checkpoints": {
+          "1": {
+            "outcome": "cleared",
+            "ticks": 151,
+            "activeMilliseconds": 1510,
+            "hull": 20328,
+            "earnedScrap": 98,
+            "spentScrap": 0,
+            "salvageGross": 1,
+            "waveRoleEffects": [
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 330,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 330,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 1584,
+                "kills": 2,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 594,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 495,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              }
+            ]
+          },
+          "100": {
+            "outcome": "cleared",
+            "ticks": 25762,
+            "activeMilliseconds": 257620,
+            "hull": 20328,
+            "earnedScrap": 32465,
+            "spentScrap": 0,
+            "salvageGross": 207,
+            "waveRoleEffects": [
+              {
+                "weapon": "Cannon",
+                "enemy": "Ranged",
+                "effectiveDamage": 15191,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "Swarmer",
+                "effectiveDamage": 5627,
+                "kills": 0,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 5620,
+                "kills": 0,
+                "armorPreventedDamage": 7
+              },
+              {
+                "weapon": "Cannon",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 45744,
+                "kills": 1,
+                "armorPreventedDamage": 248
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Close",
+                "effectiveDamage": 15191,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Ranged",
+                "effectiveDamage": 15191,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Swarmer",
+                "effectiveDamage": 1209,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ArmoredBrute",
+                "effectiveDamage": 103757,
+                "kills": 3,
+                "armorPreventedDamage": 21
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "ShieldCarrier",
+                "effectiveDamage": 27344,
+                "kills": 1,
+                "armorPreventedDamage": 7
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "Medic",
+                "effectiveDamage": 22787,
+                "kills": 1,
+                "armorPreventedDamage": 0
+              },
+              {
+                "weapon": "Launcher",
+                "enemy": "SiegeCommander",
+                "effectiveDamage": 136548,
+                "kills": 0,
+                "armorPreventedDamage": 186
+              }
+            ]
+          },
+          "300": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "500": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "2000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          },
+          "5000": {
+            "outcome": "outside-selected-window",
+            "highestClearedWave": 100,
+            "partialWaveRoleEffects": []
+          }
+        },
+        "roleEffects": {
+          "damageByWeaponAndEnemy": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 219033,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 192222,
+              "kills": 8,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Swarmer",
+              "effectiveDamage": 131149,
+              "kills": 23,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 249750,
+              "kills": 19,
+              "armorPreventedDamage": 84515
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 62111,
+              "kills": 6,
+              "armorPreventedDamage": 58
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Medic",
+              "effectiveDamage": 61897,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 45744,
+              "kills": 1,
+              "armorPreventedDamage": 248
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 1079693,
+              "kills": 152,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 1108946,
+              "kills": 151,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Swarmer",
+              "effectiveDamage": 162497,
+              "kills": 57,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ArmoredBrute",
+              "effectiveDamage": 4498664,
+              "kills": 221,
+              "armorPreventedDamage": 4555
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeElite",
+              "effectiveDamage": 57904,
+              "kills": 1,
+              "armorPreventedDamage": 22
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "ShieldCarrier",
+              "effectiveDamage": 1113085,
+              "kills": 74,
+              "armorPreventedDamage": 68
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Medic",
+              "effectiveDamage": 934454,
+              "kills": 80,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "SiegeCommander",
+              "effectiveDamage": 136548,
+              "kills": 0,
+              "armorPreventedDamage": 186
+            }
+          ],
+          "mortarMultiTargetCasts": 0,
+          "mortarAdditionalTargets": 0,
+          "railgunEffectiveArmorBypass": 0,
+          "restoredHull": 0,
+          "incomingDamageByEnemy": [],
+          "firstEffectWitnesses": []
+        },
+        "researchRanksAfter": [
+          8,
+          7,
+          7,
+          6,
+          5,
+          5,
+          5
+        ],
+        "maximumSpeedHalfStepsAfter": 10,
+        "allocation": {
+          "policy": "split-common-aux-affordable-v1",
+          "walletBefore": 216658,
+          "commonBudget": 108329,
+          "auxiliaryBudget": 108329,
+          "commonSpent": 108321,
+          "auxiliarySpent": 108104,
+          "walletAfter": 233,
+          "permanentSpentBefore": 223570,
+          "permanentSpentAfter": 439995,
+          "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+        },
+        "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+        "repeatableSalvagePerActiveHour": 1607.018088657713
+      }
+    }
+  ],
+  "lowTouchDeepRun": {
+    "tier": 1,
+    "fitting": "launcher+repair",
+    "policy": "max900",
+    "speedHalfSteps": 10,
+    "outcome": "requested-boundary",
+    "ticks": 3779725,
+    "activeMilliseconds": 37797250,
+    "selectedWindowEndWave": 5000,
+    "calendarStartMilliseconds": 3706634758,
+    "calendarEndMilliseconds": 3744432008,
+    "kills": 97900,
+    "highestClearedWave": 5000,
+    "finalHull": 309812,
+    "purchaseIntents": 41,
+    "purchaseOpportunities": 41,
+    "earnedScrap": 46046291,
+    "spentScrap": 44380630,
+    "remainingScrap": 1665661,
+    "repeatableSalvage": 127550,
+    "researchBonusSalvage": 17857,
+    "firstClearSalvage": 0,
+    "salvageGross": 145407,
+    "checkpoints": {
+      "1": {
+        "outcome": "cleared",
+        "ticks": 151,
+        "activeMilliseconds": 1510,
+        "hull": 20328,
+        "earnedScrap": 58,
+        "spentScrap": 0,
+        "salvageGross": 1,
+        "waveRoleEffects": [
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 120,
+            "kills": 4,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 60,
+            "kills": 2,
+            "armorPreventedDamage": 0
+          }
+        ]
+      },
+      "100": {
+        "outcome": "cleared",
+        "ticks": 24005,
+        "activeMilliseconds": 240050,
+        "hull": 20328,
+        "earnedScrap": 21192,
+        "spentScrap": 0,
+        "salvageGross": 115,
+        "waveRoleEffects": [
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 9667,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 4143,
+            "kills": 3,
+            "armorPreventedDamage": 0
+          }
+        ]
+      },
+      "300": {
+        "outcome": "cleared",
+        "ticks": 130405,
+        "activeMilliseconds": 1304050,
+        "hull": 20328,
+        "earnedScrap": 245443,
+        "spentScrap": 143761,
+        "salvageGross": 688,
+        "waveRoleEffects": [
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 66404,
+            "kills": 13,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 35756,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          }
+        ]
+      },
+      "500": {
+        "outcome": "cleared",
+        "ticks": 269205,
+        "activeMilliseconds": 2692050,
+        "hull": 71192,
+        "earnedScrap": 671249,
+        "spentScrap": 381396,
+        "salvageGross": 1716,
+        "waveRoleEffects": [
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 132184,
+            "kills": 13,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 71176,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          }
+        ]
+      },
+      "2000": {
+        "outcome": "cleared",
+        "ticks": 1320118,
+        "activeMilliseconds": 13201180,
+        "hull": 117255,
+        "earnedScrap": 8236211,
+        "spentScrap": 7639895,
+        "salvageGross": 23963,
+        "waveRoleEffects": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 164556,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 28512,
+            "kills": 3,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 1013478,
+            "kills": 6,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 605814,
+            "kills": 4,
+            "armorPreventedDamage": 0
+          }
+        ]
+      },
+      "5000": {
+        "outcome": "cleared",
+        "ticks": 3779725,
+        "activeMilliseconds": 37797250,
+        "hull": 309812,
+        "earnedScrap": 46046291,
+        "spentScrap": 44380630,
+        "salvageGross": 145407,
+        "waveRoleEffects": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 3529939,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 1951060,
+            "kills": 6,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 2664795,
+            "kills": 6,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 1384566,
+            "kills": 1,
+            "armorPreventedDamage": 0
+          }
+        ]
+      }
+    },
+    "roleEffects": {
+      "damageByWeaponAndEnemy": [
+        {
+          "weapon": "Cannon",
+          "enemy": "Close",
+          "effectiveDamage": 5367779391,
+          "kills": 29667,
+          "armorPreventedDamage": 0
+        },
+        {
+          "weapon": "Cannon",
+          "enemy": "Ranged",
+          "effectiveDamage": 2327142413,
+          "kills": 9323,
+          "armorPreventedDamage": 0
+        },
+        {
+          "weapon": "Launcher",
+          "enemy": "Close",
+          "effectiveDamage": 5888286436,
+          "kills": 35595,
+          "armorPreventedDamage": 0
+        },
+        {
+          "weapon": "Launcher",
+          "enemy": "Ranged",
+          "effectiveDamage": 3300906695,
+          "kills": 23315,
+          "armorPreventedDamage": 0
+        }
+      ],
+      "mortarMultiTargetCasts": 0,
+      "mortarAdditionalTargets": 0,
+      "railgunEffectiveArmorBypass": 0,
+      "restoredHull": 139261,
+      "incomingDamageByEnemy": [
+        {
+          "enemy": "Ranged",
+          "effectiveDamage": 139261,
+          "rawDamage": 168286
+        }
+      ],
+      "firstEffectWitnesses": []
+    },
+    "researchRanksAfter": [
+      8,
+      7,
+      7,
+      6,
+      5,
+      5,
+      5
+    ],
+    "maximumSpeedHalfStepsAfter": 10,
+    "allocation": {
+      "policy": "split-common-aux-affordable-v1",
+      "walletBefore": 216658,
+      "commonBudget": 108329,
+      "auxiliaryBudget": 108329,
+      "commonSpent": 108321,
+      "auxiliarySpent": 108104,
+      "walletAfter": 233,
+      "permanentSpentBefore": 223570,
+      "permanentSpentAfter": 439995,
+      "allocatedProfileSha256": "95af93d0c9a91a41875f8b0ac56071f992f2d71f51dab997f59118a535f8f590"
+    },
+    "parentProfileSha256": "d4cd83f1af9b2b8e45752fc7120c8279b3e4986fb390d8cfd7e18fbc0f18f3b2",
+    "repeatableSalvagePerActiveHour": 13849.293268690182
+  },
+  "parentProfileSha256": "10420320d79a73248d314303d4f680f1d0f2ce9b46a219108f72cf6c2dbf11dc",
+  "qualification": "Production-model projection from unchanged earned bytes, with at most one bulk purchase per 15 active minutes. Defeat before requested waves remains a failure to reach them; this is not elapsed endurance or owner play-feel evidence.",
+  "schema": 1,
+  "sourceSha256": {
+    "Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": "9e33d4351f7651539d1ef12200a57f09ff7041269958b11787c5d49d04890afe",
+    "Unity/Assets/Scripts/LastStandProgression.cs": "e379c288d709da7c783eee68af5197207379bce211d6fe02ab933933c3e55b54",
+    "Unity/Assets/Scripts/LastStandResearchCatalog.cs": "a58024b2e7aa80d2339d8ff76b1ae5dfc2e9b72fbf15c2d319fcdcc0dd7feb80",
+    "Unity/Assets/Scripts/LastStandResearchState.cs": "98480e9fb4ac2a730777f33762aa73123f9e0b0f4496da35f8f746bbbd7d40ca",
+    "Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b",
+    "Unity/Assets/Scripts/LastStandResearchPresentation.cs": "0621d4211f82b48949b0af54912afa10782134b6af5ed36f34598112f78b734a",
+    "Unity/Assets/Scripts/LastStandStore.cs": "e5d3f44f4fc686f6e4538c38ec4dd71d2ff2446389212e0fe71410a934b47f1d",
+    "Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "dc4223891365724a7e79030528c05217509241bc58ab5a14fdb2ed9e334ba23e",
+    "Unity/Assets/Scripts/LastStandProgressionSave.cs": "1cb177179981d29d6537261d35669a723aca497cb4a098973a02943d97227552",
+    "Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950",
+    "Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5",
+    "Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510",
+    "Unity/Assets/Scripts/LastStandProgressionResearch.cs": "45ee05f70b7e27f9ebf8cbf36594c243106ff98dee8c4fa8faef5dc98d200be3",
+    "Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a",
+    "Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848",
+    "Unity/Assets/Scripts/LastStandProgressionBackup.cs": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e",
+    "Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "ec73224676728da3d9e633886865f828b72448c4426a1498942ee01edc4d8f35",
+    "Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "890f1b208f256ab87a535e0164741e4dc47067f61ecad3d5d14d8ec0dbd4afdf",
+    "Unity/Assets/Scripts/EncounterModel.cs": "0f223e18de199afcdd421d8524e57a7126eb8b7e1ca2f47cc83f0ebebeccfdc7",
+    "Unity/Assets/Scripts/LastStandSelection.cs": "f8275bda48955ea8fefc3f490a7bae74a1ec5b4079a868f80cd395485fec0136",
+    "Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed",
+    "Unity/Assets/Scripts/LastStandTierCatalog.cs": "d2c51dd7e44dd8298c04dbf9c9d76d1b5500c6ba87954addef50ba68b85a223f",
+    "Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b04100878240267162e73c2d6858ab420f393eea9bd48a379909fc0d8e9d1bbf",
+    "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2",
+    "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6",
+    "Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47",
+    "Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0",
+    "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc",
+    "Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98",
+    "Unity/Assets/Scripts/EncounterBuildcraft.cs": "0e816488dbc36785aa657053d5a6c47e227ef63b4816a0b86f0f81114d912a5d",
+    "Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948",
+    "Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7",
+    "Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+    "Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967",
+    "Unity/Assets/Scripts/Content/LastStandLoadout.cs": "5217caab802e9d64408ea89047d0a40fa4a377a20c15796371840409b19c086a",
+    "Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d",
+    "Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505",
+    "Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": "b1cfd145f96986de141c0372d34deec3229fc92b8fcac2288570d0ae249ac97c",
+    "Tools/last_stand_combat_depth/CombatBalanceChecks.cs": "47b9697ab711db98a32225d2c40d2d4b1c410176e7f1fb1d4c43064c74bad3cb",
+    "Tools/last_stand_buildcraft/BuildcraftFarmingMeasurements.cs": "b4fd1bb5b9abcb0bebee9cec92937221690827739d6287aa04246ef93ca33faa",
+    "Tools/last_stand_buildcraft/measure_buildcraft_farming.py": "a04cb7ba3f8d684ffda820e09181fe7d5381bf107c6eab888e3f8dac59510ec4",
+    "Tools/last_stand_buildcraft/measure_buildcraft_balance.py": "a930721b8c03bf4ac6656df2a6f632a0d51339db24cc0d574d218ca180c376c9",
+    "Tools/last_stand_source_closure.py": "d7bede24049e0c2890957bb9bc499bd82f980967425586ff7308bdaa07de04f5",
+    "Tools/last_stand_test_runtime.py": "d7fb107fd5f4c64e13189a20038926e8982cd6a3105a8a1307bfcb006993c15c"
+  },
+  "toolSha256": {
+    "C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\lib\\mono\\msbuild\\Current\\bin\\Roslyn\\csc.exe": "7228085c2028c2426f8ae4272c9ba7efdcaa76b08b8ea8ea9168c203bb0bcb15",
+    "C:\\Program Files\\Unity 6000.3.27f2\\Editor\\Data\\MonoBleedingEdge\\bin\\mono.exe": "8623ecf0d438f78a80db16f95d13364c17796c99743d8052edc1220ee28d8375"
+  },
+  "fundingSha256": "f4a1177232a269c4aa8b36a5dd2b4929819733d83753cbd1b8bbad5e769a2204",
+  "executionSeconds": 116.49101549999978
+}

@@ -11,7 +11,7 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1]
 CONTRACTS = tuple(json.loads((TOOLS / f"contracts/last-stand-observation-v{version}.json").read_text(encoding="utf8"))
-                  for version in (1, 2, 3, 4, 5))
+                  for version in (1, 2, 3, 4, 5, 6))
 CONTINUITY_CONTROLS = ("DataExport", "DataImport", "DataPrevious", "DataGarage", "BackupCancel", "BackupReplace",
                        "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction")
 
@@ -50,7 +50,7 @@ class ObservationVersionTests(unittest.TestCase):
             value = self.read_controls(source)
             self.assertEqual(value["raw"], source)
             self.assertFalse(value["graphicsTruncated"])
-            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10, 10)[CONTRACTS.index(contract)])
+            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10, 10, 10)[CONTRACTS.index(contract)])
             self.assertEqual("plannerControls" in value, contract is not CONTRACTS[0])
 
     def test_incomplete_extra_repeated_and_malformed_current_refused(self):
@@ -128,10 +128,10 @@ class ObservationVersionTests(unittest.TestCase):
             self.read_controls(raw(invented))
 
     def test_appearance_v5_requires_every_control_and_scroll_field(self):
-        current = packet(CONTRACTS[-1])
+        current = packet(CONTRACTS[4])
         self.assertEqual(len(current["appearanceControls"]), 33)
         self.assertEqual(len(current["settingsControls"]), 53)
-        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[-1]["inventories"]), 166)
+        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[4]["inventories"]), 166)
         self.assertEqual(self.read_controls(raw(current))["schema"], "singedterra-last-stand-observation/v5")
         for name in [row["name"] for row in current["appearanceControls"]]:
             with self.subTest(missing=name):
@@ -147,6 +147,28 @@ class ObservationVersionTests(unittest.TestCase):
                        lambda p: p["settingsControls"].pop(),
                        lambda p: p.update(schema="singedterra-last-stand-observation/v4"),
                        lambda p: p.update(schema="singedterra-last-stand-observation/v6")):
+            changed = deepcopy(current); change(changed)
+            with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                self.read_controls(raw(changed))
+
+    def test_buildcraft_v6_requires_armory_and_expanded_research_exactly(self):
+        current = packet(CONTRACTS[-1])
+        self.assertEqual(self.read_controls(raw(current))["schema"], "singedterra-last-stand-observation/v6")
+        self.assertEqual(len(current["armoryControls"]), 12)
+        self.assertIn("ArmoryName", [row["name"] for row in current["armoryControls"]])
+        self.assertNotIn("FittingNext", [row["name"] for row in current["controls"]])
+        for field in ("armoryControls", "researchControls", "shopControls", "settingsControls", "controls"):
+            for row in current[field]:
+                with self.subTest(field=field, missing=row["name"]):
+                    incomplete = deepcopy(current)
+                    incomplete[field] = [item for item in incomplete[field] if item["name"] != row["name"]]
+                    with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+                        self.read_controls(raw(incomplete))
+        for change in (lambda p: p.pop("armoryControls"), lambda p: p.pop("armoryScrollOffset"),
+                       lambda p: p.update(armoryMaximumScrollOffset="500"), lambda p: p.update(armoryScrollOffset=-1),
+                       lambda p: p["armoryControls"].append(deepcopy(p["armoryControls"][0])),
+                       lambda p: p["armoryControls"][0].update(name="invented-armory"),
+                       lambda p: p.update(schema="singedterra-last-stand-observation/v5")):
             changed = deepcopy(current); change(changed)
             with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
                 self.read_controls(raw(changed))

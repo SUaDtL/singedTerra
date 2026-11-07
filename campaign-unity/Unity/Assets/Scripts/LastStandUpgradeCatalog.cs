@@ -4,10 +4,10 @@ using System.Globalization;
 
 namespace SingedTerra.LastStand
 {
-    public enum LastStandUpgradeTrackId { CannonAttack=0, LauncherAttack=1, HullCapacity=2, Armor=3, CannonCycle=4, FieldRepair=5, ScattergunAttack=6, ScrapYield=7, MortarAttack=8, RailgunAttack=9 }
+    public enum LastStandUpgradeTrackId { CannonAttack=0, LauncherAttack=1, HullCapacity=2, Armor=3, CannonCycle=4, FieldRepair=5, ScattergunAttack=6, ScrapYield=7, MortarAttack=8, RailgunAttack=9, ArcOutput=10, ShieldCapacity=11 }
     public enum LastStandUpgradeCategory { Attack, Defense, Utility }
-    public enum LastStandUpgradeApplicability { All, Launcher, Repair, Scattergun, Mortar, Railgun }
-    public enum LastStandFitting { Launcher=0, Repair=1, Scattergun=2, Mortar=3, Railgun=4 }
+    public enum LastStandUpgradeApplicability { All, Launcher, Repair, Scattergun, Mortar, Railgun, Arc, Shield }
+    public enum LastStandFitting { Launcher=0, Repair=1, Scattergun=2, Mortar=3, Railgun=4, Arc=5, Shield=6 }
     public enum LastStandBulkQuantity { Max=0, One=1, Ten=10, Hundred=100 }
 
     public sealed class LastStandUpgradeQuote
@@ -27,7 +27,8 @@ namespace SingedTerra.LastStand
         public const string LegacyEconomyVersion = "long-run-economy-v1";
         public const string PreviousEconomyVersion = "research-farming-economy-v2";
         public const string RetainedEconomyVersion = "research-farming-economy-v3";
-        public const string EconomyVersion = "combat-depth-economy-v4";
+        public const string CombatDepthEconomyVersion = "combat-depth-economy-v4";
+        public const string EconomyVersion = "buildcraft-economy-v5";
         public const int TotalCap = 5000, PermanentCap = 2500, ScrapPriceStep = 5;
         public const int LegacyTotalCap = 8, LegacyPermanentCap = 3;
         public const int BaseCannonDamage = 20, CannonDamagePerLevel = 10;
@@ -35,6 +36,8 @@ namespace SingedTerra.LastStand
         public const int BaseScattergunDamage = 9, ScattergunDamagePerLevel = 3;
         public const int BaseMortarDamage=18, MortarDamagePerLevel=6, MortarPeriod=60, MortarRadius=10000;
         public const int BaseRailgunDamage=40, RailgunDamagePerLevel=10, RailgunPeriod=60;
+        public const int BaseArcDamage=16,ArcDamagePerLevel=5,ArcPeriod=40,ArcTargets=4,ArcHopRadius=7000,ArcFalloffPercent=75;
+        public const int BaseShieldCapacity=60,ShieldCapacityPerLevel=8,ShieldRechargeDelay=100,ShieldRechargePeriod=20;
         public const int BaseMaximumHull = 120, HullPerLevel = 15;
         public const int BaseCannonPeriod = 20, BaseRepairAmount = 3, RepairPeriod = 20;
 
@@ -61,9 +64,13 @@ namespace SingedTerra.LastStand
             };
             if(!legacy)rows.Add(new LastStandUpgradeDefinition(LastStandUpgradeTrackId.ScrapYield,"scrapYield","Scrap Yield",
                 LastStandUpgradeCategory.Utility,LastStandUpgradeApplicability.All,version));
-            if(version==EconomyVersion) {
+            if(version==CombatDepthEconomyVersion||version==EconomyVersion) {
                 rows.Add(new LastStandUpgradeDefinition(LastStandUpgradeTrackId.MortarAttack,"mortarAttack","Mortar Payload",LastStandUpgradeCategory.Attack,LastStandUpgradeApplicability.Mortar,version));
                 rows.Add(new LastStandUpgradeDefinition(LastStandUpgradeTrackId.RailgunAttack,"railgunAttack","Railgun Damage",LastStandUpgradeCategory.Attack,LastStandUpgradeApplicability.Railgun,version));
+            }
+            if(version==EconomyVersion){
+                rows.Add(new LastStandUpgradeDefinition(LastStandUpgradeTrackId.ArcOutput,"arcOutput","Arc Output",LastStandUpgradeCategory.Attack,LastStandUpgradeApplicability.Arc,version));
+                rows.Add(new LastStandUpgradeDefinition(LastStandUpgradeTrackId.ShieldCapacity,"shieldCapacity","Shield Capacity",LastStandUpgradeCategory.Defense,LastStandUpgradeApplicability.Shield,version));
             }
             return rows.AsReadOnly();
         }
@@ -126,10 +133,12 @@ namespace SingedTerra.LastStand
                 case LastStandUpgradeTrackId.ScrapYield:slope=5;divisor=20;break;
                 case LastStandUpgradeTrackId.MortarAttack:slope=4;divisor=180;break;
                 case LastStandUpgradeTrackId.RailgunAttack:slope=6;divisor=160;break;
+                case LastStandUpgradeTrackId.ArcOutput:slope=5;divisor=190;break;
+                case LastStandUpgradeTrackId.ShieldCapacity:slope=4;divisor=220;break;
             }
             // New-run income grows early. Its deep run prices keep long-term
             // starting levels valuable; saved economies retain their prices.
-            int curve=EconomyVersion==LastStandUpgradeCatalog.RetainedEconomyVersion||EconomyVersion==LastStandUpgradeCatalog.EconomyVersion?22:1;
+            int curve=EconomyVersion==LastStandUpgradeCatalog.RetainedEconomyVersion||EconomyVersion==LastStandUpgradeCatalog.CombatDepthEconomyVersion||EconomyVersion==LastStandUpgradeCatalog.EconomyVersion?22:1;
             return checked((int)((long)slope*purchaseIndex+curve*extra*extra/divisor));
         }
         public int PermanentPrice(int purchaseIndex)
@@ -148,6 +157,8 @@ namespace SingedTerra.LastStand
                 case LastStandUpgradeTrackId.ScrapYield:initial=5;linear=1;quadratic=20;break;
                 case LastStandUpgradeTrackId.MortarAttack:initial=3;linear=4;quadratic=400;break;
                 case LastStandUpgradeTrackId.RailgunAttack:initial=4;linear=4;quadratic=350;break;
+                case LastStandUpgradeTrackId.ArcOutput:initial=4;linear=4;quadratic=450;break;
+                case LastStandUpgradeTrackId.ShieldCapacity:initial=3;linear=5;quadratic=500;break;
             }
             return checked((int)(initial+n/linear+n*n/quadratic));
         }
@@ -194,7 +205,14 @@ namespace SingedTerra.LastStand
                 (Applicability == LastStandUpgradeApplicability.Repair && fitting == LastStandFitting.Repair) ||
                 (Applicability == LastStandUpgradeApplicability.Scattergun && fitting == LastStandFitting.Scattergun) ||
                 (Applicability == LastStandUpgradeApplicability.Mortar && fitting == LastStandFitting.Mortar) ||
-                (Applicability == LastStandUpgradeApplicability.Railgun && fitting == LastStandFitting.Railgun);
+                (Applicability == LastStandUpgradeApplicability.Railgun && fitting == LastStandFitting.Railgun)||
+                (Applicability == LastStandUpgradeApplicability.Arc && fitting == LastStandFitting.Arc)||
+                (Applicability == LastStandUpgradeApplicability.Shield && fitting == LastStandFitting.Shield);
+        }
+        public bool IsEligible(LastStandLoadout loadout)
+        {
+            if(loadout==null)throw new ArgumentNullException(nameof(loadout));
+            return IsEligible(loadout.Primary)||loadout.Secondary.HasValue&&IsEligible(loadout.Secondary.Value);
         }
 
         // Armor returns applied damage for the supplied positive raw enemy hit.
@@ -225,13 +243,25 @@ namespace SingedTerra.LastStand
                     return LastStandUpgradeCatalog.BaseMortarDamage+LastStandUpgradeCatalog.MortarDamagePerLevel*totalLevel+growth*growth/4;
                 case LastStandUpgradeTrackId.RailgunAttack:
                     return LastStandUpgradeCatalog.BaseRailgunDamage+LastStandUpgradeCatalog.RailgunDamagePerLevel*totalLevel+growth*growth/4;
+                case LastStandUpgradeTrackId.ArcOutput:
+                    return LastStandUpgradeCatalog.BaseArcDamage+LastStandUpgradeCatalog.ArcDamagePerLevel*totalLevel+growth*growth/10;
+                case LastStandUpgradeTrackId.ShieldCapacity:
+                    return LastStandUpgradeCatalog.BaseShieldCapacity+LastStandUpgradeCatalog.ShieldCapacityPerLevel*totalLevel+growth*growth/6;
                 default: throw new ArgumentOutOfRangeException(nameof(Id));
             }
         }
 
-        public string DescribeEffect(int totalLevel)
+        public int EffectWithResearchAt(int totalLevel,int rawHit,LastStandCombatResearchSnapshot research)
         {
-            string effect = EffectAt(totalLevel, 1).ToString(CultureInfo.InvariantCulture);
+            int value=EffectAt(totalLevel,rawHit);research=research??LastStandCombatResearchSnapshot.None;
+            if(EconomyVersion!=LastStandUpgradeCatalog.EconomyVersion)return value;
+            if(Id==LastStandUpgradeTrackId.LauncherAttack||Id==LastStandUpgradeTrackId.MortarAttack||Id==LastStandUpgradeTrackId.ArcOutput)return research.ScaleAreaEffect(value);
+            return Id==LastStandUpgradeTrackId.FieldRepair?research.ScaleRecovery(value):value;
+        }
+        public string DescribeEffect(int totalLevel,LastStandCombatResearchSnapshot research=null)
+        {
+            research=research??LastStandCombatResearchSnapshot.None;
+            string effect = EffectWithResearchAt(totalLevel,1,research).ToString(CultureInfo.InvariantCulture);
             switch (Id)
             {
                 case LastStandUpgradeTrackId.CannonAttack:
@@ -240,6 +270,9 @@ namespace SingedTerra.LastStand
                 case LastStandUpgradeTrackId.MortarAttack: return effect+" damage in a "+
                     (LastStandUpgradeCatalog.MortarRadius/1000m).ToString("0.#",CultureInfo.InvariantCulture)+"m radius";
                 case LastStandUpgradeTrackId.RailgunAttack: return effect+" damage ignoring armor";
+                case LastStandUpgradeTrackId.ArcOutput:return effect+" damage, chaining to up to 4 targets with 75% damage per hop";
+                case LastStandUpgradeTrackId.ShieldCapacity:return effect+" shield; recovers "+
+                    research.ScaleRecovery(Math.Max(1,EffectAt(totalLevel,1)/20))+" per second after 5s without a hit";
                 case LastStandUpgradeTrackId.HullCapacity: return effect + " maximum hull";
                 case LastStandUpgradeTrackId.Armor:
                     return "reduce hits by " + totalLevel.ToString(CultureInfo.InvariantCulture) + " (minimum 1 damage)";
@@ -260,6 +293,11 @@ namespace SingedTerra.LastStand
         {
             var track = CreateTrack(persistentLevel, runPurchases);
             return new LastStandUpgradeProjection(this, track, IsEligible(fitting));
+        }
+        public LastStandUpgradeProjection Project(int persistentLevel,int runPurchases,LastStandLoadout loadout,LastStandCombatResearchSnapshot research=null)
+        {
+            var track=CreateTrack(persistentLevel,runPurchases);
+            return new LastStandUpgradeProjection(this,track,IsEligible(loadout),research);
         }
     }
 
@@ -282,7 +320,7 @@ namespace SingedTerra.LastStand
             ? NextPermanentPrice.Value.ToString(CultureInfo.InvariantCulture) + " Salvage" : "MAX";
         public string UnavailableReason { get; }
 
-        internal LastStandUpgradeProjection(LastStandUpgradeDefinition definition, MechanicsShopTrack track, bool eligible)
+        internal LastStandUpgradeProjection(LastStandUpgradeDefinition definition, MechanicsShopTrack track, bool eligible,LastStandCombatResearchSnapshot research=null)
         {
             PermanentLevel = track.PersistentLevel;
             RunPurchases = track.RunPurchases;
@@ -297,11 +335,10 @@ namespace SingedTerra.LastStand
             NextPrice = capped ? (int?)null : track.NextRunPrice;
             NextPermanentPrice = PermanentLevel == definition.PermanentCap
                 ? (int?)null : definition.PermanentPrice(PermanentLevel + 1);
-            CurrentEffectDescription = definition.DescribeEffect(CurrentLevel);
-            NextEffectDescription = capped ? "MAX" : definition.DescribeEffect(CurrentLevel + 1);
+            CurrentEffectDescription = definition.DescribeEffect(CurrentLevel,research);
+            NextEffectDescription = capped ? "MAX" : definition.DescribeEffect(CurrentLevel + 1,research);
             UnavailableReason = capped ? "MAX" : eligible ? String.Empty :
-                definition.Applicability == LastStandUpgradeApplicability.Launcher
-                    ? "Requires launcher fitting" : definition.Applicability == LastStandUpgradeApplicability.Repair ? "Requires repair fitting" : "Requires scattergun fitting";
+                "Requires "+definition.Applicability.ToString().ToLowerInvariant()+" fitting";
         }
     }
 }

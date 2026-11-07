@@ -1,0 +1,607 @@
+{
+  "schema": "singedterra-buildcraft-evidence-git-filter-review/v1",
+  "status": "pass",
+  "recordedUtc": "2026-11-07T07:47:52.341216+00:00",
+  "reviewedAttributePath": "campaign-unity/.gitattributes",
+  "attributeSha256": "8a8c4e76b6d4f345dd728a6a5c760db862e76336e6e4757c4e634026c405a8d8",
+  "files": 55,
+  "method": "Actual raw versus path-sensitive git hash-object under core.autocrlf=false,true,input; no object/index writes.",
+  "changedByGit": [],
+  "unexpectedAttributes": [],
+  "generatedReports": [
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-farming-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-500-wave-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-report.json"
+  ],
+  "whitespaceCheck": {
+    "method": "git diff --no-index --check empty file versus each evidence file",
+    "findings": [
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log:23: trailing whitespace.\n+  at CombatBalanceMeasurements+RoleEffects.Observe (SingedTerra.Encounter.EncounterModel model) [0x0043e] in <af123d5078684af9ac38a711b7756780>:0 \ncampaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log:24: trailing whitespace.\n+  at CombatBalanceMeasurements.Run (CombatBalanceMeasurements+Context c, System.Int32 tier, System.String fitting, System.String policy, System.Int32 speedHalf, System.Int32 maxTicks, System.Int32 stopWave, System.Action`2[T1,T2] confirmedBoundary) [0x0028b] in <af123d5078684af9ac38a711b7756780>:0 \ncampaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log:25: trailing whitespace.\n+  at BuildcraftBalanceMeasurements.Compare (CombatBalanceMeasurements+Seed seed, System.Int32 tier, System.String name, System.String policy, System.Int32 maximumTicks, System.Int32 endWave) [0x000dc] in <af123d5078684af9ac38a711b7756780>:0 \ncampaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log:26: trailing whitespace.\n+  at BuildcraftBalanceMeasurements.Measure (System."
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/portable-final.txt",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/portable-final.txt:1350: trailing whitespace.\n+    # Subtest: ambiguous child clock \ncampaign-unity/docs/last-stand-buildcraft/qualification-20261107/portable-final.txt:1351: trailing whitespace.\n+    ok 10 - ambiguous child clock \n"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt:32: trailing whitespace.\n+  at CombatResearchChecks.Quotes () [0x00a70] in <e5f2b7b804e94dddb095ea23db2c1163>:0 \ncampaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt:33: trailing whitespace.\n+  at CombatResearchChecks.Main (System.String[] args) [0x0004e] in <e5f2b7b804e94dddb095ea23db2c1163>:0 \n"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt:15: trailing whitespace.\n+  at PresentationChecks.Readouts () [0x001ae] in <bca5b715c6834d218cc7986d963f8177>:0 \ncampaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt:16: trailing whitespace.\n+  at PresentationChecks.Main (System.String[] args) [0x000a3] in <bca5b715c6834d218cc7986d963f8177>:0 \ncampaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt:30: trailing whitespace.\n+  at CombatResearchChecks.Quotes () [0x00a70] in <2d072cc0546c4b0cb472068af9cae5ad>:0 \ncampaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt:31: trailing whitespace.\n+  at CombatResearchChecks.Main (System.String[] args) [0x0004e] in <2d072cc0546c4b0cb472068af9cae5ad>:0 \n"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-retained-receipt-red.log",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-retained-receipt-red.log:24: trailing whitespace.\n+  at BuildcraftChecks.Main (System.String[] args) [0x0116c] in <7e55c19d35be4efaa1c8d2729f2c6540>:0 \n"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-red.log",
+        "exitCode": 3,
+        "output": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-red.log:30: trailing whitespace.\n+  at CombatBalanceMeasurements+RoleEffects.Observe (SingedTerra.Encounter.EncounterModel model) [0x0043e] in <32be8f00409a4081857d325841258512>:0 \ncampaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-red.log:31: trailing whitespace.\n+  at CombatBalanceChecks.Run (System.String name) [0x0126c] in <32be8f00409a4081857d325841258512>:0 \ncampaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-red.log:32: trailing whitespace.\n+  at CombatBalanceMeasurements.Main (System.String[] args) [0x0001d] in <32be8f00409a4081857d325841258512>:0 \n"
+      }
+    ]
+  },
+  "findings": [],
+  "bound": "Captured55-file identity at this review; no hosted clone or numerical replay inferred. Normal blank/trailing whitespace checks remain enabled; CRLF endings are recognized.",
+  "records": [
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/balance.md",
+      "sha256": "c88374a1637f9728fa32be0fe12d5df778cef7e6f8b291addd8b94a568e7c389",
+      "rawGitObject": "02cbfa8ff30201979182e54d8f97510f5315057d",
+      "byAutocrlf": {
+        "false": "02cbfa8ff30201979182e54d8f97510f5315057d",
+        "true": "02cbfa8ff30201979182e54d8f97510f5315057d",
+        "input": "02cbfa8ff30201979182e54d8f97510f5315057d"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.funding.json",
+      "sha256": "f4a1177232a269c4aa8b36a5dd2b4929819733d83753cbd1b8bbad5e769a2204",
+      "rawGitObject": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+      "byAutocrlf": {
+        "false": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+        "true": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+        "input": "ec129c3ba6bde5cd88115ce433238dfc696755cc"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.inputs.json",
+      "sha256": "ee908afe02c24b1e8a3f6a1c1167409735754c333db3bf5f2de5b7a1e13687f1",
+      "rawGitObject": "8d12b539aa50e9c17ce603c0c734485d8bf5c6d8",
+      "byAutocrlf": {
+        "false": "8d12b539aa50e9c17ce603c0c734485d8bf5c6d8",
+        "true": "8d12b539aa50e9c17ce603c0c734485d8bf5c6d8",
+        "input": "8d12b539aa50e9c17ce603c0c734485d8bf5c6d8"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.json",
+      "sha256": "3ef7b290830933e784ff7ab1c6e984028f4c9f1d88e99286e93ef8cd8fff97c5",
+      "rawGitObject": "90abe958474b31d89802939b27e62ee67dc435f7",
+      "byAutocrlf": {
+        "false": "90abe958474b31d89802939b27e62ee67dc435f7",
+        "true": "90abe958474b31d89802939b27e62ee67dc435f7",
+        "input": "90abe958474b31d89802939b27e62ee67dc435f7"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.progress.log",
+      "sha256": "f2a3c28d119ce4e88e24db65a6a59b7f58364267be8aaf04193d40aec8bf1081",
+      "rawGitObject": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+      "byAutocrlf": {
+        "false": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+        "true": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+        "input": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.sources.zip",
+      "sha256": "7ecd5e9bc2c1e076de76499149458e1690bd42ee3017615bae5ab690b0c05bf5",
+      "rawGitObject": "5eb10ee1b85cef658ffc7144a9e6f05482f8524e",
+      "byAutocrlf": {
+        "false": "5eb10ee1b85cef658ffc7144a9e6f05482f8524e",
+        "true": "5eb10ee1b85cef658ffc7144a9e6f05482f8524e",
+        "input": "5eb10ee1b85cef658ffc7144a9e6f05482f8524e"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log",
+      "sha256": "6c5047fd130bc7d415018fa199f3eda23c1e8e09889e649a9689be9fd0fa84ac",
+      "rawGitObject": "0e981f21e686b6b2cfca08baf63652d8bdf1d64a",
+      "byAutocrlf": {
+        "false": "0e981f21e686b6b2cfca08baf63652d8bdf1d64a",
+        "true": "0e981f21e686b6b2cfca08baf63652d8bdf1d64a",
+        "input": "0e981f21e686b6b2cfca08baf63652d8bdf1d64a"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.funding.json",
+      "sha256": "f4a1177232a269c4aa8b36a5dd2b4929819733d83753cbd1b8bbad5e769a2204",
+      "rawGitObject": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+      "byAutocrlf": {
+        "false": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+        "true": "ec129c3ba6bde5cd88115ce433238dfc696755cc",
+        "input": "ec129c3ba6bde5cd88115ce433238dfc696755cc"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.inputs.json",
+      "sha256": "d05efcfd65dd5ddb6e5ddc4521b558a729108067ba95ba21a9d69934b717a1d1",
+      "rawGitObject": "fc00ad3b2d3c542bf5f75e53d6d240ec2a8c24c7",
+      "byAutocrlf": {
+        "false": "fc00ad3b2d3c542bf5f75e53d6d240ec2a8c24c7",
+        "true": "fc00ad3b2d3c542bf5f75e53d6d240ec2a8c24c7",
+        "input": "fc00ad3b2d3c542bf5f75e53d6d240ec2a8c24c7"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.json",
+      "sha256": "1113384e9057441c8c1d55e1e329b77cb93457c0651af4acf9d6ea50e17b7a10",
+      "rawGitObject": "ecf59ace612124c907a0ea01f918ddbc5bca4350",
+      "byAutocrlf": {
+        "false": "ecf59ace612124c907a0ea01f918ddbc5bca4350",
+        "true": "ecf59ace612124c907a0ea01f918ddbc5bca4350",
+        "input": "ecf59ace612124c907a0ea01f918ddbc5bca4350"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.progress.log",
+      "sha256": "f2a3c28d119ce4e88e24db65a6a59b7f58364267be8aaf04193d40aec8bf1081",
+      "rawGitObject": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+      "byAutocrlf": {
+        "false": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+        "true": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab",
+        "input": "e3d89a71c084eb7b7db5abeafdd83122ec4fb1ab"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.sources.zip",
+      "sha256": "2359517bd4cf1db3b1326de19529779904d2484eb118c336b2b765b876af9454",
+      "rawGitObject": "1c7ac47a8344a62184f135aac185e018f504ebdc",
+      "byAutocrlf": {
+        "false": "1c7ac47a8344a62184f135aac185e018f504ebdc",
+        "true": "1c7ac47a8344a62184f135aac185e018f504ebdc",
+        "input": "1c7ac47a8344a62184f135aac185e018f504ebdc"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-summary.json",
+      "sha256": "a1072372e70bee9a3cbf691c3dc45d19081dfce5983ed173c0cd379d172332ce",
+      "rawGitObject": "11602bb161f5de522429332f460cafa63cc5becd",
+      "byAutocrlf": {
+        "false": "11602bb161f5de522429332f460cafa63cc5becd",
+        "true": "11602bb161f5de522429332f460cafa63cc5becd",
+        "input": "11602bb161f5de522429332f460cafa63cc5becd"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-farming-report.json",
+      "sha256": "8331d9a2213b7ba55905579ee111cbf761a9dc3c93c04fb79da0f7f5616c02bb",
+      "rawGitObject": "5c53b53590439633d9d87c2453045fee2ed159e9",
+      "byAutocrlf": {
+        "false": "5c53b53590439633d9d87c2453045fee2ed159e9",
+        "true": "5c53b53590439633d9d87c2453045fee2ed159e9",
+        "input": "5c53b53590439633d9d87c2453045fee2ed159e9"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-farming-report.sources.zip",
+      "sha256": "d5f6eefeda24a5a2f950584fc031b4803098b0723cb7c3f830c6e44d5845c98d",
+      "rawGitObject": "dd3617645f584cb634908965bf620be19be9b303",
+      "byAutocrlf": {
+        "false": "dd3617645f584cb634908965bf620be19be9b303",
+        "true": "dd3617645f584cb634908965bf620be19be9b303",
+        "input": "dd3617645f584cb634908965bf620be19be9b303"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-500-wave-report.json",
+      "sha256": "506934a3075e67f54213a6bd2ab66ead2734b824600415e7d2da003d53d0a7fc",
+      "rawGitObject": "08b1ea9efddda4fd1e80777b5f225a1aeafad11f",
+      "byAutocrlf": {
+        "false": "08b1ea9efddda4fd1e80777b5f225a1aeafad11f",
+        "true": "08b1ea9efddda4fd1e80777b5f225a1aeafad11f",
+        "input": "08b1ea9efddda4fd1e80777b5f225a1aeafad11f"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-500-wave-report.sources.zip",
+      "sha256": "f09ad644a6d49c426540ddb83837b6c248bf9b0bd5b6d784884658b184caa034",
+      "rawGitObject": "24ff047dc1c97b7e6a3520f0db8ea1d90e732050",
+      "byAutocrlf": {
+        "false": "24ff047dc1c97b7e6a3520f0db8ea1d90e732050",
+        "true": "24ff047dc1c97b7e6a3520f0db8ea1d90e732050",
+        "input": "24ff047dc1c97b7e6a3520f0db8ea1d90e732050"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-report.json",
+      "sha256": "6d495d2b0a8ddc44d4154c96f414894e8acf3126c2dc86bfb7f9e06c76b3aa60",
+      "rawGitObject": "0cff360cf6fc7e06d0d50a28346bc4cca3c7cf97",
+      "byAutocrlf": {
+        "false": "0cff360cf6fc7e06d0d50a28346bc4cca3c7cf97",
+        "true": "0cff360cf6fc7e06d0d50a28346bc4cca3c7cf97",
+        "input": "0cff360cf6fc7e06d0d50a28346bc4cca3c7cf97"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-report.sources.zip",
+      "sha256": "b37f9480c919648e2f134eca97a857257c237ba7420d5b9ff1718d978448e828",
+      "rawGitObject": "40a4b3193503e2826e76ef1936b12818120390db",
+      "byAutocrlf": {
+        "false": "40a4b3193503e2826e76ef1936b12818120390db",
+        "true": "40a4b3193503e2826e76ef1936b12818120390db",
+        "input": "40a4b3193503e2826e76ef1936b12818120390db"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/apk-signature-final.txt",
+      "sha256": "5eaaec5b29ba5d516d638b441edc64fc048c37f78362aa6feb7fbae44aeef276",
+      "rawGitObject": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+      "byAutocrlf": {
+        "false": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+        "true": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+        "input": "204439e6f25b68230b30bf2e38d9b09680d570c2"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/apk-signature.txt",
+      "sha256": "5eaaec5b29ba5d516d638b441edc64fc048c37f78362aa6feb7fbae44aeef276",
+      "rawGitObject": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+      "byAutocrlf": {
+        "false": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+        "true": "204439e6f25b68230b30bf2e38d9b09680d570c2",
+        "input": "204439e6f25b68230b30bf2e38d9b09680d570c2"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/armory-preview-final.png",
+      "sha256": "c47746693817296c91d0c78387e0314f0733e3a0b0c2982bc40c5de82592c0d2",
+      "rawGitObject": "bc8048cf78b85b19f4604d18f5a51421725e5d72",
+      "byAutocrlf": {
+        "false": "bc8048cf78b85b19f4604d18f5a51421725e5d72",
+        "true": "bc8048cf78b85b19f4604d18f5a51421725e5d72",
+        "input": "bc8048cf78b85b19f4604d18f5a51421725e5d72"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/buildcraft-admission-failure.txt",
+      "sha256": "c82d6f4a547d23f32137a3832427cf931e119617da83896cb88d4a527ef45321",
+      "rawGitObject": "f347a2e1be7867b2c045f064a5ee9c42051420a1",
+      "byAutocrlf": {
+        "false": "f347a2e1be7867b2c045f064a5ee9c42051420a1",
+        "true": "f347a2e1be7867b2c045f064a5ee9c42051420a1",
+        "input": "f347a2e1be7867b2c045f064a5ee9c42051420a1"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/buildcraft-browser-final.txt",
+      "sha256": "5512279b59072873a07f12d81cea3672654c92b8dc7ec46c5157553f3e85699c",
+      "rawGitObject": "20be4e9425b21c56b42c230715c8bc50752ee3cb",
+      "byAutocrlf": {
+        "false": "20be4e9425b21c56b42c230715c8bc50752ee3cb",
+        "true": "20be4e9425b21c56b42c230715c8bc50752ee3cb",
+        "input": "20be4e9425b21c56b42c230715c8bc50752ee3cb"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/clock-metadata-green.txt",
+      "sha256": "92f3c4edc6e0b68bdf5d2c68051ab8add008379bb7c5b0cc68e40cb9a221384d",
+      "rawGitObject": "3a622184d88d322409ced8ec87f343f967d835f9",
+      "byAutocrlf": {
+        "false": "3a622184d88d322409ced8ec87f343f967d835f9",
+        "true": "3a622184d88d322409ced8ec87f343f967d835f9",
+        "input": "3a622184d88d322409ced8ec87f343f967d835f9"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/clock-metadata-red.txt",
+      "sha256": "cf0d3e245b339af3b096e9aec0407f44ce201c1079a30a2b091304da6459f987",
+      "rawGitObject": "13c1298862e95f1435cc5ba33b9b357854dd4d1c",
+      "byAutocrlf": {
+        "false": "13c1298862e95f1435cc5ba33b9b357854dd4d1c",
+        "true": "13c1298862e95f1435cc5ba33b9b357854dd4d1c",
+        "input": "13c1298862e95f1435cc5ba33b9b357854dd4d1c"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/encounter-oracle-final.txt",
+      "sha256": "30ca644007016bcae10f425bc026264f965914f34ebb78a6d8c3b595a92ec602",
+      "rawGitObject": "c2e932162fc7e608617d615dfde5978a67b193c1",
+      "byAutocrlf": {
+        "false": "c2e932162fc7e608617d615dfde5978a67b193c1",
+        "true": "c2e932162fc7e608617d615dfde5978a67b193c1",
+        "input": "c2e932162fc7e608617d615dfde5978a67b193c1"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/final-build-summary.json",
+      "sha256": "549db3ab0ac98ee8773b16359f406478a479908ecdade794d7c237ec315b4360",
+      "rawGitObject": "037bc47e74dfcee814cb9f994ea927478272bd2f",
+      "byAutocrlf": {
+        "false": "037bc47e74dfcee814cb9f994ea927478272bd2f",
+        "true": "037bc47e74dfcee814cb9f994ea927478272bd2f",
+        "input": "037bc47e74dfcee814cb9f994ea927478272bd2f"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/local-bytes-final.json",
+      "sha256": "1657f189cdb297881e91e4072bdec8e05b4413c06dc7b4dd1c7614d16927421c",
+      "rawGitObject": "fa83bb64c03a4c1ebea42628b5b3308cebb9083f",
+      "byAutocrlf": {
+        "false": "fa83bb64c03a4c1ebea42628b5b3308cebb9083f",
+        "true": "fa83bb64c03a4c1ebea42628b5b3308cebb9083f",
+        "input": "fa83bb64c03a4c1ebea42628b5b3308cebb9083f"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/native-caption-attempt2.txt",
+      "sha256": "704ca49437dce12aaa1e1fb54dcfd86a1fc730a756785350b104625af560dd1c",
+      "rawGitObject": "a14a9d1a0c594062b9d7b07b8cc9ee97dabaab20",
+      "byAutocrlf": {
+        "false": "a14a9d1a0c594062b9d7b07b8cc9ee97dabaab20",
+        "true": "a14a9d1a0c594062b9d7b07b8cc9ee97dabaab20",
+        "input": "a14a9d1a0c594062b9d7b07b8cc9ee97dabaab20"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/native-player-result.json",
+      "sha256": "4e85f5a029db2c16aecc8561f4cd654109a92d9d97c399979eeaa6f7a2a57e67",
+      "rawGitObject": "3ed40e05700d5e30ef4d2834cf2c3e262e044a9b",
+      "byAutocrlf": {
+        "false": "3ed40e05700d5e30ef4d2834cf2c3e262e044a9b",
+        "true": "3ed40e05700d5e30ef4d2834cf2c3e262e044a9b",
+        "input": "3ed40e05700d5e30ef4d2834cf2c3e262e044a9b"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/node-guards-initial.txt",
+      "sha256": "c0a366d0b6c7296744fabfd4742a87f199ac6e4294ce464e71316e7401a1d65d",
+      "rawGitObject": "931d251c15297d372dcabb5ad3f04b01b46fe58e",
+      "byAutocrlf": {
+        "false": "931d251c15297d372dcabb5ad3f04b01b46fe58e",
+        "true": "931d251c15297d372dcabb5ad3f04b01b46fe58e",
+        "input": "931d251c15297d372dcabb5ad3f04b01b46fe58e"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/planner-browser-final.txt",
+      "sha256": "fb516cbfcdcbe4138c6ee60d6c927583781083a1a3052e0f77df35c512afe4cd",
+      "rawGitObject": "4eb8f1b45d1e48250dea05a225c4ed1b75fffc14",
+      "byAutocrlf": {
+        "false": "4eb8f1b45d1e48250dea05a225c4ed1b75fffc14",
+        "true": "4eb8f1b45d1e48250dea05a225c4ed1b75fffc14",
+        "input": "4eb8f1b45d1e48250dea05a225c4ed1b75fffc14"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/portable-final.txt",
+      "sha256": "790cf769c418ecb596e4b8e1e4ece3347c89b9f09de20e9c20d2378a325357d2",
+      "rawGitObject": "8e35512bfb3b102d8ddcf0b067c062a0ff967f25",
+      "byAutocrlf": {
+        "false": "8e35512bfb3b102d8ddcf0b067c062a0ff967f25",
+        "true": "8e35512bfb3b102d8ddcf0b067c062a0ff967f25",
+        "input": "8e35512bfb3b102d8ddcf0b067c062a0ff967f25"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-admission-failure.txt",
+      "sha256": "cfeed00072bb72447fb5279b8def059efe8589767865bc55570981a7bc520d00",
+      "rawGitObject": "7bfe173f99cf9997815471edcf8d77e5d184ed88",
+      "byAutocrlf": {
+        "false": "7bfe173f99cf9997815471edcf8d77e5d184ed88",
+        "true": "7bfe173f99cf9997815471edcf8d77e5d184ed88",
+        "input": "7bfe173f99cf9997815471edcf8d77e5d184ed88"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-green.txt",
+      "sha256": "f175ac79f2e33e35044a65a4596c858076da4479672e5a3a32d2eac77002e4a5",
+      "rawGitObject": "2c8f257825984762092a43e0c9fa2acc5db0048b",
+      "byAutocrlf": {
+        "false": "2c8f257825984762092a43e0c9fa2acc5db0048b",
+        "true": "2c8f257825984762092a43e0c9fa2acc5db0048b",
+        "input": "2c8f257825984762092a43e0c9fa2acc5db0048b"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt",
+      "sha256": "269585e1682024d7c8b9ec97d28e064ac867c7e5bb87d2636d340c57a5f4ab85",
+      "rawGitObject": "b8503574a36a26ce300f6e1debd624843a9bf7a4",
+      "byAutocrlf": {
+        "false": "b8503574a36a26ce300f6e1debd624843a9bf7a4",
+        "true": "b8503574a36a26ce300f6e1debd624843a9bf7a4",
+        "input": "b8503574a36a26ce300f6e1debd624843a9bf7a4"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt",
+      "sha256": "e0a2c392ae45eb311d4f6a8040890de0e1639b3081126e90c8e5e5ad9c07559b",
+      "rawGitObject": "99f32e50305de3e757fab7af2d41dac32ba54439",
+      "byAutocrlf": {
+        "false": "99f32e50305de3e757fab7af2d41dac32ba54439",
+        "true": "99f32e50305de3e757fab7af2d41dac32ba54439",
+        "input": "99f32e50305de3e757fab7af2d41dac32ba54439"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-browser-final.txt",
+      "sha256": "4e1dacace45179267723b61a3441f42b67a492c1026dd9c2c2480caf1bc0091d",
+      "rawGitObject": "af29f4bd1e241a687e4d991b00079100dbf4a88d",
+      "byAutocrlf": {
+        "false": "af29f4bd1e241a687e4d991b00079100dbf4a88d",
+        "true": "af29f4bd1e241a687e4d991b00079100dbf4a88d",
+        "input": "af29f4bd1e241a687e4d991b00079100dbf4a88d"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-browser-pre-wording.txt",
+      "sha256": "9cb399dbe9fb68cadd8fe2175564d5f615e60537ab0197a21560f33fff86d473",
+      "rawGitObject": "034d9ebdc19f9bc77727ab635b7344b1c02e58db",
+      "byAutocrlf": {
+        "false": "034d9ebdc19f9bc77727ab635b7344b1c02e58db",
+        "true": "034d9ebdc19f9bc77727ab635b7344b1c02e58db",
+        "input": "034d9ebdc19f9bc77727ab635b7344b1c02e58db"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-ready-final.png",
+      "sha256": "660a142d8e471c0ea21e3996a0bced399547b8eb156648403a43bfdd70fc4604",
+      "rawGitObject": "25d6b8b73c52ea309be5fda1d7a8dcf9ab2f7c14",
+      "byAutocrlf": {
+        "false": "25d6b8b73c52ea309be5fda1d7a8dcf9ab2f7c14",
+        "true": "25d6b8b73c52ea309be5fda1d7a8dcf9ab2f7c14",
+        "input": "25d6b8b73c52ea309be5fda1d7a8dcf9ab2f7c14"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/research-wrong-port-failure.txt",
+      "sha256": "cd6867a2f19218e4f3fb89e112f3f2d6a1eb973091bc1ec47d085fb3b6f7c3d0",
+      "rawGitObject": "69ac3237bc940593ac9cdc676988b18938762381",
+      "byAutocrlf": {
+        "false": "69ac3237bc940593ac9cdc676988b18938762381",
+        "true": "69ac3237bc940593ac9cdc676988b18938762381",
+        "input": "69ac3237bc940593ac9cdc676988b18938762381"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/source-payload-final.txt",
+      "sha256": "a26d22ac60b021c297d70a8fe2fd835becde356a096b3ba6342c7f934ee9bb13",
+      "rawGitObject": "ef7e1959b76cf59b04538af886fb0968ba03705e",
+      "byAutocrlf": {
+        "false": "ef7e1959b76cf59b04538af886fb0968ba03705e",
+        "true": "ef7e1959b76cf59b04538af886fb0968ba03705e",
+        "input": "ef7e1959b76cf59b04538af886fb0968ba03705e"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/unity-initial-batch.txt",
+      "sha256": "8177fe792a14b642cd1b44d2a1aeb0b3d19de461ce59de08b9ab9450455f78fb",
+      "rawGitObject": "989a0ddb86711bce548e74a40aba2d92daeec106",
+      "byAutocrlf": {
+        "false": "989a0ddb86711bce548e74a40aba2d92daeec106",
+        "true": "989a0ddb86711bce548e74a40aba2d92daeec106",
+        "input": "989a0ddb86711bce548e74a40aba2d92daeec106"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/utmp-preservation.json",
+      "sha256": "801148d1468f65bb7305892dfcbe420e7b3ae9c5b9dab0bb6a3076ffa9b9b473",
+      "rawGitObject": "43589e801e07b9fe7c5c1b5f6de408b2b1067fa7",
+      "byAutocrlf": {
+        "false": "43589e801e07b9fe7c5c1b5f6de408b2b1067fa7",
+        "true": "43589e801e07b9fe7c5c1b5f6de408b2b1067fa7",
+        "input": "43589e801e07b9fe7c5c1b5f6de408b2b1067fa7"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/validation.json",
+      "sha256": "5e4f35649ce05d59ccbd2343606132dfc7ae1d6225518e5ebabe452d62d95653",
+      "rawGitObject": "42ea90cb78c7280db30b9691a5293e07ac9a618e",
+      "byAutocrlf": {
+        "false": "42ea90cb78c7280db30b9691a5293e07ac9a618e",
+        "true": "42ea90cb78c7280db30b9691a5293e07ac9a618e",
+        "input": "42ea90cb78c7280db30b9691a5293e07ac9a618e"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.json",
+      "sha256": "13273a5579d6c9dbb1d4ea028c540409b995d5d41ab3c87b44953e3fb3594580",
+      "rawGitObject": "7f1ad83905be251043d1690f3176a98b20853b1e",
+      "byAutocrlf": {
+        "false": "7f1ad83905be251043d1690f3176a98b20853b1e",
+        "true": "7f1ad83905be251043d1690f3176a98b20853b1e",
+        "input": "7f1ad83905be251043d1690f3176a98b20853b1e"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.log",
+      "sha256": "b774e02117ec1e6de1de69a3b1278061fbd68c270e98bd5eb1370f83647215da",
+      "rawGitObject": "0108563c8e8536176ce5b482227435bb0a6dd92a",
+      "byAutocrlf": {
+        "false": "0108563c8e8536176ce5b482227435bb0a6dd92a",
+        "true": "0108563c8e8536176ce5b482227435bb0a6dd92a",
+        "input": "0108563c8e8536176ce5b482227435bb0a6dd92a"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.md",
+      "sha256": "cc33e8a81edb5a8653e7a1b79c4169c73f081a47cfcbcd0f1c2d351c975fec39",
+      "rawGitObject": "d5e9850aa7ea1271dabd03eb628b8d69b9982023",
+      "byAutocrlf": {
+        "false": "d5e9850aa7ea1271dabd03eb628b8d69b9982023",
+        "true": "d5e9850aa7ea1271dabd03eb628b8d69b9982023",
+        "input": "d5e9850aa7ea1271dabd03eb628b8d69b9982023"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/final-portable.log",
+      "sha256": "b960280839a94e02338ef7efb4ea61539730b645a802bf89cd0ed6879186a80a",
+      "rawGitObject": "bf112b292d62f35bc0b967429f6473004f5b9b70",
+      "byAutocrlf": {
+        "false": "bf112b292d62f35bc0b967429f6473004f5b9b70",
+        "true": "bf112b292d62f35bc0b967429f6473004f5b9b70",
+        "input": "bf112b292d62f35bc0b967429f6473004f5b9b70"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-buildcraft-catalog-contracts-green.log",
+      "sha256": "8c27651713749c6914b8dc93b50d88b5d3ec42a6f0b912b933816b5d9e8b661e",
+      "rawGitObject": "e7da2b6f4e66fdcb312b36b5f5d786a467e62983",
+      "byAutocrlf": {
+        "false": "e7da2b6f4e66fdcb312b36b5f5d786a467e62983",
+        "true": "e7da2b6f4e66fdcb312b36b5f5d786a467e62983",
+        "input": "e7da2b6f4e66fdcb312b36b5f5d786a467e62983"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-buildcraft-tier-ui-green.log",
+      "sha256": "c004c5862a264b8dad32c6fe2018ea50ac990aa5e2b570dab174b4bf1ebb46da",
+      "rawGitObject": "9b65316796a9cb04d338ea17ab76511699a7429d",
+      "byAutocrlf": {
+        "false": "9b65316796a9cb04d338ea17ab76511699a7429d",
+        "true": "9b65316796a9cb04d338ea17ab76511699a7429d",
+        "input": "9b65316796a9cb04d338ea17ab76511699a7429d"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-retained-receipt-red.log",
+      "sha256": "564fa02e37395eb004932ab70d8bfb73b27f7b218659f69e4299fc451abd139a",
+      "rawGitObject": "fb6cc56e5f06cf675a6a81d46bbc4071256e4578",
+      "byAutocrlf": {
+        "false": "fb6cc56e5f06cf675a6a81d46bbc4071256e4578",
+        "true": "fb6cc56e5f06cf675a6a81d46bbc4071256e4578",
+        "input": "fb6cc56e5f06cf675a6a81d46bbc4071256e4578"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-green.log",
+      "sha256": "9cf86e6be996c7e0622853fd0320489609d47a42ce1569d1bdcf6db0a49d6332",
+      "rawGitObject": "6afa35859e755329edbc5547e58af8b0298586a3",
+      "byAutocrlf": {
+        "false": "6afa35859e755329edbc5547e58af8b0298586a3",
+        "true": "6afa35859e755329edbc5547e58af8b0298586a3",
+        "input": "6afa35859e755329edbc5547e58af8b0298586a3"
+      }
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-buildcraft/verification/laststand-support-observer-red.log",
+      "sha256": "948bc34cf8412141349153cfb572ff42fc6b5a583f384a94a577d5fc63c2b134",
+      "rawGitObject": "306e6026b8756018547c44cdef071b1d01be9549",
+      "byAutocrlf": {
+        "false": "306e6026b8756018547c44cdef071b1d01be9549",
+        "true": "306e6026b8756018547c44cdef071b1d01be9549",
+        "input": "306e6026b8756018547c44cdef071b1d01be9549"
+      }
+    }
+  ]
+}

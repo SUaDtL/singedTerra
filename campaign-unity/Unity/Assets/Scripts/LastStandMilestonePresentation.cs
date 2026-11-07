@@ -27,15 +27,33 @@ namespace SingedTerra.LastStand
         {
             edition=edition??LastStandRunEdition.Current;var definition=edition.Tier(tier);
             var rows=new List<LastStandMilestoneView>();
-            foreach(var milestone in LastStandRewardCatalog.Milestones(definition,edition.Tiers,edition.Fittings)){
-                string unlock=milestone.UnlockTierId==0?"":"Tier "+milestone.UnlockTierId;
-                if(milestone.UnlockFittingId!=null){
-                    string name=FittingName(milestone.UnlockFittingId,edition);
-                    unlock+=(unlock.Length==0?"":" + ")+name;
-                }
+            foreach(var milestone in LastStandRewardCatalog.Milestones(definition,edition.Tiers,edition.Fittings,edition.IsBuildcraft)){
+                var names=new List<string>();
+                foreach(var reward in milestone.Rewards)if(reward.Kind!=LastStandRewardKind.Salvage)names.Add(UnlockName(reward,edition));
+                string unlock=String.Join(" + ",names);
                 rows.Add(new LastStandMilestoneView(milestone,LastStandRewardCatalog.At(definition,milestone.Wave,edition).RepeatableSalvage,unlock));
             }
             return rows.AsReadOnly();
+        }
+        static string UnlockName(LastStandRewardGrant reward,LastStandRunEdition edition)
+        {
+            switch(reward.Kind)
+            {
+                case LastStandRewardKind.Tier:return "Tier "+reward.Amount;
+                case LastStandRewardKind.Fitting:return FittingName(reward.Id,edition);
+                case LastStandRewardKind.EquipmentBays:return "Bay "+reward.Amount;
+                case LastStandRewardKind.ResearchLabs:return "Lab "+reward.Amount;
+                case LastStandRewardKind.CombatResearch:return "combat research";
+                default:throw new ArgumentException("Unknown unlock reward.");
+            }
+        }
+        public static string UnlockRequirement(LastStandRewardKind kind,int amount)
+        {
+            foreach(var tier in LastStandRunEdition.Current.Tiers)
+                foreach(var milestone in LastStandRewardCatalog.Milestones(tier))
+                    foreach(var reward in milestone.Rewards)
+                        if(reward.Kind==kind&&reward.Amount==amount)return "Clear Tier "+tier.Id+" wave "+milestone.Wave;
+            return "No unlock milestone is available.";
         }
         static string FittingName(string id,LastStandRunEdition edition)
         {
@@ -57,10 +75,14 @@ namespace SingedTerra.LastStand
         }
         // Call only with a confirmed receipt. The supplied Salvage already includes
         // the exact research fraction and first-clear award saved by progression.
-        public static string ConfirmedReceipt(int wave,int salvage,bool firstClear,string fitting,int tier)
+        public static string ConfirmedReceipt(int wave,int salvage,bool firstClear,string fitting,int tier,
+            int equipmentBays=0,int researchLabs=0,bool combatResearch=false)
         {
             string detail=String.IsNullOrEmpty(fitting)?"":fitting.ToUpperInvariant()+" UNLOCKED";
             if(tier>0)detail+=(detail.Length==0?"":" / ")+"TIER "+tier+" UNLOCKED";
+            if(equipmentBays>0)detail+=(detail.Length==0?"":" / ")+"BAY "+equipmentBays+" UNLOCKED";
+            if(researchLabs>0)detail+=(detail.Length==0?"":" / ")+"LAB "+researchLabs+" UNLOCKED";
+            if(combatResearch)detail+=(detail.Length==0?"":" / ")+"COMBAT RESEARCH UNLOCKED";
             if(detail.Length==0)detail=firstClear?"FIRST CLEAR SAVED":"WAVE REWARD SAVED";
             return "W"+wave+" +"+salvage.ToString("N0",CultureInfo.InvariantCulture)+" SALVAGE\n"+detail;
         }

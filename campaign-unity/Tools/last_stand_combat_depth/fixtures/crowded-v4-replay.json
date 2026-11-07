@@ -1,0 +1,172 @@
+{
+  "schema": "last-stand-retained-crowded-sources/v1",
+  "sourceCommit": "219239001787993cf6e71fab33cd87a26f16eff7",
+  "purpose": "Immutable historical v4 calibration replay only; never a current v5 qualification or a game dependency. Reports remain at their original checked-in paths.",
+  "files": {
+    "Tools/last_stand_combat_depth/CombatBalanceChecks.cs": {
+      "sha256": "ba75c6f433c113c3ae1caacd657d1e1a9859c4f22e5ed6d7a050fe1af77ba3de",
+      "bytes": 12367
+    },
+    "Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": {
+      "sha256": "3c97b77d4aaf9a68f8808645d9ad417b7040f396870ccf8ef29058a678382307",
+      "bytes": 42997
+    },
+    "Tools/last_stand_combat_depth/CrowdedWaveMeasurements.cs": {
+      "sha256": "33ab284d64e33af61a6fab69843d599222d50744663943a363d3c2a936854106",
+      "bytes": 7672
+    },
+    "Tools/last_stand_combat_depth/measure_combat_balance.py": {
+      "sha256": "dee12c408e7d2b9770b6b47aaa3ec65ed36336eb5334d4e39354015d8cc06cc8",
+      "bytes": 8517
+    },
+    "Tools/last_stand_combat_depth/measure_crowded_waves.py": {
+      "sha256": "589791e96bf03bd6f6cf62b8f46a12d19316e47811da1268ad4957c9cc93c3ed",
+      "bytes": 33218
+    },
+    "Tools/last_stand_combat_depth/test_crowded_waves.py": {
+      "sha256": "dc08dc88e93886dee4cd91184e302c982e90981b6ba56d272d32a66bd7666d00",
+      "bytes": 20462
+    },
+    "Tools/last_stand_source_closure.py": {
+      "sha256": "91e0bcf81e5b2d9cf6ec308cbab8485b0d1d62a17b6a3d52a21de70893c06ed1",
+      "bytes": 4468
+    },
+    "Tools/last_stand_test_runtime.py": {
+      "sha256": "d7fb107fd5f4c64e13189a20038926e8982cd6a3105a8a1307bfcb006993c15c",
+      "bytes": 6406
+    },
+    "Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": {
+      "sha256": "03db8ca0cee40c627a299ea4d5cd7fa8d05286335b01c3b2674a8d88bdb40367",
+      "bytes": 5175
+    },
+    "Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": {
+      "sha256": "a33403fbae466fbe285bdea214a9b2a2ff9c89b1f91d930b50a7722a27b2e57c",
+      "bytes": 6579
+    },
+    "Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": {
+      "sha256": "ebe1922e4ff2bf4f7db5227500e380c2e22398aacdab45d6b681615927a87b74",
+      "bytes": 6077
+    },
+    "Unity/Assets/Scripts/Content/LastStandRunEdition.cs": {
+      "sha256": "bebcce5919373aceb2bfb7929224dcf129ecd7e8f3acfce6730d5246a358cbbc",
+      "bytes": 2440
+    },
+    "Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": {
+      "sha256": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6",
+      "bytes": 6019
+    },
+    "Unity/Assets/Scripts/EncounterFoeKind.cs": {
+      "sha256": "3fa0903618e22ec938dee8ac1029d95ebaaf9d7fe23128d80580f1bca54684d5",
+      "bytes": 266
+    },
+    "Unity/Assets/Scripts/EncounterGeometry.cs": {
+      "sha256": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98",
+      "bytes": 1690
+    },
+    "Unity/Assets/Scripts/EncounterModel.cs": {
+      "sha256": "864dd594d00282e132bb10e23fa55fc842d2921a969e6e6269b4636166aa1332",
+      "bytes": 32994
+    },
+    "Unity/Assets/Scripts/EncounterProfile.cs": {
+      "sha256": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47",
+      "bytes": 4437
+    },
+    "Unity/Assets/Scripts/LastStandEconomyCatalog.cs": {
+      "sha256": "23555af9618da47e8022dd4d9ab299de59ddbfa31ef174a2c9ef290485c733b6",
+      "bytes": 7067
+    },
+    "Unity/Assets/Scripts/LastStandLegacySave.cs": {
+      "sha256": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950",
+      "bytes": 12820
+    },
+    "Unity/Assets/Scripts/LastStandProgression.cs": {
+      "sha256": "19a9e962aa266a95236ad944f3e3e5a721edca62e2ad070d464ca78da683d89f",
+      "bytes": 21400
+    },
+    "Unity/Assets/Scripts/LastStandProgressionAppearance.cs": {
+      "sha256": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2",
+      "bytes": 1371
+    },
+    "Unity/Assets/Scripts/LastStandProgressionBackup.cs": {
+      "sha256": "0450f9b44730799088205b72a69c353741250de532d0d648312ad3a8ce841b5e",
+      "bytes": 11049
+    },
+    "Unity/Assets/Scripts/LastStandProgressionResearch.cs": {
+      "sha256": "f45249e386fc40069078b0576739e6dae54a9fbdd9aae95243f5ba4b3105aa0a",
+      "bytes": 5834
+    },
+    "Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": {
+      "sha256": "f8de9ccd8a4b925354290213648596d5fb84dd9e22a6851ddb9c9a927249f956",
+      "bytes": 9624
+    },
+    "Unity/Assets/Scripts/LastStandProgressionSave.cs": {
+      "sha256": "cb5c3b2b4d931505cd2b1d1bff60ea93e47931c4cc4115a2a672f796a4d7ce73",
+      "bytes": 21216
+    },
+    "Unity/Assets/Scripts/LastStandResearchCatalog.cs": {
+      "sha256": "be74a188bc8269fb2bd13542f2fe6b9bfeaf7ead46e6c0637977c684b8a9604b",
+      "bytes": 6056
+    },
+    "Unity/Assets/Scripts/LastStandResearchClock.cs": {
+      "sha256": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b",
+      "bytes": 2969
+    },
+    "Unity/Assets/Scripts/LastStandResearchState.cs": {
+      "sha256": "e95e4a176ba0d8520730984c1752957efce203f5f4c07dd3d6347c2604afdcf1",
+      "bytes": 19425
+    },
+    "Unity/Assets/Scripts/LastStandRewardCatalog.cs": {
+      "sha256": "215beec45af8509b8952414953cd67a9db5c55ada80d2a3fa746579b77016458",
+      "bytes": 5140
+    },
+    "Unity/Assets/Scripts/LastStandRunCheckpoint.cs": {
+      "sha256": "c84d1febc24c5b5a1a8193ea0f2bb239d40469c0186267adaff14ccebb4d851a",
+      "bytes": 4025
+    },
+    "Unity/Assets/Scripts/LastStandRunClock.cs": {
+      "sha256": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+      "bytes": 9754
+    },
+    "Unity/Assets/Scripts/LastStandRunHistory.cs": {
+      "sha256": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848",
+      "bytes": 17742
+    },
+    "Unity/Assets/Scripts/LastStandSaveJson.cs": {
+      "sha256": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5",
+      "bytes": 9569
+    },
+    "Unity/Assets/Scripts/LastStandSelection.cs": {
+      "sha256": "8fb62bab29262306c0c1051764b2b0a6dfe787cf8729c51cbe3873b9fa8763ed",
+      "bytes": 8191
+    },
+    "Unity/Assets/Scripts/LastStandShopState.cs": {
+      "sha256": "869fc62dc2ae993e76caf67f7464d180688cf23b219a1695004763b875aa393d",
+      "bytes": 25707
+    },
+    "Unity/Assets/Scripts/LastStandSpeedPolicy.cs": {
+      "sha256": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505",
+      "bytes": 1107
+    },
+    "Unity/Assets/Scripts/LastStandStore.cs": {
+      "sha256": "93b78c0423028bc86e6ddecac37bb9c9aaa5b7113e93059003d29f6573c8b16e",
+      "bytes": 6834
+    },
+    "Unity/Assets/Scripts/LastStandTierCatalog.cs": {
+      "sha256": "c2e6f97dbc0e060461973eb0b2420c43738f91c6f24c8f60c521f9ab4cc8cc51",
+      "bytes": 5985
+    },
+    "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": {
+      "sha256": "aa51e8a6d54805c51bc712ebf56da93dee2e037672c36977d81ed2f9d7786c53",
+      "bytes": 19815
+    },
+    "Unity/Assets/Scripts/LastStandWaveCatalog.cs": {
+      "sha256": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0",
+      "bytes": 3549
+    },
+    "Unity/Assets/Scripts/MechanicsShopModel.cs": {
+      "sha256": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7",
+      "bytes": 1570
+    }
+  },
+  "archiveSha256": "e0072cd07a9e0a284bd6824e707feb45ec1de6564062de829008171de7e739ef"
+}

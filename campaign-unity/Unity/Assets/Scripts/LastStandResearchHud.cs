@@ -24,7 +24,8 @@ namespace SingedTerra.LastStand
         readonly List<LastStandResearchListEntry> entries=new List<LastStandResearchListEntry>();
         readonly string[] filters={"","Combat","Economy","Research"};
         LastStandResearchSnapshot snapshot;
-        long balance;int bestWave,filterIndex;bool canAct,open,detailSelected,narrow,helpOpen;
+        LastStandLoadout loadout;
+        long balance;int bestWave,bestTierTwoWave,filterIndex;bool canAct,open,detailSelected,narrow,helpOpen;
         float width,height,unitsX=1,unitsY=1;
         string status="";
         public Action<Button> FocusRequested { get; set; }
@@ -77,11 +78,11 @@ namespace SingedTerra.LastStand
             helpText=modal.Text("ResearchHelpBody",detailPane.Content,16);
             modal.Shade.gameObject.SetActive(false);
         }
-        public void Refresh(bool visible,LastStandResearchSnapshot research,int bestTierOneWave,long salvageBalance,bool actionsAllowed,string saveStatus)
+        public void Refresh(bool visible,LastStandResearchSnapshot research,int bestTierOneWave,long salvageBalance,bool actionsAllowed,string saveStatus,int bestTierTwoWave=0,LastStandLoadout loadout=null)
         {
             bool justOpened=visible&&!open;open=visible;modal.Shade.gameObject.SetActive(open);if(!open)return;
             if(research==null)throw new ArgumentNullException(nameof(research));
-            snapshot=research.Clone();bestWave=bestTierOneWave;balance=salvageBalance;canAct=actionsAllowed;status=saveStatus??"";
+            snapshot=research.Clone();bestWave=bestTierOneWave;this.bestTierTwoWave=bestTierTwoWave;this.loadout=loadout;balance=salvageBalance;canAct=actionsAllowed;status=saveStatus??"";
             if(justOpened){detailSelected=false;helpOpen=false;listPane.Reset();detailPane.Reset();}
             RefreshContent();
         }
@@ -93,7 +94,7 @@ namespace SingedTerra.LastStand
         void RefreshContent()
         {
             if(!open||snapshot==null)return;
-            int unlocked=LastStandResearchCatalog.UnlockedSlots(bestWave);
+            int unlocked=LastStandResearchCatalog.UnlockedSlots(bestWave,bestTierTwoWave);
             modal.Title.text="RESEARCH LAB";
             modal.Status.text=(unlocked==0?"RESEARCH LOCKED - clear Tier 1, wave 25\n":"")+
                 balance.ToString("N0")+" SALVAGE  |  "+(unlocked==0?"Best Tier 1 wave: "+bestWave:unlocked+" labs open")+
@@ -109,44 +110,46 @@ namespace SingedTerra.LastStand
                 var button=projects[i];button.gameObject.SetActive(shown);
                 var track=LastStandResearchCatalog.Tracks[i];
                 button.GetComponentInChildren<Text>().text=track.Name+"  "+snapshot.Rank(track.Id)+" / "+track.MaximumRank+
-                    "\n"+LastStandResearchPresentation.Availability(snapshot,track.Id,balance,bestWave,canAct);
+                    "\n"+LastStandResearchPresentation.Availability(snapshot,track.Id,balance,bestWave,canAct,bestTierTwoWave);
                 modal.Style(button,true,track.Key==list.SelectedKey);
             }
             var selected=LastStandResearchCatalog.Get(Selected);int rank=snapshot.Rank(Selected);
             detail.text=selected.Name.ToUpperInvariant()+"  |  Rank "+rank+" / "+selected.MaximumRank+"\n"+
-                "Now: "+LastStandResearchPresentation.Effect(Selected,rank)+"\n\n";
+                "Now: "+LastStandResearchPresentation.Effect(Selected,rank)+"\nApplies to: "+LastStandResearchPresentation.Applicability(Selected)+"\n\n";
             if(rank<selected.MaximumRank)
             {
                 int fundedLab=-1;LastStandResearchProjectSnapshot funded=null;
                 for(int i=0;i<snapshot.slots.Length;i++)
                     foreach(var project in new[]{snapshot.slots[i].active,snapshot.slots[i].queued})
                         if(project!=null&&project.track==Selected&&project.rank==rank+1){funded=project;fundedLab=i;}
-                detail.text+="NEXT UPGRADE\n"+LastStandResearchPresentation.Effect(Selected,rank+1)+"\n\n";
+                var nextQuote=LastStandResearchPresentation.ProjectQuote(snapshot,Selected,rank+1,loadout:loadout);
+                detail.text+="NEXT UPGRADE\n"+nextQuote.AfterEffect+"\n"+nextQuote.LoadoutApplicability+"\n"+nextQuote.ApplicationTiming+"\n\n";
                 if(funded!=null)detail.text+="PAID - Lab "+(fundedLab+1)+"\n"+LastStandResearchPresentation.Project(funded,funded==snapshot.slots[fundedLab].queued);
                 else
                 {
                     var quote=LastStandResearchPresentation.ProjectQuote(snapshot,Selected,rank+1);
                     detail.text+="COST  "+quote.Cost.ToString("N0")+" Salvage\nTIME  "+LastStandResearchPresentation.Duration(quote.RemainingMilliseconds)+
                         (quote.ResumesPartial?" remaining (saved progress)":" real time")+
-                        (unlocked>0&&quote.Cost>balance?"\n"+LastStandResearchPresentation.Availability(snapshot,Selected,balance,bestWave,canAct):"");
+                        (unlocked>0&&quote.Cost>balance?"\n"+LastStandResearchPresentation.Availability(snapshot,Selected,balance,bestWave,canAct,bestTierTwoWave):"");
                 }
             }
-            else detail.text+="This track is complete. Its benefit remains active.\n";
+            else detail.text+=selected.IsCombatSnapshot?"This track is complete. Its ranks apply on the next deployment.\n":"This track is complete. Its benefit remains active.\n";
+            if(!LastStandResearchCatalog.IsUnlocked(selected,bestWave))detail.text+="\nLOCKED - clear Tier 1 wave 500 to fund combat research.\n";
             detail.text+="\n\n"+(unlocked==0?"Clear Tier 1, wave 25 to start research.\nYour best: wave "+bestWave+" / 25.":
                 !canAct?(status.Length>0?status:"Research actions are unavailable until the save is ready."):
                 "Research continues while you play or close the game.");
             help.GetComponentInChildren<Text>().text=helpOpen?"HIDE RESEARCH HELP":"HOW RESEARCH WORKS";
             helpText.gameObject.SetActive(helpOpen);
             helpText.text="Salvage also pays for permanent Workshop upgrades. Starting research spends the shown cost once.\n\n"+
-                "Lab 1 unlocks at Tier 1 wave 25; Lab 2 at wave 100. Each lab runs one project and can hold one paid queued project. Queue duration is an estimate until it starts.\n\n"+
-                "Timers use real time, including while paused or closed. Combat speed does not change research time. Completed benefits apply automatically.\n\n"+
+                "Lab 1 unlocks at Tier 1 wave 25; Lab 2 at wave 100; Lab 3 at Tier 2 wave 500. Each lab runs one project and can hold one paid queued project. Queue duration is an estimate until it starts.\n\n"+
+                "Timers use real time, including while paused or closed. Combat speed does not change research time. Game Speed and income benefits apply automatically. Combat research is captured on the next deployment.\n\n"+
                 "Switching or suspending refunds the active project's cost and saves elapsed time. Resuming repays that cost. Removing a queued project refunds it. Nothing buys another rank automatically.";
             intents.Clear();
             for(int i=0;i<snapshot.slots.Length;i++)
             {
                 var slot=snapshot.slots[i];bool locked=i>=unlocked;
                 slotLabels[i].gameObject.SetActive(unlocked>0);
-                slotLabels[i].text="LAB "+(i+1)+(locked?" - unlocks at Tier 1, wave 100":
+                slotLabels[i].text="LAB "+(i+1)+(locked?(i==0?" - unlocks at Tier 1, wave 25":i==1?" - unlocks at Tier 1, wave 100":" - unlocks at Tier 2, wave 500"):
                     slot.active==null?" - READY":"\n"+LastStandResearchPresentation.Project(slot.active));
                 if(slot.queued!=null)slotLabels[i].text+="\nNext: "+LastStandResearchPresentation.Project(slot.queued,true);
                 for(int a=0;a<5;a++)
@@ -157,7 +160,7 @@ namespace SingedTerra.LastStand
                         action==LastStandResearchAction.RemoveQueued?slot.queued!=null:
                         action==LastStandResearchAction.Queue?slot.active!=null&&slot.queued==null:slot.active!=null);
                     var intent=LastStandResearchPresentation.Intent(snapshot,i,Selected,action);
-                    var offer=LastStandResearchPresentation.ProjectAction(snapshot,intent,balance,bestWave);
+                    var offer=LastStandResearchPresentation.ProjectAction(snapshot,intent,balance,bestWave,bestTierTwoWave:bestTierTwoWave);
                     if(action==LastStandResearchAction.Start||action==LastStandResearchAction.Queue||action==LastStandResearchAction.Switch)
                         shown=shown&&offer.ValidWhenFunded;
                     button.gameObject.SetActive(shown);var explanation=actionDetails[i*5+a];explanation.gameObject.SetActive(shown);
@@ -221,7 +224,7 @@ namespace SingedTerra.LastStand
             // Put the immediate start before management of occupied labs. Keep
             // stable lab identities in intents and diagnostics despite display order.
             var slotOrder=new List<int>();for(int i=0;i<slotLabels.Count;i++)slotOrder.Add(i);
-            int unlocked=LastStandResearchCatalog.UnlockedSlots(bestWave);
+            int unlocked=LastStandResearchCatalog.UnlockedSlots(bestWave,bestTierTwoWave);
             slotOrder.Sort((a,b)=>
             {
                 int left=a>=unlocked?2:snapshot.slots[a].active==null?0:1;

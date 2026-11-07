@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
+import {parseWaveOracleCsv,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveResume} from '../../e2e/helpers/lastStandWaveJourney.mjs';
 import {validateModelObservation} from '../../e2e/helpers/lastStandJourney.mjs';
 import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
@@ -72,4 +72,45 @@ test('the current compiled oracle refuses mixed rules, content or economy observ
     {economyVersion:'research-farming-economy-v3'},{railgun:1}])
     assert.throws(()=>validateModelObservation({...model,...change},oracle));
   assert.throws(()=>parseWaveOracleCsv(currentCsv(),{format:1}));
+});
+
+function buildcraftCsv(){return Buffer.from([1,2,3,4,5,6].flatMap(tier=>
+  ['repair','launcher','scattergun','mortar','railgun','arc','shield'].flatMap(fitting=>[20,30,40,50].map(damage=>
+    [tier,fitting,damage,0,120,0,0,0,0,0,0,0,0,0,1,0,0,0,18,40,1,1,0,16,fitting==='shield'?60:0,fitting==='shield'?60:0,0,0,1,20,0,'Running'].join(',')))).join('\r\n')+'\r\n');}
+test('format3 maps exactly six tiers and seven fittings and binds observed Arc/shield state',()=>{
+  const bytes=buildcraftCsv(),profiles=parseWaveOracleCsv(bytes,{format:3});assert.equal(Object.keys(profiles).length,168);
+  const oracle=profiles['6:shield:50'],model={...oracle[0],rules:'last-stand-waves-v3:storm-foundry'};
+  assert.equal(model.shield,60);assert.doesNotThrow(()=>validateModelObservation(model,oracle));
+  for(const key of ['arc','arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','armorPiercing','areaControl','fieldEngineering']){
+    assert.throws(()=>validateModelObservation({...model,[key]:model[key]+1},oracle));
+    const missing={...model};delete missing[key];assert.throws(()=>validateModelObservation(missing,oracle));
+  }
+  for(const options of [{format:2},{edition:COMBAT_DEPTH_WAVE_EDITION},{edition:{...CURRENT_WAVE_EDITION,rulesVersion:'last-stand-waves-v4'}}])
+    assert.throws(()=>parseWaveOracleCsv(bytes,options));
+  assert.throws(()=>parseWaveOracleCsv(Buffer.from(bytes.toString().split('\r\n').slice(1).join('\r\n'))));
+  assert.throws(()=>parseWaveOracleCsv(Buffer.from(bytes.toString().replace(',60,60,0,0,1,20,0,Running',',61,60,0,0,1,20,0,Running'))));
+});
+function buildcraftResume(){
+  const value=currentResume(),saved=value.saved,cp=saved.checkpoint;
+  saved.version=8;saved.research.catalogVersion='research-v2';saved.research.slots.push({active:null,queued:null});
+  for(const key of ['armorPiercing','areaControl','fieldEngineering']){saved.research.completedRanks[key]=0;saved.research.partials[key]=null;}
+  cp.contentVersion='last-stand-content-v3';Object.assign(cp.encounter,{rulesVersion:'last-stand-waves-v3',tier:6,fitting:1,railgunShots:0});
+  Object.assign(cp.shop,{economyVersion:'buildcraft-economy-v5',tier:6,fitting:1});
+  for(const key of ['arcOutput','shieldCapacity']){cp.shop.permanentLevels[key]=0;cp.shop.runPurchases[key]=0;value.shop.cards.push({key,p:0,n:0});}
+  cp.loadout={primary:'repair',secondary:'shield'};cp.combatResearch={armorPiercing:0,areaControl:0,fieldEngineering:0};
+  cp.buildcraft={arcShots:0,nextArcTick:1,arcDamage:16,shield:60,shieldCapacity:60,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:220,lastShieldHitTick:0};
+  for(const state of [value.afterResume,value.stable])Object.assign(state,{profileVersion:'last-stand-waves-v3',contentVersion:cp.contentVersion,economyVersion:cp.shop.economyVersion,
+    activeTier:6,fittingId:'repair',activeSecondaryId:'shield',railgunShots:0,arcShots:0,arcDamage:16,shield:60,shieldCapacity:60});
+  value.afterStored=structuredClone(saved);return value;
+}
+test('profile8 resume requires exact captured build, new state and research while retaining profile7',()=>{
+  assert.doesNotThrow(()=>validateWaveResume(currentResume()));assert.doesNotThrow(()=>validateWaveResume(buildcraftResume()));
+  for(const mutate of [v=>v.saved.version=7,v=>v.saved.version=9,v=>delete v.saved.checkpoint.loadout,
+    v=>v.saved.checkpoint.loadout.secondary='repair',v=>v.saved.checkpoint.combatResearch.areaControl=21,
+    v=>v.saved.checkpoint.combatResearch.areaControl=1,v=>v.saved.checkpoint.buildcraft.extra=1,
+    v=>delete v.saved.checkpoint.buildcraft.shieldAbsorbed,v=>v.saved.checkpoint.buildcraft.shield=61,
+    v=>v.saved.checkpoint.encounter.tier=7,v=>v.saved.research.catalogVersion='research-v3',
+    v=>v.stable.activeSecondaryId='',v=>v.stable.arcDamage++,v=>v.stable.shield++]){
+    const value=buildcraftResume();mutate(value);value.afterStored=structuredClone(value.saved);assert.throws(()=>validateWaveResume(value));
+  }
 });

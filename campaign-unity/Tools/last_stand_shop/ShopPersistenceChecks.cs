@@ -108,7 +108,7 @@ internal static class ShopPersistenceChecks
         var supplied=LastStandSaveJson.Read("{"+levels+"}");
         object yield=0;
         var extra=new Dictionary<string,object>();
-        foreach(string key in new[]{"mortarAttack","railgunAttack"})
+        foreach(string key in new[]{"mortarAttack","railgunAttack","arcOutput","shieldCapacity"})
             if(supplied.TryGetValue(key,out var rank)){extra[key]=rank;supplied.Remove(key);}
         if(supplied.TryGetValue("scrapYield",out var value)){yield=value;supplied.Remove("scrapYield");}
         string legacy=LastStandSaveJson.Write(supplied);
@@ -141,7 +141,7 @@ internal static class ShopPersistenceChecks
 
     static void CheckCurrentSave(string value)
     {
-        Require(value.StartsWith("{\"version\":7,"), "Supported migration must write version 7 under the same key.");
+        Require(value.StartsWith("{\"version\":8,"), "Supported migration must write version 8 under the same key.");
         Require(value.Contains("\"permanentLevels\":{") && !value.Contains("\"permanentLevel\":"),
             "Version 6 must preserve keyed permanent tracks.");
         Require(value.Contains("\"scrapYield\":") && value.Contains("\"research\":") && value.Contains("\"checkpoint\":"),
@@ -235,7 +235,7 @@ internal static class ShopPersistenceChecks
         var model = Load(store);
         Require(model.SaveState == "ready" && store.Writes == 1, "Valid v2 migrates once to v3 after verified saving.");
         CheckEntitlements(model, 17, 3, 9, 6, true);
-        int[] expected = { 3, 2, 1, 0, 3, 2, 0, 0, 0, 0 };
+        int[] expected = { 3, 2, 1, 0, 3, 2, 0, 0, 0, 0, 0, 0 };
         foreach (var track in LastStandUpgradeCatalog.Tracks)
             Require(Level(model, track.Id) == expected[(int)track.Id], "V2 must preserve every independent track level.");
         Require(model.TryClaim() && !model.TryClaim(), "V2 pending reward must retain exactly-once Claim.");

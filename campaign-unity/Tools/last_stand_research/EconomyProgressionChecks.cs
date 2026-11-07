@@ -76,7 +76,7 @@ static class EconomyProgressionChecks
             else if(args[0]=="legacy") {
                 var old=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion);
                 var current=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.EconomyVersion);
-                Check(old.Tracks.Count==7 && LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion).Tracks.Count==8 && current.Tracks.Count==10,"Versioned roster boundaries.");
+                Check(old.Tracks.Count==7 && LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion).Tracks.Count==8 && LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.CombatDepthEconomyVersion).Tracks.Count==10 && current.Tracks.Count==12,"Versioned roster boundaries.");
                 for(int i=0;i<7;i++)Check(old.Tracks[i].Key==current.Tracks[i].Key,"Existing stable track identity moved.");
                 long cap=0;for(int n=1;n<=12;n++)cap+=old.Get(LastStandUpgradeTrackId.CannonCycle).PermanentPrice(n);
                 Check(cap==94,"Legacy price rule was changed.");

@@ -32,12 +32,29 @@ static class RulesCompatibilityChecks
     static bool Ready(LastStandProgression p)=>p.SaveState=="ready";
     static Dictionary<string,object> Obj(object value)=>LastStandSaveJson.Object(value);
     static string Part(string raw,string key)=>LastStandSaveJson.Write(LastStandSaveJson.Read(raw)[key]);
-    static void CurrentEnvelope(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==7,"Expected atomic v7 envelope");
+    static void CurrentEnvelope(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==8,"Expected atomic v8 envelope");
+    static Dictionary<string,object> OriginalResearch(object value)
+    {
+        var research=Obj(value);research["catalogVersion"]=LastStandResearchCatalog.LegacyVersion;
+        foreach(var track in LastStandResearchCatalog.Tracks)if((int)track.Id>=LastStandResearchCatalog.LegacyTrackCount){
+            Obj(research["completedRanks"]).Remove(track.Key);Obj(research["partials"]).Remove(track.Key);}
+        var slots=LastStandSaveJson.Array(research["slots"]);while(slots.Count>LastStandResearchCatalog.LegacySlotCount)slots.RemoveAt(slots.Count-1);
+        return research;
+    }
+    static bool PreservedPart(string before,string after,string key)
+    {
+        if(key!="research")return Part(before,key)==Part(after,key);
+        var old=LastStandSaveJson.Read(before)[key];var current=Obj(LastStandSaveJson.Read(after)[key]);
+        foreach(var track in LastStandResearchCatalog.Tracks)if((int)track.Id>=LastStandResearchCatalog.LegacyTrackCount)
+            Check(LastStandSaveJson.Integer(Obj(current["completedRanks"])[track.Key])==0&&Obj(current["partials"])[track.Key]==null,"New research starts neutral");
+        var third=Obj(LastStandSaveJson.Array(current["slots"])[2]);Check(third["active"]==null&&third["queued"]==null,"New lab starts idle");
+        return LastStandSaveJson.Write(OriginalResearch(old))==LastStandSaveJson.Write(OriginalResearch(current));
+    }
     static void Legacy(string v5,string v4,string snapshot)
     {
         foreach(string raw in new[]{File.ReadAllText(v4),File.ReadAllText(v5)}){
             var store=new Store{Raw=raw};var p=Load(store);Check(Ready(p),"Supported original profile");CurrentEnvelope(store);
-            if(raw==File.ReadAllText(v5))Check(Part(raw,"research")==Part(store.Raw,"research"),"Research preserved");
+            if(raw==File.ReadAllText(v5))Check(PreservedPart(raw,store.Raw,"research"),"Research preserved");
             var cp=p.Checkpoint;Check(cp.RulesVersion=="last-stand-waves-v1","Original combat edition");
             var model=cp.RestoreModel();var shop=cp.RestoreShop();
             if(raw==File.ReadAllText(v4))Check(model.Snapshot()==File.ReadAllText(snapshot),"Independent v4 snapshot");
@@ -75,7 +92,7 @@ static class RulesCompatibilityChecks
         LastStandResearchTransition advance;Check(r.TryAdvance(12345,Epoch+12345,false,out advance),"Research fixture elapsed");r=advance.State;
         apply(LastStandResearchAction.Switch,0,LastStandResearchTrackId.GameSpeed,1);apply(LastStandResearchAction.Queue,0,LastStandResearchTrackId.GameSpeed,2);
         apply(LastStandResearchAction.Start,1,LastStandResearchTrackId.ResearchSpeed,1);
-        data["research"]=LastStandSaveJson.Read(LastStandProgression.RulesResearchJson(r));data["recoveryRemainder"]=37;
+        data["research"]=OriginalResearch(LastStandSaveJson.Read(LastStandProgression.RulesResearchJson(r)));data["recoveryRemainder"]=37;
         var history=new LastStandRunHistory();history.Begin(1,1,"launcher",LastStandUpgradeCatalog.RetainedEconomyVersion,"paid legacy context");
         history.AddActiveTime(300123,1);history.AddPausedTime(456);history.AddClosedTime(789);
         history.BankWave(1,3,2,1,"finished context");history.Finish("defeat","finished context");
@@ -94,10 +111,11 @@ static class RulesCompatibilityChecks
                 store.Fault=null;Check(p.Retry(),"Migration retry");}
             CurrentEnvelope(store);Check(Ready(p)&&p.Wallet==LastStandSaveJson.Integer(LastStandSaveJson.Read(original)["credits"]),"No retroactive currency");
             foreach(string key in new[]{"research","history","recoveryRemainder","firstClears","selectedTier","selectedFitting"})
-                Check(Part(original,key)==Part(store.Raw,key),"Preserved "+key);
+                Check(PreservedPart(original,store.Raw,key),"Preserved "+key);
             Check(p.IsFittingUnlocked("mortar")==arms&&p.IsFittingUnlocked("railgun")==arms&&p.IsTierUnlocked(3)==tiers,"Only available authored content earns backfill");
             Check(!p.TrySelectFitting("mortar")&&!p.TrySelectTier(3),"No active-run fitting or tier replacement");
-            var levels=Obj(LastStandSaveJson.Read(store.Raw)["permanentLevels"]);Check(levels.Count==10&&LastStandSaveJson.Integer(levels["mortarAttack"])==0&&LastStandSaveJson.Integer(levels["railgunAttack"])==0,"New tracks neutral");
+            var levels=Obj(LastStandSaveJson.Read(store.Raw)["permanentLevels"]);Check(levels.Count==12,"Complete current permanent track shape");
+            foreach(string added in new[]{"mortarAttack","railgunAttack","arcOutput","shieldCapacity"})Check(LastStandSaveJson.Integer(levels[added])==0,"New tracks neutral");
             int writes=store.Writes;string stable=store.Raw;Check(Ready(Load(store))&&store.Raw==stable&&store.Writes==writes,"Migration exactly once");
         }
         var denied=new Store{Raw=original,Owner=false};Check(!Ready(Load(denied))&&denied.Raw==original&&denied.Writes==0,"No ownership no migration");
@@ -127,7 +145,7 @@ static class RulesCompatibilityChecks
             root["checkpoint"]=null;Obj(root["history"])["current"]=null;root["nextRunId"]=2;
             var store=new Store{Raw=LastStandSaveJson.Write(root)};string original=store.Raw;var p=Load(store);
             Check(Ready(p)&&p.IsFittingUnlocked("mortar")== (arms&&tier1>=500)&&p.IsFittingUnlocked("railgun")== (arms&&tier2>=100)&&p.IsTierUnlocked(3)==(tiersAvailable&&tier2>=300),"Best-wave exact unlock boundaries and authored availability");
-            foreach(string key in new[]{"credits","research","history","firstClears","recoveryRemainder","selectedTier","selectedFitting"})Check(Part(original,key)==Part(store.Raw,key),"Backfill changes flags only "+key);
+            foreach(string key in new[]{"credits","research","history","firstClears","recoveryRemainder","selectedTier","selectedFitting"})Check(PreservedPart(original,store.Raw,key),"Backfill preserves original progress "+key);
             int writes=store.Writes;Check(Ready(Load(store))&&Ready(Load(store))&&store.Writes==writes,"Backfill does not repeat");
         }
     }
@@ -135,7 +153,7 @@ static class RulesCompatibilityChecks
     {
         var store=new Store{Raw=File.ReadAllText(path)};Check(Ready(Load(store)),"Known input");CurrentEnvelope(store);
         foreach(string field in new[]{"version","rulesVersion","contentVersion","economyVersion"}){
-            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=8;
+            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=9;
             else {var cp=Obj(root["checkpoint"]);if(field=="contentVersion")cp[field]="future-content";
                 else Obj(cp[field=="rulesVersion"?"encounter":"shop"])[field]="future-rules";}
             var bad=new Store{Raw=LastStandSaveJson.Write(root)};string bytes=bad.Raw;
@@ -217,7 +235,7 @@ static class RulesCompatibilityChecks
             foreach(var definition in LastStandUpgradeCatalog.Tracks)
                 Check(p.GetPermanentLevel(definition.Id)>=0,"Unavailable neutral read projection");
             var view=LastStandShopPresentation.ProjectPermanent(p,LastStandFitting.Repair);
-            Check(view.Cards.Count==10,"Failed migration shop exposes available definitions with neutral absent old slots");
+            Check(view.Cards.Count==12,"Failed migration shop exposes available definitions with neutral absent old slots");
             foreach(var card in view.Cards)if((int)card.TrackId>=8)Check(card.PermanentLevel==0,"Failed migration cannot grant new ranks");
             foreach(var card in view.Cards)Check(!card.CanPurchase,"Failed migration has no purchase admission");
             Check(store.Raw==input&&store.Writes==0,"Read projection cannot migrate");

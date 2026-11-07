@@ -7,20 +7,28 @@ namespace SingedTerra.LastStand
     // it is not a rule interpreter or a mutable global content override.
     public sealed class LastStandRunEdition
     {
-        public const string LegacyContentVersion="last-stand-content-v1",CurrentContentVersion="last-stand-content-v2";
-        public const string LegacyRulesVersion="last-stand-waves-v1",CurrentRulesVersion="last-stand-waves-v2";
+        public const string LegacyContentVersion="last-stand-content-v1",CombatDepthContentVersion="last-stand-content-v2",CurrentContentVersion="last-stand-content-v3";
+        public const string LegacyRulesVersion="last-stand-waves-v1",CombatDepthRulesVersion="last-stand-waves-v2",CurrentRulesVersion="last-stand-waves-v3";
         public string RulesVersion { get; }
         public string ContentVersion { get; }
         public string EconomyVersion { get; }
         public bool IsLegacy=>RulesVersion==LegacyRulesVersion;
-        public IReadOnlyList<LastStandTierDefinition> Tiers=>IsLegacy?LastStandTierCatalog.Legacy:LastStandTierCatalog.All;
-        public IReadOnlyList<LastStandFittingDefinition> Fittings=>IsLegacy?LastStandFittingCatalog.Legacy:LastStandFittingCatalog.Definitions;
+        public bool IsBuildcraft=>RulesVersion==CurrentRulesVersion;
+        public IReadOnlyList<LastStandTierDefinition> Tiers=>IsLegacy?LastStandTierCatalog.Legacy:IsBuildcraft?LastStandTierCatalog.All:LastStandTierCatalog.CombatDepth;
+        public IReadOnlyList<LastStandFittingDefinition> Fittings=>IsLegacy?LastStandFittingCatalog.Legacy:IsBuildcraft?LastStandFittingCatalog.Definitions:LastStandFittingCatalog.CombatDepth;
         LastStandRunEdition(string rules,string content,string economy){RulesVersion=rules;ContentVersion=content;EconomyVersion=economy;}
         public static LastStandRunEdition Current { get; }=new LastStandRunEdition(CurrentRulesVersion,CurrentContentVersion,LastStandUpgradeCatalog.EconomyVersion);
+        public static LastStandRunEdition CombatDepth { get; }=new LastStandRunEdition(CombatDepthRulesVersion,CombatDepthContentVersion,LastStandUpgradeCatalog.CombatDepthEconomyVersion);
+        public static LastStandRunEdition ForEconomy(string economy)=>economy==LastStandUpgradeCatalog.EconomyVersion?Current:
+            economy==LastStandUpgradeCatalog.CombatDepthEconomyVersion?CombatDepth:Legacy(economy);
+        public static string ContentForRules(string rules)=>rules==LegacyRulesVersion?LegacyContentVersion:
+            rules==CombatDepthRulesVersion?CombatDepthContentVersion:rules==CurrentRulesVersion?CurrentContentVersion:
+            throw new ArgumentException("Unsupported Last Stand rules.");
         public static LastStandRunEdition Legacy(string economy)=>Resolve(LegacyRulesVersion,LegacyContentVersion,economy);
         public static LastStandRunEdition Resolve(string rules,string content,string economy)
         {
             if(rules==CurrentRulesVersion&&content==CurrentContentVersion&&economy==LastStandUpgradeCatalog.EconomyVersion)return Current;
+            if(rules==CombatDepthRulesVersion&&content==CombatDepthContentVersion&&economy==LastStandUpgradeCatalog.CombatDepthEconomyVersion)return CombatDepth;
             if(rules==LegacyRulesVersion&&content==LegacyContentVersion&&
                 (economy==LastStandUpgradeCatalog.LegacyEconomyVersion||economy==LastStandUpgradeCatalog.PreviousEconomyVersion||economy==LastStandUpgradeCatalog.RetainedEconomyVersion))
                 return new LastStandRunEdition(rules,content,economy);

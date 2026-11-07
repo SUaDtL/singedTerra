@@ -104,12 +104,12 @@ function implementation_elapsedTicks(before,after) {
     'Background callback step budget exceeded');
 }
 
-function implementation_isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || /^last-stand-waves-v[12]:/.test(item?.rules??'');}
+function implementation_isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || /^last-stand-waves-v[123]:/.test(item?.rules??'');}
 
 function implementation_validateAdmittedClock(before,after) {
   sameDocument(before,after);
   for(const item of [before,after]){
-    assert.match(item.rules??'',/^last-stand-waves-v[12]:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
+    assert.match(item.rules??'',/^last-stand-waves-v[123]:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
     assert.equal(item.scope,'healthy');assert.equal(item.status,'Running');
     assert.equal(item.paused,false);assert.equal(item.catchingUp,false);assert.equal(item.failed,false);
     assert.equal(item.selectedSpeed,1);assert.equal(item.effectiveSpeed,1);
@@ -145,6 +145,8 @@ function implementation_validateModelObservation(observed,oracle) {
   for(const key of MODEL_FIELDS)assert.equal(observed[key],expected[key],'Source-bound model '+key+' differs');
   if(Object.hasOwn(expected,'mortar'))for(const key of ['scattergun','mortar','railgun'])
     assert.equal(observed[key],expected[key],'Source-bound armament '+key+' differs');
+  if(Object.hasOwn(expected,'arc'))for(const key of ['arc','arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','fitting','secondaryFitting','armorPiercing','areaControl','fieldEngineering'])
+    assert.equal(observed[key],expected[key],'Source-bound buildcraft '+key+' differs');
   if(Object.hasOwn(expected,'wave'))for(const key of ['wave','completedWave'])
     assert.equal(observed[key],expected[key],'Source-bound wave '+key+' differs');
 }
@@ -157,7 +159,7 @@ function implementation_cannonDeployment(deployed,encounters,oracle){
     Number.isSafeInteger(deployed.runId) && Number.isSafeInteger(deployed.sessionRun),
     'Cannon proof requires explicit current document, scope and run identities');
   assert.ok(deployed.action==='deploy' && deployed.phase==='battle' && deployed.saveState==='ready' &&
-    ['last-stand-waves-v1','last-stand-waves-v2'].includes(deployed.profileVersion) && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
+    ['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(deployed.profileVersion) && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
     deployed.activeTier===1 && deployed.fittingId==='repair' && [20,30].includes(deployed.cannonDamage),
     'First cannon proof requires its actual current repair deployment');
   const models=encounters.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.action==='deploy');
@@ -374,7 +376,7 @@ function implementation_validateAwayAudioReturn({kind,before,begin,recovered,ms,
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
-  const waveRun=['last-stand-waves-v1','last-stand-waves-v2'].includes(before.loop?.profileVersion);
+  const waveRun=['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(before.loop?.profileVersion);
   // The current controller retains its wave profile after ReturnToInspection
   // removes the model. Its finalized result has explicit absent-clock/run fields;
   // it is a silent lifecycle boundary, never an archived combat callback lane.
@@ -386,7 +388,7 @@ function implementation_validateAwayAudioReturn({kind,before,begin,recovered,ms,
     item.phase===phase && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
     item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
   const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop,'result') && before.loop.t>=before.t;
-  assert.equal(waveRun,typeof before.rules==='string' && /^last-stand-waves-v[12]:/.test(before.rules) || idleWaveResult,
+  assert.equal(waveRun,typeof before.rules==='string' && /^last-stand-waves-v[123]:/.test(before.rules) || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
   if(idleWaveResult){
     const during=item=>current(item) && item.t>=before.t && item.t<=recovered;

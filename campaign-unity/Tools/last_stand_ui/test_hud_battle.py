@@ -61,9 +61,6 @@ class HudBattleTests(unittest.TestCase):
     def setUpClass(cls):
         # T-06 appends fresh evidence; the shared runner and historical T-05
         # evidence remain byte-identical. Its ROOT/PROJECT/UNITY do not change.
-        unity_check_runner.EVIDENCE = Path(
-            r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t06-author-20261008")
-        unity_check_runner.EVIDENCE = Path(r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t06-correction-20261008")
         cls.exit_code, cls.log = unity_check_runner.run_checks("LastStandHudChecks.RunBattle")
         cls.runtime_exit, cls.runtime_log = run_runtime_checks()
 

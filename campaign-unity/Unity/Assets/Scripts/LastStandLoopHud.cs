@@ -62,10 +62,10 @@ namespace SingedTerra.LastStand
                 (activation,intent,result)=>observations.ObservePurchase(activation,intent,result));
             modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements,shop.OpenPermanentFromPlanner,shop.CanOpenPermanentShop);settings=modals.Settings;
             actions=new[]{combat.Fitting,combat.Deploy,combat.Claim,combat.Purchase,combat.Redeploy,combat.Retry,combat.Pause,combat.Mute,combat.Tier,combat.Effects,
-                modals.Menu,combat.SpeedMinus,combat.SpeedRate,combat.SpeedPlus,garage.TierPrevious,garage.TierNext,garage.FittingPrevious,garage.FittingNext,garage.ResearchEntry};
+                modals.Menu,combat.SpeedMinus,combat.SpeedRate,combat.SpeedPlus,garage.TierPrevious,garage.TierNext,garage.ArmoryEntry,garage.ResearchEntry};
             var core=new List<Button>(actions);core.Add(combat.WaveInfo);coreActions=core.ToArray();
             var background=new List<Button>(coreActions);background.AddRange(shop.Buttons);backgroundActions=background.ToArray();
-            var all=new List<Button>(backgroundActions);all.AddRange(modals.Buttons);
+            var all=new List<Selectable>(backgroundActions);all.AddRange(modals.Buttons);all.Add(modals.Armory.NameInput);
             keyboard=root.gameObject.AddComponent<LastStandHudKeyboard>();
             keyboard.Initialize(all.ToArray(),b=>{shop.RevealSelection(b);modals.Reveal(b);});modals.BindKeyboard(keyboard);
             keyboard.CanScrollContent=()=>combat.CanScrollRecovery;
@@ -84,7 +84,7 @@ namespace SingedTerra.LastStand
         }
         public void Refresh()
         {
-            modals.BeforeRefresh(garage.ResearchEntry,combat.WaveInfo);
+            modals.BeforeRefresh(garage.ResearchEntry,combat.WaveInfo,garage.ArmoryEntry);
             shop.ReconcileSession();
             var state=combat.Project(shop.IsOpen);keyboard.BeforeRefresh(state.Phase!=projectedPhase);projectedPhase=state.Phase;
             for(int i=0;i<actions.Length;i++)
@@ -97,7 +97,7 @@ namespace SingedTerra.LastStand
             if((state.Phase=="battle"||state.Phase=="settling")&&!shop.IsOpen)shop.Entry.GetComponentInChildren<Text>(true).text="RUN\nUPGRADES";
             nodes["DockHeading"].GetComponent<Text>().text=state.Phase=="battle"||state.Phase=="settling"?"GAME SPEED":"FIELD CONTROLS";
             modals.Refresh(keyboard,backgroundActions);Layout();
-            modals.AfterRefresh(keyboard,garage.TierNext,garage.FittingNext);observations.ReportShopState();
+            modals.AfterRefresh(keyboard,garage.TierNext,garage.ArmoryEntry);observations.ReportShopState();
         }
         public void Layout()
         {

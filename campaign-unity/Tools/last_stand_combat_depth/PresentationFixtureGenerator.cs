@@ -34,7 +34,8 @@ static class PresentationFixtureGenerator
             int remaining=40000;
             while(!model.AwaitingWaveCommit&&model.Status==EncounterStatus.Running&&remaining-->0)
             {model.Step();shop.ObserveAuthoritativeKills(model,profile.ResearchRank(LastStandResearchTrackId.ScrapLogistics));}
-            Require(remaining>0&&model.AwaitingWaveCommit&&model.Hull>0,"Actual cohort did not clear alive: tier "+tier+" wave "+model.Wave);
+            Require(remaining>0&&model.AwaitingWaveCommit&&model.Hull>0,"Actual cohort did not clear alive: tier "+tier+" wave "+model.Wave+
+                " hull "+model.Hull+" status "+model.Status+" remaining tick budget "+remaining);
             Require(model.CompletedWave==commits+1&&profile.TryCommitWave(model,shop),"Sequential actual boundary transaction: "+profile.SaveError);
             commits++;
             if(model.CompletedWave<end)Require(model.ContinueAfterCheckpoint(),"Actual boundary continuation");
@@ -58,9 +59,9 @@ static class PresentationFixtureGenerator
         var store=new Store{Raw=mature};var profile=Load(store,now());
         Require(!profile.HasCheckpoint&&profile.MaximumGameSpeed==5,"Existing mature seed must be idle and funded");
         var runs=new List<object>();
-        for(int tier=1;tier<=3;tier++)
+        for(int tier=1;tier<=5;tier++)
         {
-            runs.Add(Advance(profile,tier,tier==1?500:300));
+            runs.Add(Advance(profile,tier,tier==1?750:tier==2?500:300));
             Require(profile.TryFinalizeRun(null,"abandon"),"Simulated campaign must finalize through the actual owner");
         }
         var tiers=new List<object>();foreach(var tier in LastStandRunEdition.Current.Tiers)
@@ -68,6 +69,12 @@ static class PresentationFixtureGenerator
         var fittings=new List<object>();foreach(var fitting in LastStandRunEdition.Current.Fittings)
         {Require(profile.IsFittingUnlocked(fitting.Id),"Actual milestone did not unlock fitting");fittings.Add(fitting.Id);}
         Require(profile.TrySelectTier(1)&&profile.TrySelectFitting("launcher"),"Idle presentation selection");
+        var presentation=LastStandSaveJson.Read(store.Raw);
+        Require(presentation["checkpoint"]==null&&presentation["pendingDefeat"]==null,"Display strength reset is permitted only after all simulated runs finalize");
+        var levels=LastStandSaveJson.Object(presentation["permanentLevels"]);
+        var cohortLevels=new Dictionary<string,object>(levels);int previousCannon=profile.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack);
+        levels["cannonAttack"]=0;store.Raw=LastStandSaveJson.Write(presentation);profile=Load(store,now());
+        Require(profile.GetPermanentLevel(LastStandUpgradeTrackId.CannonAttack)==0,"Production must reload the idle display strength reset");
         long utc=now();Anchor(profile,utc);ValidateReload(store,utc);
         int combinations=0;
         foreach(var tier in LastStandRunEdition.Current.Tiers)foreach(var fitting in LastStandRunEdition.Current.Fittings)
@@ -76,10 +83,12 @@ static class PresentationFixtureGenerator
             Require(ready.TrySelectTier(tier.Id)&&ready.TrySelectFitting(fitting.Id)&&ready.TryDeploy(),"Unlocked roster must actually deploy every pairing");
             ready.Checkpoint.RestoreModel();ready.Checkpoint.RestoreShop();combinations++;
         }
-        return Map("id","roster-ready","save",store.Raw,"version",7,"createdUtcMilliseconds",utc,"hasCheckpoint",false,
+        return Map("id","roster-ready","save",store.Raw,"version",8,"createdUtcMilliseconds",utc,"hasCheckpoint",false,
             "unlockedTiers",tiers,"unlockedFittings",fittings,"simulatedRuns",runs,"productionReloadValidated",true,
+            "equipmentBayCount",profile.EquipmentBayCount,"researchLabCount",profile.UnlockedResearchLabCount,"combatResearchUnlocked",profile.CombatResearchUnlocked,
             "validatedDeploymentCombinations",combinations,"giftedPermanentLevels",LastStandSaveJson.Read(store.Raw)["permanentLevels"],"sourceStoreWrites",store.Writes,
-            "scope","Existing declared mature development gifts plus simulated continuous cohorts; not earned player progression or elapsed endurance.");
+            "cohortPermanentLevels",cohortLevels,"idlePresentationReset",Map("track","cannonAttack","before",previousCannon,"after",0),
+            "scope","Existing declared mature development gifts plus simulated continuous cohorts; completed cohort provenance retained. After every run finalized, the idle display copy resets Cannon Attack from500 to0 so auxiliary fittings can fire; other gifts stay unchanged. Not earned player progression, native acceptance or elapsed endurance.");
     }
     static Dictionary<string,object> BeforeElite(string roster,Func<long> now)
     {
@@ -94,10 +103,30 @@ static class PresentationFixtureGenerator
         bool elite=false;for(int i=0;i<40000&&model.Status==EncounterStatus.Running&&!model.AwaitingWaveCommit&&!elite;i++)
         {model.Step();foreach(var foe in model.Foes)if(foe.Alive&&foe.Kind==FoeKind.SiegeElite)elite=true;}
         Require(elite,"Actual restored next cohort must contain an elite");
-        return Map("id","tier2-before-elite","save",store.Raw,"version",7,"createdUtcMilliseconds",utc,"hasCheckpoint",true,
+        return Map("id","tier2-before-elite","save",store.Raw,"version",8,"createdUtcMilliseconds",utc,"hasCheckpoint",true,
             "tier",2,"completedWave",49,"nextWave",50,"fitting","launcher","giftedPermanentLevels",levels,
             "simulatedRuns",new List<object>{run},"productionReloadValidated",true,"nextCohortContainsElite",true,
             "scope","Idle copy of roster-ready with explicitly reset gifted levels; 49 continuous actual cohorts, not earned player progression.");
+    }
+    static Dictionary<string,object> BeforeCommander(string roster,Func<long> now)
+    {
+        var data=LastStandSaveJson.Read(roster);Require(data["checkpoint"]==null,"Strength reset is permitted only in this idle development copy");
+        var levels=LastStandSaveJson.Object(data["permanentLevels"]);
+        foreach(var track in LastStandUpgradeCatalog.Tracks)levels[track.Key]=
+            track.Id==LastStandUpgradeTrackId.HullCapacity||track.Id==LastStandUpgradeTrackId.Armor?500:
+            track.Id==LastStandUpgradeTrackId.CannonAttack||track.Id==LastStandUpgradeTrackId.LauncherAttack?100:0;
+        var store=new Store{Raw=LastStandSaveJson.Write(data)};var profile=Load(store,now());
+        Require(profile.TryApplyLoadout(new LastStandLoadout("launcher")),"Development loadout must apply through the actual owner");
+        var run=Advance(profile,5,99);long utc=now();Anchor(profile,utc);ValidateReload(store,utc);
+        var model=profile.Checkpoint.RestoreModel();Require(model.CompletedWave==99&&model.Hull>0,"Actual living wave99 boundary");
+        Require(model.ContinueAfterCheckpoint()&&model.Wave==100,"Next actual cohort is wave100");
+        bool commander=false;for(int i=0;i<40000&&model.Status==EncounterStatus.Running&&!model.AwaitingWaveCommit&&!commander;i++)
+        {model.Step();foreach(var foe in model.Foes)if(foe.Alive&&foe.Kind==FoeKind.SiegeCommander)commander=true;}
+        Require(commander,"Actual restored next cohort must contain a Siege Commander");
+        return Map("id","tier5-before-commander","save",store.Raw,"version",8,"createdUtcMilliseconds",utc,"hasCheckpoint",true,
+            "tier",5,"completedWave",99,"nextWave",100,"fitting","launcher","secondaryFitting","","giftedPermanentLevels",levels,
+            "simulatedRuns",new List<object>{run},"productionReloadValidated",true,"nextCohortContainsCommander",true,"commanderObservedTick",model.Tick,
+            "scope","Idle copy of roster-ready with gifted Hull/Armor500, Cannon/Launcher100, all other permanent levels0, launcher with no second bay, and synthetic prior research; 99 continuous actual simulated cohorts. Development presentation only, not earned player progression, native acceptance or elapsed endurance.");
     }
     static int Main(string[] args)
     {
@@ -107,7 +136,8 @@ static class PresentationFixtureGenerator
             long fixedUtc=args[1]=="live"?-1:long.Parse(args[1]);Func<long> now=()=>fixedUtc<0?DateTimeOffset.UtcNow.ToUnixTimeMilliseconds():fixedUtc;
             var roster=Roster(File.ReadAllText(args[0]),now);
             var elite=BeforeElite((string)roster["save"],now);
-            Console.WriteLine(LastStandSaveJson.Write(Map("cases",new List<object>{roster,elite})));return 0;
+            var commander=BeforeCommander((string)roster["save"],now);
+            Console.WriteLine(LastStandSaveJson.Write(Map("cases",new List<object>{roster,elite,commander})));return 0;
         }
         catch(Exception error){Console.Error.WriteLine(error);return 1;}
     }

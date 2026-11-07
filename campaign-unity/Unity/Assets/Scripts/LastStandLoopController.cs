@@ -25,7 +25,8 @@ namespace SingedTerra.LastStand
             {
                 var receipt=Progression?.LastReceipt;
                 return receipt==null?"":LastStandTierHudText.WaveReceipt(receipt.Wave,receipt.Salvage,
-                    receipt.MilestoneId!=null,receipt.UnlockedFitting,receipt.UnlockedTier);
+                    receipt.MilestoneId!=null,receipt.UnlockedFitting,receipt.UnlockedTier,
+                    receipt.UnlockedEquipmentBays,receipt.UnlockedResearchLabs,receipt.UnlockedCombatResearch);
             }
         }
         string ReceiptNotice(string context="")=>ConfirmedWaveReceipt==""?context:
@@ -122,7 +123,7 @@ namespace SingedTerra.LastStand
             Phase = Progression.PendingDefeat != null ? "result" : Progression.Wallet > 0 ? "workshop" : "garage";
             if (Progression.SaveState != "ready") Notice = Progression.SaveError;
             ApplyTierEnvironment(Progression.SelectedTier);
-            art.TrySelectFitting(Progression.Checkpoint?.FittingId ?? Progression.SelectedFitting);
+            art.TrySelectLoadout(Progression.Checkpoint?.Loadout ?? Progression.SelectedLoadout);
             Refresh("ready");
         }
 
@@ -172,7 +173,9 @@ namespace SingedTerra.LastStand
         }
         void RefreshGarageSelections()
         {
-            if(!GarageCardsVisible)return;
+            // A modal may preview an unearned fitting. The garage cursor must
+            // continue to describe its committed build until that editor closes.
+            if(!GarageCardsVisible||MenuOpen)return;
             var content=LastStandContentCatalog.Current;
             string stamp=Progression.SelectedTier.ToString();
             foreach(var tier in content.Tiers)
@@ -263,7 +266,7 @@ namespace SingedTerra.LastStand
         void StartReservedRun(bool resume)
         {
             var checkpoint=Progression.Checkpoint;
-            if (checkpoint==null || !ApplyTierEnvironment(checkpoint.Tier) || !art.TrySelectFitting(checkpoint.FittingId)) return;
+            if (checkpoint==null || !ApplyTierEnvironment(checkpoint.Tier) || !art.TrySelectLoadout(checkpoint.Loadout)) return;
             var shop=checkpoint.RestoreShop();
             var model=checkpoint.RestoreModel();
             runShop = shop; FinalAccounting = null;
@@ -507,7 +510,7 @@ namespace SingedTerra.LastStand
             if(Session.Model==null)
             {
                 ApplyTierEnvironment(Progression.Checkpoint?.Tier??Progression.SelectedTier);
-                art.TrySelectFitting(Progression.Checkpoint?.FittingId??Progression.SelectedFitting);
+                art.TrySelectLoadout(Progression.Checkpoint?.Loadout??Progression.SelectedLoadout);
                 garageTierStamp=garageFittingStamp=null;
             }
             Notice=confirmed?"Upgrade saved. Existing checkpoints keep their original deployment stats.":"Save confirmed.";
@@ -555,6 +558,7 @@ namespace SingedTerra.LastStand
         public void OpenMenu(string page = "menu")
         {
             if(page=="appearance" && !CanCustomizeAppearance)return;
+            if(page=="armory" && !CanCustomizeBuild)return;
             if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
@@ -564,7 +568,9 @@ namespace SingedTerra.LastStand
             if (!MenuOpen && Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(true)) return;
             LeaveBackupPage(page);
             LeaveAppearancePage(page);
+            LeaveArmoryPage(page);
             if(page=="appearance" && MenuPage!="appearance")BeginAppearance();
+            if(page=="armory" && MenuPage!="armory")BeginArmory();
             MenuPage = page; Confirmation = "";
             Audio.UnlockFromGesture("menu"); Refresh("menu");
         }
@@ -576,6 +582,7 @@ namespace SingedTerra.LastStand
             if (Session.Model != null && !Session.CheckpointBlocked && !Session.TrySetMenuPaused(false)) return;
             LeaveBackupPage("");
             LeaveAppearancePage("");
+            LeaveArmoryPage("");
             MenuPage = ""; Confirmation = ""; Refresh("menu-close");
         }
         public void RequestConfirmation(string action)
@@ -595,7 +602,7 @@ namespace SingedTerra.LastStand
             { Notice = "Finish reconciling this run and retry any unconfirmed save before leaving."; Refresh("navigation-unavailable"); return; }
             // Ordinary navigation preserves the last committed wave. Partial
             // wave progress and purchases are restored together on Resume.
-            LeaveAppearancePage("");MenuPage="";Confirmation="";Selection=null;
+            LeaveAppearancePage("");LeaveArmoryPage("");MenuPage="";Confirmation="";Selection=null;
             if(Session.Model!=null){Phase="garage";runShop=null;Session.ReturnToInspection();}
             Refresh("navigation");
             Platform.Navigate(account);
@@ -671,6 +678,7 @@ namespace SingedTerra.LastStand
             if (hud == null) return;
             RefreshGarageSelections();
             RefreshAppearance();
+            RefreshArmory();
             SyncAudioAdmission();
             hud.Refresh(); Changed?.Invoke();
             EmitState(action);

@@ -15,7 +15,7 @@ using SingedTerra.VisualReview;
 public static class LastStandAppearanceChecks
 {
     const BindingFlags Private=BindingFlags.Instance|BindingFlags.NonPublic;
-    sealed class Storage : ILastStandStorage
+    internal sealed class Storage : ILastStandStorage
     {
         public string Value;
         public bool DenyWrite;
@@ -31,7 +31,7 @@ public static class LastStandAppearanceChecks
         public void Cancel(){}
         public void Dispose(){}
     }
-    sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         public readonly Storage Game=new Storage(),Preferences=new Storage();
         public readonly LastStandLoopController Loop;
@@ -39,8 +39,9 @@ public static class LastStandAppearanceChecks
         public readonly Canvas Canvas;
         public readonly LastStandHudKeyboard Keyboard;
         RenderTexture target;
-        public Fixture()
+        public Fixture(string initialSave=null)
         {
+            Game.Value=initialSave;
             LastStandLoopController.StorageFactory=()=>Game;LastStandLoopController.PreferencesStorageFactory=()=>Preferences;
             LastStandLoopController.BackupTransportFactory=_=>new Transport();
             EditorSceneManager.OpenScene("Assets/Scenes/LastStandPrototype.unity",OpenSceneMode.Single);

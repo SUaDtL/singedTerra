@@ -258,6 +258,37 @@ function fittingFixture(initial='repair',fault=()=>{}) {
   return {options,calls,state,layout};
 }
 
+function armoryFittingFixture(initial='repair',fault=()=>{}){
+  const state={fittingId:initial,selectedPrimaryId:initial,selectedSecondaryId:'',armoryDraftPrimaryId:initial,armoryDraftSecondaryId:'',armoryCanApply:false,menu:''},calls=[];
+  const layout={schema:'singedterra-last-stand-observation/v6',controls:[{name:'ArmoryEntry',active:true,interactable:true}],armoryControls:[]};
+  const refresh=()=>{layout.armoryControls=['ArmoryBay1Previous','ArmoryBay1Next','ArmoryApply','ArmoryClose'].map(name=>({name,active:state.menu==='armory',interactable:name==='ArmoryApply'?state.armoryCanApply:true}));};
+  refresh();
+  return {state,layout,calls,options:{currentState:()=>state,currentLayout:()=>layout,waitFor:async predicate=>assert.ok(predicate()),click:async name=>{
+    calls.push(name);
+    if(name==='ArmoryEntry')state.menu='armory';
+    if(name==='ArmoryBay1Previous'||name==='ArmoryBay1Next'){
+      state.armoryDraftPrimaryId=name==='ArmoryBay1Next'?'launcher':'repair';state.fittingId=state.armoryDraftPrimaryId;state.armoryCanApply=true;
+    }
+    if(name==='ArmoryApply'){state.selectedPrimaryId=state.armoryDraftPrimaryId;state.armoryCanApply=false;}
+    if(name==='ArmoryClose')state.menu='';
+    fault({state,name});refresh();
+  }}};
+}
+test('v6 fitting journey previews through Armory then requires confirmed Apply before returning',async()=>{
+  for(const [initial,fitting,direction] of [['repair','launcher','Next'],['launcher','repair','Previous']]){
+    const fixture=armoryFittingFixture(initial);await journey.selectLastStandFitting({...fixture.options,fitting});
+    assert.deepEqual(fixture.calls,['ArmoryEntry','ArmoryBay1'+direction,'ArmoryApply','ArmoryClose']);
+    assert.equal(fixture.state.selectedPrimaryId,fitting);assert.equal(fixture.state.menu,'');
+  }
+  const unchanged=armoryFittingFixture();await journey.selectLastStandFitting({...unchanged.options,fitting:'repair'});assert.deepEqual(unchanged.calls,[]);
+  for(const fault of [({state,name})=>{if(name==='ArmoryApply')state.selectedPrimaryId='repair';},
+    ({state,name})=>{if(name==='ArmoryBay1Next')state.selectedPrimaryId='launcher';},
+    ({state,name})=>{if(name==='ArmoryBay1Next')state.armoryDraftSecondaryId='shield';}]){
+    const fixture=armoryFittingFixture('repair',fault);await assert.rejects(journey.selectLastStandFitting({...fixture.options,fitting:'launcher'}));
+    assert.ok(!fixture.calls.includes('ArmoryClose'),'Unconfirmed or changed build cannot be reported as applied');
+  }
+});
+
 test('fitting journey uses the actual inline arrow and observes equipped identity in either direction',async()=>{
   for(const [initial,fitting,arrow] of [['repair','launcher','FittingNext'],['launcher','repair','FittingPrevious']]){
     const fixture=fittingFixture(initial);await journey.selectLastStandFitting({...fixture.options,fitting});

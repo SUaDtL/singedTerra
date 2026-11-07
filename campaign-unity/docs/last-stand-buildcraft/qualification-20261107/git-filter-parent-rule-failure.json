@@ -1,0 +1,20 @@
+{
+  "files": 55,
+  "status": "fail",
+  "changedByGit": [
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.inputs.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.inputs.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-balance-summary.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-farming-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-500-wave-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/buildcraft-sensitivity-report.json",
+    "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/final-build-summary.json",
+    "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/local-bytes-final.json",
+    "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/native-player-result.json",
+    "campaign-unity/docs/last-stand-buildcraft/qualification-20261107/utmp-preservation.json",
+    "campaign-unity/docs/last-stand-buildcraft/validation.json",
+    "campaign-unity/docs/last-stand-buildcraft/verification/coverage-cov03.json"
+  ]
+}

@@ -66,8 +66,8 @@ test('actual research endurance admission requires current schema and retains ex
       writeFileSync(path,JSON.stringify(manifest));};
     const admit=()=>endurance.admitResearchFixtures(manifest,path,directory);
     write(save);assert.doesNotThrow(admit);
-    for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined]){
-      write({...save,version});assert.throws(admit,/Current endurance requires save version 7/);
+    for(const version of [4,5,6,9,0,-1,6.5,'6',null,undefined]){
+      write({...save,version});assert.throws(admit,/Endurance requires explicit save version 7 or 8/);
     }
     write(save);writeFileSync(savePath,JSON.stringify({...save,version:8}));
     assert.throws(admit,/Fixture bytes changed/);
@@ -338,8 +338,8 @@ test('actual endurance durable readback admits current and retained checkpoint e
     assert.equal(result.completed,true);
     assert.equal(result.report.latestSample.checkpoint.wave,checkpoint?.encounter.completedWave??null);
   }
-  for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined])
-    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Current endurance requires save version 7/);
+  for(const version of [4,5,6,9,0,-1,6.5,'6',null,undefined])
+    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Endurance requires explicit save version 7 or 8/);
   for(const mutate of [cp=>cp.encounter.rulesVersion='unknown',cp=>cp.contentVersion='last-stand-content-v1',
     cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage]){
     const checkpoint=structuredClone(current);mutate(checkpoint);

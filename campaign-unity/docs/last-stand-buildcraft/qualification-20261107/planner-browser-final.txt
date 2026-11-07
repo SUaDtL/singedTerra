@@ -1,0 +1,1 @@
+{"status":"pass","checks":15,"result":"C:\\Users\\brenn\\.codex\\worktrees\\last-stand-research-farming\\singedTerra\\campaign-unity\\Evidence\\planning-browser\\2026-11-07T07-30-33-820Z\\result.json"}

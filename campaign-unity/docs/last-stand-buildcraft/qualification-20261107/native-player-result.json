@@ -1,0 +1,21 @@
+{
+  "player": "LastStand-windows-20261107T065017Z-c9fe9c",
+  "ownerFiles": [
+    {
+      "before": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "after": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "path": "C:\\Users\\brenn\\AppData\\LocalLow\\singedTerra\\Starter Tank - Art Slice\\Unity\\local.683c9b86e88ebe342ba03c730e32c96b\\Editor\\Analytics\\config"
+    },
+    {
+      "before": "3155BA37D535D783631319424A2D25CAFDA8683575A1801AB6268CE86C83BD3B",
+      "after": "3155BA37D535D783631319424A2D25CAFDA8683575A1801AB6268CE86C83BD3B",
+      "path": "C:\\Users\\brenn\\AppData\\LocalLow\\singedTerra\\Starter Tank - Art Slice\\Unity\\local.683c9b86e88ebe342ba03c730e32c96b\\Editor\\Analytics\\values"
+    }
+  ],
+  "error": "point (160, 354) is over PickerHost.exe \"\", not target window LastStand.exe \"Last Stand\"",
+  "ownerSaveSlotsBefore": 0,
+  "status": "blocked-before-input",
+  "ownedPlayerStopped": true,
+  "attempts": 2,
+  "profile": "bc_20261107_a"
+}

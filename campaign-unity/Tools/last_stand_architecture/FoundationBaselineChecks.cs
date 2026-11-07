@@ -77,9 +77,15 @@ static class FoundationBaselineChecks
         Row("bulk", buy.PurchasedQuantity, buy.ChargedScrap, restored.EarnedScrap,
             restored.SpentScrap, restored.Scrap,
             restored.GetTrack(LastStandUpgradeTrackId.CannonAttack).CurrentLevel);
-        foreach (var track in LastStandResearchCatalog.Tracks)
+        // This immutable baseline predates combat research; compare every
+        // original track explicitly rather than widening its frozen oracle.
+        foreach (var id in new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.SalvageRecovery,
+            LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.ScrapLogistics})
+        {
+            var track=LastStandResearchCatalog.Get(id);
             Row("research", track.Key, track.MaximumRank, track.Cost(1),
                 track.BaseDurationMilliseconds(1));
+        }
     }
     static void ClockObservations()
     {

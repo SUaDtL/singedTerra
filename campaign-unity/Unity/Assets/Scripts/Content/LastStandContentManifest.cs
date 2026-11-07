@@ -50,20 +50,21 @@ namespace SingedTerra.LastStand
                 LastStandEnemyCatalog.ValidateMix(tier.EnemyMixId);
                 tiers.Add(tier.Id);if(!environments.Contains(tier.EnvironmentId))throw new ArgumentException("Tier references a missing environment.");
             }
-            var fittings=new HashSet<string>(StringComparer.Ordinal);var mechanics=new HashSet<LastStandFitting>();var unlocks=new HashSet<string>(StringComparer.Ordinal);
+            var fittings=new HashSet<string>(StringComparer.Ordinal);var mechanics=new HashSet<LastStandFitting>();
             foreach(var fitting in Fittings)
             {
                 if(fitting==null||!fittings.Add(fitting.Id)||!mechanics.Add(fitting.Mechanic))throw new ArgumentException("Duplicate fitting identity or mechanic.");
-                if(!fitting.InitiallyUnlocked&&(!tiers.Contains(fitting.UnlockTier)||!unlocks.Add(fitting.UnlockTier+":"+fitting.UnlockWave)))
-                    throw new ArgumentException("Invalid or ambiguous fitting unlock.");
+                if(!fitting.InitiallyUnlocked&&!tiers.Contains(fitting.UnlockTier))
+                    throw new ArgumentException("Invalid fitting unlock.");
             }
             foreach(var tier in Tiers)
             {
                 var milestones=LastStandRewardCatalog.Milestones(tier,Tiers,Fittings);
                 foreach(var milestone in milestones)
-                    if(milestone.UnlockTierId!=0&&!tiers.Contains(milestone.UnlockTierId) ||
-                        milestone.UnlockFittingId!=null&&!fittings.Contains(milestone.UnlockFittingId))
-                        throw new ArgumentException("Milestone references missing content.");
+                    foreach(var reward in milestone.Rewards)
+                        if(reward.Kind==LastStandRewardKind.Tier&&!tiers.Contains(reward.Amount)||
+                            reward.Kind==LastStandRewardKind.Fitting&&!fittings.Contains(reward.Id))
+                            throw new ArgumentException("Milestone references missing content.");
             }
             foreach(var economy in LastStandEconomyCatalog.All)
             {
@@ -109,13 +110,17 @@ namespace SingedTerra.LastStand
             new LastStandEnvironmentIdentity("sunlit-ash","Sunlit Ash","Warm ash flats, broken rock and long sunlit approaches."),
             new LastStandEnvironmentIdentity("iron-perimeter","Iron Perimeter","A cold industrial perimeter with hard cover and steel-grey ground."),
             new LastStandEnvironmentIdentity("cinder-basin","Cinder Basin","A broken caldera rim, basalt teeth and half-buried southern ruins."),
-            new LastStandEnvironmentIdentity("storm-foundry","Storm Foundry","A foundry yard, pressure tanks and cable works under cold storm light.")
+            new LastStandEnvironmentIdentity("storm-foundry","Storm Foundry","A foundry yard, pressure tanks and cable works under cold storm light."),
+            new LastStandEnvironmentIdentity("glass-wastes","Glass Wastes","Sun-bleached vitrified flats and fractured emerald glass spires."),
+            new LastStandEnvironmentIdentity("frostline-relay","Frostline Relay","Frozen relay towers and blue-white drifts beneath a pale winter sky.")
         });
         public static LastStandContentManifest Legacy { get; } = new LastStandContentManifest(LastStandRunEdition.LegacyContentVersion,
             LastStandTierCatalog.Legacy,new[]{Environments[0],Environments[1]},LastStandFittingCatalog.Legacy,LastStandResearchCatalog.Definitions);
         public static LastStandContentManifest Current { get; } = new LastStandContentManifest(LastStandRunEdition.CurrentContentVersion,
             LastStandTierCatalog.All,Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions);
-        public static LastStandContentManifest Get(string version)=>version==Legacy.Version?Legacy:version==Current.Version?Current:
+        public static LastStandContentManifest CombatDepth { get; } = new LastStandContentManifest(LastStandRunEdition.CombatDepthContentVersion,
+            LastStandTierCatalog.CombatDepth,new[]{Environments[0],Environments[1],Environments[2],Environments[3]},LastStandFittingCatalog.CombatDepth,LastStandResearchCatalog.Definitions);
+        public static LastStandContentManifest Get(string version)=>version==Legacy.Version?Legacy:version==CombatDepth.Version?CombatDepth:version==Current.Version?Current:
             throw new ArgumentException("Unsupported content edition.");
         public static LastStandEnvironmentIdentity Environment(string id)
         {

@@ -1,0 +1,37 @@
+test_timer_and_effect_readouts (last_stand_research.test_presentation.ResearchPresentationTests.test_timer_and_effect_readouts) ... FAIL
+test_lab_planner_quotes_share_cost_effects_and_applicability (last_stand_research.test_combat_research.CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability) ... FAIL
+
+======================================================================
+FAIL: test_timer_and_effect_readouts (last_stand_research.test_presentation.ResearchPresentationTests.test_timer_and_effect_readouts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_presentation.py", line 40, in test_timer_and_effect_readouts
+    def test_timer_and_effect_readouts(self): self.case("readouts")
+                                              ~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_presentation.py", line 34, in case
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : System.Exception: Global current and next-upgrade applicability must agree for GameSpeed with repair
+  at PresentationChecks.Readouts () [0x001ae] in <bca5b715c6834d218cc7986d963f8177>:0 
+  at PresentationChecks.Main (System.String[] args) [0x000a3] in <bca5b715c6834d218cc7986d963f8177>:0 
+
+
+======================================================================
+FAIL: test_lab_planner_quotes_share_cost_effects_and_applicability (last_stand_research.test_combat_research.CombatResearchTests.test_lab_planner_quotes_share_cost_effects_and_applicability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_combat_research.py", line 39, in test_lab_planner_quotes_share_cost_effects_and_applicability
+    self.case("quotes")
+    ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_research\test_combat_research.py", line 29, in case
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : System.Exception: Armor applicability must retain the base cannon alongside matching bays: launcher
+  at CombatResearchChecks.Quotes () [0x00a70] in <2d072cc0546c4b0cb472068af9cae5ad>:0 
+  at CombatResearchChecks.Main (System.String[] args) [0x0004e] in <2d072cc0546c4b0cb472068af9cae5ad>:0 
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.638s
+
+FAILED (failures=2)

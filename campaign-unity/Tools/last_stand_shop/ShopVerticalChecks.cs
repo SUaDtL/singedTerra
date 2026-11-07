@@ -68,7 +68,8 @@ internal static class ShopVerticalChecks
         var tracksProperty = catalog.GetProperty("Tracks", BindingFlags.Public | BindingFlags.Static);
         Require(tracksProperty != null, "The catalog must expose its immutable typed track definitions.");
         var current = (IReadOnlyList<LastStandUpgradeDefinition>)tracksProperty.GetValue(null);
-        Equal(current.Count, 10, "Current economy preserves eight tracks and appends two armaments");
+        Equal(current.Count, 12, "Current economy preserves ten tracks and appends Arc and Shield");
+        Equal(current[10].Key,"arcOutput","Arc appends without reindexing");Equal(current[11].Key,"shieldCapacity","Shield appends without reindexing");
         Equal(current[8].Key, "mortarAttack", "Mortar appended without reindexing");
         Equal(current[9].Key, "railgunAttack", "Railgun appended without reindexing");
         Equal(current[6].Key, "scattergunAttack", "Scattergun identity remains appended");
@@ -256,7 +257,7 @@ internal static class ShopVerticalChecks
             Equal(Text(typed, "Id"), current.Id.ToString(), "Typed Get exact ID");
             Equal(Text(typed, "Key"), current.Key, "Typed Get exact key");
         }
-        foreach (int invalidId in new[] { -1, 10, 99, int.MaxValue })
+        foreach (int invalidId in new[] { -1, 12, 99, int.MaxValue })
             RejectedParameter(() => CallStatic(typedLookup, Enum.ToObject(trackIdType, invalidId)), "id",
                 "Typed Get invalid id=" + invalidId);
         foreach (var unknown in new[] { null, "", "CannonAttack", "cannonAttack ", "unknown" })
@@ -289,11 +290,11 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "The actual compiled baseline supplies no run-owned ledger for independent tracks and unique-kill Scrap accounting.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int),typeof(LastStandLoadout),typeof(LastStandCombatResearchSnapshot) });
         Require(constructor != null, "The ledger must freeze six permanent levels for an identified run and fitting.");
         // Explicitly append zero for the new track to these preserved six-slot test inputs.
         if(permanentLevels != null && permanentLevels.Length == 6) { var expanded = new int[7]; Array.Copy(permanentLevels, expanded, 6); permanentLevels = expanded; }
-        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1 }); }
+        try { return constructor.Invoke(new object[] { runId, Enum.Parse(fittingType, launcher ? "Launcher" : "Repair"), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1,null,null }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -309,9 +310,9 @@ internal static class ShopVerticalChecks
         var ledgerType = assembly.GetType("SingedTerra.LastStand.LastStandShopState");
         Require(ledgerType != null, "Malformed construction must exercise the actual compiled ledger.");
         var fittingType = assembly.GetType("SingedTerra.LastStand.LastStandFitting");
-        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int) });
+        var constructor = ledgerType.GetConstructor(new[] { typeof(int), fittingType, typeof(IReadOnlyList<int>), typeof(string), typeof(LastStandRunEdition), typeof(int),typeof(LastStandLoadout),typeof(LastStandCombatResearchSnapshot) });
         Require(constructor != null, "Malformed construction uses the actual run/fitting/permanent snapshot boundary.");
-        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1 }); }
+        try { return constructor.Invoke(new[] { (object)runId, Enum.ToObject(fittingType, fittingValue), permanentLevels, LastStandUpgradeCatalog.LegacyEconomyVersion, null, 1,null,null }); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
 
@@ -469,7 +470,7 @@ internal static class ShopVerticalChecks
         foreach (int count in new[] { 0, 5, 6, 8 })
             RejectedConstructor(() => ActualLedger(23, 0, new int[count]), typeof(ArgumentException), "permanentLevels",
                 "Wrong permanent snapshot count=" + count);
-        RejectedConstructor(() => ActualLedger(23, 99, new int[7]), typeof(ArgumentException), null, "Undefined ledger fitting=99 refused by edition before construction");
+        RejectedConstructor(() => ActualLedger(23, 99, new int[7]), typeof(ArgumentOutOfRangeException), "fitting", "Undefined ledger fitting=99 refused before constructing its loadout");
     }
 
     static void LedgerUniqueKillIncome()
@@ -1689,7 +1690,9 @@ internal static class ShopVerticalChecks
     {
         var type = typeof(MechanicsShopTrack).Assembly.GetType("SingedTerra.LastStand.LastStandShopPresentation");
         Require(type != null, "Actual production supplies no immutable six-card run/permanent shop presentation.");
-        var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+        var signature=methodName=="ProjectRun"?new[]{typeof(LastStandShopState),typeof(LastStandBulkQuantity)}:
+            new[]{typeof(LastStandProgression),typeof(LastStandFitting),typeof(LastStandBulkQuantity)};
+        var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static,null,signature,null);
         Require(method != null, "Actual presentation supplies " + methodName);
         return methodName == "ProjectRun" ? CallStatic(method, owner, LastStandBulkQuantity.One) :
             CallStatic(method, owner, launcher ? LastStandFitting.Launcher : LastStandFitting.Repair, LastStandBulkQuantity.One);
@@ -1699,9 +1702,9 @@ internal static class ShopVerticalChecks
     {
         var cards = (IList)Get(view, "Cards");
         Require(cards.IsReadOnly, "The card collection cannot be replaced or reordered.");
-        Equal(cards.Count, Text(view,"Mode") == "Permanent" ? 10 : 7, "Permanent uses current roster; historical run retains its seven tracks");
+        Equal(cards.Count, Text(view,"Mode") == "Permanent" ? 12 : 7, "Permanent uses current roster; historical run retains its seven tracks");
         Equal(Get(cards[6], "Key"), "scattergunAttack", "Appended card preserves existing ordering");
-        if (cards.Count == 10) Equal(Get(cards[7], "Key"), "scrapYield", "Current permanent view includes Scrap Yield");
+        if (cards.Count == 12) Equal(Get(cards[7], "Key"), "scrapYield", "Current permanent view includes Scrap Yield");
         var result = new object[cards.Count];
         cards.CopyTo(result, 0);
         var immutableItems = new List<object>(result); immutableItems.Add(view);
@@ -1943,7 +1946,8 @@ internal static class ShopVerticalChecks
         {
             if (candidate.Name != name) continue;
             var parameters = candidate.GetParameters();
-            if (parameters.Length != args.Length) continue;
+            if (parameters.Length < args.Length) continue;
+            bool optional=true;for(int i=args.Length;i<parameters.Length;i++)optional&=parameters[i].IsOptional;if(!optional)continue;
             bool matches = true;
             for (int i = 0; i < args.Length; i++)
                 matches &= args[i] == null ? !parameters[i].ParameterType.IsValueType : parameters[i].ParameterType.IsInstanceOfType(args[i]);
@@ -1952,7 +1956,9 @@ internal static class ShopVerticalChecks
             method = candidate;
         }
         Require(method != null, "Missing public behavior: " + name);
-        try { return method.Invoke(owner, args); }
+        var declared=method.GetParameters();var supplied=new object[declared.Length];Array.Copy(args,supplied,args.Length);
+        for(int i=args.Length;i<declared.Length;i++)supplied[i]=declared[i].DefaultValue;
+        try { return method.Invoke(owner, supplied); }
         catch (TargetInvocationException error) { throw error.InnerException; }
     }
     static void Rejected(Action action, string claim)

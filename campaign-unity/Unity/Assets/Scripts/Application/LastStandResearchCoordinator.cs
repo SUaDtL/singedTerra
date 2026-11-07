@@ -22,6 +22,8 @@ namespace SingedTerra.LastStand
         public bool Initialized => clock != null;
         public bool CanAct => Initialized && progression.SaveState == "ready";
         public string Status { get; private set; } = "";
+        public LastStandResearchQuote Quote(LastStandResearchTrackId track,int rank)
+        {var snapshot=Snapshot;return snapshot==null?null:LastStandResearchPresentation.ProjectQuote(snapshot,track,rank,loadout:progression.SelectedLoadout);}
         public long ClosedMilliseconds { get; private set; }
         public event Action Confirmed;
 
@@ -62,7 +64,7 @@ namespace SingedTerra.LastStand
             {
                 int slot = definition.StorageSlot;
                 if (announcedRanks != null && snapshot.completedRanks[slot] > announcedRanks[slot])
-                    completed.Add(definition.Name + " rank " + snapshot.completedRanks[slot]);
+                    completed.Add(definition.Name + " rank " + snapshot.completedRanks[slot]+(definition.IsCombatSnapshot?" (next deployment)":""));
             }
             announcedRanks = (int[])snapshot.completedRanks.Clone();
             if (completed.Count > 0) completionNotice = "Completed: " + string.Join("; ", completed) + ".";

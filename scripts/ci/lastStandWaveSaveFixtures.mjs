@@ -3,15 +3,16 @@ const researchKeys=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistic
 const aggregate=(run,tier)=>({tier,runs:run?1:0,bestWave:run?.highestClearedWave??0,
   activeMilliseconds:run?.activeMilliseconds??0,repeatableSalvage:run?.repeatableSalvage??0,
   milestoneSalvage:run?.milestoneSalvage??0,researchBonusSalvage:run?.researchBonusSalvage??0});
-export function idleWaveFields({runId=1,wave=1,finalized=false}={}) {
+export function idleWaveFields({runId=1,wave=1,finalized=false,profileVersion=5}={}) {
   const run={runId,tier:1,fitting:'repair',economyVersion:'research-farming-economy-v2',
     startContext:'inert-context',endContext:'inert-context',highestClearedWave:wave,finishReason:finalized?'defeat':'',
     sinceUpdate:false,activeMilliseconds:50,pausedMilliseconds:0,closedMilliseconds:0,repeatableSalvage:wave,
     milestoneSalvage:0,researchBonusSalvage:0,speedMilliseconds:[0,50,0,0,0,0,0,0,0,0]};
-  return {version:5,revision:3,recoveryRemainder:0,research:{version:1,catalogVersion:'research-v1',revision:1,
+  const keys=[...researchKeys,...(profileVersion===8?['armorPiercing','areaControl','fieldEngineering']:[])];
+  return {version:profileVersion,revision:3,recoveryRemainder:0,research:{version:1,catalogVersion:profileVersion===8?'research-v2':'research-v1',revision:1,
     lastObservedUtcMilliseconds:1000,nextProjectIdentity:1,completionSequence:0,
-    completedRanks:Object.fromEntries(researchKeys.map(key=>[key,0])),partials:Object.fromEntries(researchKeys.map(key=>[key,null])),
-    slots:[{active:null,queued:null},{active:null,queued:null}]},
+    completedRanks:Object.fromEntries(keys.map(key=>[key,0])),partials:Object.fromEntries(keys.map(key=>[key,null])),
+    slots:Array.from({length:profileVersion===8?3:2},()=>({active:null,queued:null}))},
     history:{version:1,lastFinalizedRunId:finalized?runId:0,current:finalized?null:run,
       recent:finalized?[run]:[],tiers:finalized?[aggregate(run,1)]:[],lifetime:aggregate(finalized?run:null,0)}};
 }

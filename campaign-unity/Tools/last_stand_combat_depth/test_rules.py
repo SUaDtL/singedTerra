@@ -80,11 +80,17 @@ class RulesCompatibilityTests(unittest.TestCase):
     def unavailable_variant(self, label):
         return self.variant(label, {
             "LastStandTierCatalog.cs": [(",1,1,2,300,true,LastStandEnemyCatalog.Cinder)", ",1,1,2,300,false,LastStandEnemyCatalog.Cinder)"),
-                                        (",1,1,3,300,true,LastStandEnemyCatalog.Foundry)", ",1,1,3,300,false,LastStandEnemyCatalog.Foundry)")],
+                                        (",1,1,3,300,true,LastStandEnemyCatalog.Foundry)", ",1,1,3,300,false,LastStandEnemyCatalog.Foundry)"),
+                                        (",1,1,4,300,true,LastStandEnemyCatalog.Glass)", ",1,1,4,300,false,LastStandEnemyCatalog.Glass)"),
+                                        (",1,1,5,300,true,LastStandEnemyCatalog.Frost)", ",1,1,5,300,false,LastStandEnemyCatalog.Frost)")],
             "LastStandSelection.cs": [(",1,500,true)", ",1,500,false)"),
-                                      (",2,100,true)", ",2,100,false)")],
+                                      (",2,100,true)", ",2,100,false)"),
+                                      (",2,300)", ",2,300,false)"),
+                                      (",3,100)", ",3,100,false)")],
             "LastStandUpgradeCatalog.cs": [("LastStandUpgradeApplicability.Mortar,version)", "LastStandUpgradeApplicability.Mortar,version,false)"),
-                                            ("LastStandUpgradeApplicability.Railgun,version)", "LastStandUpgradeApplicability.Railgun,version,false)")],
+                                            ("LastStandUpgradeApplicability.Railgun,version)", "LastStandUpgradeApplicability.Railgun,version,false)"),
+                                            ("LastStandUpgradeApplicability.Arc,version)", "LastStandUpgradeApplicability.Arc,version,false)"),
+                                            ("LastStandUpgradeApplicability.Shield,version)", "LastStandUpgradeApplicability.Shield,version,false)")],
         })
 
     def test_migration_oracle_rejects_research_history_reset(self):

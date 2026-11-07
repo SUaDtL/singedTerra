@@ -12,7 +12,7 @@ static class CatalogChecks
         try {
             switch (args[0]) {
                 case "rosters":
-                    Require(LastStandTierCatalog.All.Count == 4, "Current authored campaign has four tiers.");
+                    Require(LastStandTierCatalog.All.Count == 6 && LastStandTierCatalog.CombatDepth.Count==4, "Current campaign has six tiers; retained combat-depth has four.");
                     Require(LastStandTierCatalog.Get(2).RequiredWave == 300, "Tier two unlock is wave 300.");
                     foreach (var tier in LastStandTierCatalog.All) {
                         var roster = LastStandWaveCatalog.ForWave(tier, 100);
@@ -23,7 +23,9 @@ static class CatalogChecks
                     }
                     Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),100).Milestone.UnlockFittingId == "scattergun", "Authored armament unlock.");
                     Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(2),300).Milestone.UnlockTierId == 3, "Current tier three unlock follows tier two.");
-                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(4),300).Milestone.UnlockTierId == 0, "No phantom tier five.");
+                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(4),300).Milestone.UnlockTierId == 5 && LastStandRewardCatalog.At(LastStandTierCatalog.Get(5),300).Milestone.UnlockTierId == 6, "New authored tier unlocks.");
+                    Require(LastStandRewardCatalog.At(LastStandTierCatalog.Get(6),300).Milestone.UnlockTierId == 0, "No phantom tier seven.");
+                    Require(LastStandRewardCatalog.At(LastStandRunEdition.CombatDepth.Tier(4),300,LastStandRunEdition.CombatDepth).Milestone.UnlockTierId==0,"Retained edition has no new tier reward.");
                     break;
                 case "expansion":
                     var tiers = new List<LastStandTierDefinition>();

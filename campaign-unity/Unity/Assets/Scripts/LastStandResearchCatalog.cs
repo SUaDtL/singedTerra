@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace SingedTerra.LastStand
 {
-    public enum LastStandResearchTrackId { GameSpeed, SalvageRecovery, ResearchSpeed, ScrapLogistics }
+    public enum LastStandResearchTrackId { GameSpeed, SalvageRecovery, ResearchSpeed, ScrapLogistics, ArmorPiercing, AreaControl, FieldEngineering }
 
     public static class LastStandResearchCatalog
     {
         public const string LegacyVersion = "research-v1";
-        public const string Version = LegacyVersion;
-        public const int SlotCount = 2, MultiplierDenominator = 100;
+        public const string Version = "research-v2";
+        public const int LegacyTrackCount = 4, LegacySlotCount = 2, SlotCount = 3, MultiplierDenominator = 100;
         public static LastStandResearchDefinitions Definitions { get; } = new LastStandResearchDefinitions(Version,new[]
         {
             new LastStandResearchDefinition(LastStandResearchTrackId.GameSpeed,"gameSpeed","Game Speed",8,0,
@@ -20,14 +20,25 @@ namespace SingedTerra.LastStand
             new LastStandResearchDefinition(LastStandResearchTrackId.ResearchSpeed,"researchSpeed","Research Speed",100,2,
                 LastStandResearchCurve.Polynomial(15,2,12),LastStandResearchCurve.Polynomial(20,4,15),LastStandResearchEffect.ResearchSpeed,2,false),
             new LastStandResearchDefinition(LastStandResearchTrackId.ScrapLogistics,"scrapLogistics","Scrap Logistics",100,3,
-                LastStandResearchCurve.Polynomial(20,1,20),LastStandResearchCurve.Polynomial(10,2,25),LastStandResearchEffect.Scrap,2,true)
+                LastStandResearchCurve.Polynomial(20,1,20),LastStandResearchCurve.Polynomial(10,2,25),LastStandResearchEffect.Scrap,2,true),
+            new LastStandResearchDefinition(LastStandResearchTrackId.ArmorPiercing,"armorPiercing","Armor Piercing",20,4,
+                LastStandResearchCurve.Polynomial(250,50,2),LastStandResearchCurve.Polynomial(50,10,2),LastStandResearchEffect.ArmorPiercing,1,true),
+            new LastStandResearchDefinition(LastStandResearchTrackId.AreaControl,"areaControl","Area Control",20,5,
+                LastStandResearchCurve.Polynomial(320,80,2),LastStandResearchCurve.Polynomial(75,15,2),LastStandResearchEffect.AreaControl,2,true),
+            new LastStandResearchDefinition(LastStandResearchTrackId.FieldEngineering,"fieldEngineering","Field Engineering",20,6,
+                LastStandResearchCurve.Polynomial(280,70,2),LastStandResearchCurve.Polynomial(60,15,2),LastStandResearchEffect.FieldEngineering,2,true)
         });
         public static int TrackCount => Definitions.Count;
         public static IReadOnlyList<LastStandResearchDefinition> Tracks => Definitions.Tracks;
         public static bool IsTrack(LastStandResearchTrackId id)=>Definitions.Contains(id);
         public static LastStandResearchDefinition Get(LastStandResearchTrackId id)=>Definitions.Get(id);
         public static bool TryGet(string key,out LastStandResearchDefinition definition)=>Definitions.TryGet(key,out definition);
-        public static int UnlockedSlots(int bestTierOneWave)=>bestTierOneWave>=100?2:bestTierOneWave>=25?1:0;
+        static LastStandEntitlements Entitlements(int bestTierOneWave,int bestTierTwoWave)=>
+            LastStandRewardCatalog.Entitlements(tier=>tier==1?bestTierOneWave:tier==2?bestTierTwoWave:0);
+        public static int UnlockedSlots(int bestTierOneWave,int bestTierTwoWave=0)=>Entitlements(bestTierOneWave,bestTierTwoWave).ResearchLabs;
+        public static bool CombatUnlocked(int bestTierOneWave)=>Entitlements(bestTierOneWave,0).CombatResearch;
+        public static bool IsUnlocked(LastStandResearchDefinition definition,int bestTierOneWave)=>
+            !definition.IsCombatSnapshot||CombatUnlocked(bestTierOneWave);
         public static bool TryMultiplyReward(long amount,int rank,int priorCarry,out long payout,out int nextCarry)
         {
             payout=0;nextCarry=priorCarry;
@@ -48,7 +59,8 @@ namespace SingedTerra.LastStand
         public int MaximumRank { get; }
         public int StorageSlot { get; }
         public LastStandResearchEffect Effect { get; }
-        public string Category => Effect==LastStandResearchEffect.GameSpeed?"Combat":Effect==LastStandResearchEffect.ResearchSpeed?"Research":"Economy";
+        public bool IsCombatSnapshot => Effect==LastStandResearchEffect.ArmorPiercing||Effect==LastStandResearchEffect.AreaControl||Effect==LastStandResearchEffect.FieldEngineering;
+        public string Category => Effect==LastStandResearchEffect.GameSpeed||IsCombatSnapshot?"Combat":Effect==LastStandResearchEffect.ResearchSpeed?"Research":"Economy";
         public LastStandResearchDefinition(LastStandResearchTrackId id,string key,string name,int maximumRank,int storageSlot,
             LastStandResearchCurve cost,LastStandResearchCurve durationMinutes,LastStandResearchEffect effect,int effectPerRank,bool accelerated)
         {

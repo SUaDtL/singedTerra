@@ -73,7 +73,7 @@ static class ResearchSaveChecks
             () => LastStandProgression.ResearchSaveTestRead(Mutate(raw, mutation)), message);
         invalid(x => x.Add("researchData", 99), "Unknown currency rejected");
         invalid(x => x["version"] = 2, "Future schema rejected");
-        invalid(x => x["catalogVersion"] = "research-v2", "Unknown catalog rejected");
+        invalid(x => x["catalogVersion"] = "research-v3", "Unknown catalog rejected");
         invalid(x => x["lastObservedUtcMilliseconds"] = 253402300800000L, "Out-of-range UTC rejected");
         invalid(x => LastStandSaveJson.Array(x["slots"]).Add(null), "Extra slot rejected");
         invalid(x => LastStandSaveJson.Object(x["completedRanks"])["unknown"] = 1, "Extra track rejected");

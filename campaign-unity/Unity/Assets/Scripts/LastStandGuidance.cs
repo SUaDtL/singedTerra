@@ -56,7 +56,7 @@ namespace SingedTerra.LastStand
         readonly HashSet<string> dismissedContexts = new HashSet<string>(StringComparer.Ordinal);
         static readonly LastStandGuidanceAction FirstDeployment = new LastStandGuidanceAction(
             "first-deployment","controls","help","LEARN THE CONTROLS",
-            "Choose a tier and fitting, then Deploy. Your starting checkpoint is saved before wave 1. You can pause at any time.");
+            "Choose a tier, prepare your build in Armory, then Deploy. Your starting checkpoint is saved before wave 1. You can pause at any time.");
         static readonly LastStandGuidanceAction ResumeCheckpoint = new LastStandGuidanceAction(
             "resume-checkpoint","checkpoints","help","HOW RESUME WORKS",
             "Your last confirmed wave checkpoint is ready. Resume Run restores it paused, so you choose when combat continues.");
@@ -98,8 +98,9 @@ namespace SingedTerra.LastStand
                 new LastStandHelpTopic("tiers","Tiers & fittings",TiersHelp,"milestones","VIEW WAVE MILESTONES"),
                 new LastStandHelpTopic("upgrades","Run & permanent upgrades",UpgradesHelp,"workshop","VIEW PERMANENT UPGRADES"),
                 new LastStandHelpTopic("research","Using the Research Lab",
-                    "Labs unlock through Tier 1 wave progress. Open Research, select a project, then review its next benefit, Salvage cost and duration. Choose Start Research in an idle Lab when ready.\n\n"+
+                    "Labs unlock through wave milestones; the third Lab is earned in Tier 2. Open Research, select a project, then review its next benefit, Salvage cost and duration. Choose Start Research in an idle Lab when ready.\n\n"+
                     "Research and permanent Workshop upgrades use the same Salvage. Research uses real time, including while the game is paused or closed; combat speed does not change its timer.\n\n"+
+                    "Armor Piercing, Area Control and Field Engineering apply on your next deployment. Resuming a checkpoint keeps its captured combat research. Game Speed and Salvage Recovery remain available to the current run.\n\n"+
                     "Switching or suspending saves elapsed research progress and refunds its paid cost. Resuming pays that cost again. Queued research is paid when queued; review the Lab's action details before changing it.",
                     "research","OPEN RESEARCH LAB"),
                 new LastStandHelpTopic("saves","Local saves & backups",
@@ -128,8 +129,8 @@ namespace SingedTerra.LastStand
         const string ControlsHelp="Use Pause/Resume or minus and plus. Speed changes in 0.5 steps: 0 is paused; 0.5x and 1x are available. Resume restores your last positive speed. Game Speed research unlocks higher speeds, up to 5x.";
         const string WavesHelp="Defeat every enemy in the wave. Each clear saves repeatable Salvage and any first-clear milestone bonus or unlock. See Wave Milestones in Menu. New runs have no separate defeat payout or Claim step. Older saved rewards can still be claimed once.";
         const string CheckpointsHelp="A starting checkpoint is saved before wave 1. Each clear saves hull, Scrap, upgrades and cooldowns. Return or reload keeps the last confirmed checkpoint; partial-wave purchases and spending roll back together. Resume waits for you and starts paused. Closed-tab time does not advance combat. An open hidden tab can keep progressing and saving waves. Failed saves stop combat until Retry succeeds.";
-        static string TiersHelp=>"The next locked tier shows its required wave. Earning it never selects it or ends your current farm. Open Wave Milestones for the current tier roadmap. "+LastStandMilestonePresentation.FittingRoadmap+" New Run or Abandon needs confirmation when a checkpoint exists. Completed rewards are kept.";
-        const string UpgradesHelp="Run upgrades spend Scrap; permanent upgrades spend banked Salvage. Cannon Attack, Launcher Attack, Scattergun Attack, Mortar Payload and Railgun Damage increase the matching weapon damage. Hull Capacity raises maximum hull, Armor reduces incoming damage, Cannon Cycle shortens the firing interval, and Field Repair restores more hull. Each card describes its next effect. Permanent purchases do not change an existing checkpoint's deployment stats.";
+        static string TiersHelp=>"The next locked tier shows its required wave. Earning it never selects it or ends your current farm. Open Wave Milestones for the current tier roadmap. "+LastStandMilestonePresentation.FittingRoadmap+"\n\nIn Armory, preview fittings on your tank, name one of three presets, then Apply Build. Cancel keeps your saved build. The cannon is always equipped. Bay 2 unlocks through wave progress; each bay must use a different fitting. Shared upgrades apply once to the tank.\n\nSaved builds prepare your next deployment. Resume keeps the checkpoint's build. New Run or Abandon needs confirmation when a checkpoint exists. Completed rewards are kept.";
+        const string UpgradesHelp="Run upgrades spend Scrap; permanent upgrades spend banked Salvage. Cannon Attack, Launcher Attack, Scattergun Attack, Mortar Payload, Railgun Damage and Arc Output increase the matching weapon's damage. Shield Capacity raises the Reactive Shield's buffer. Hull Capacity raises maximum hull, Armor reduces incoming damage, Cannon Cycle shortens the firing interval, and Field Repair restores more hull. Each card describes its current and next effect, including applicable combat research. Permanent purchases do not change an existing checkpoint's deployment stats.";
         const string PreferencesHelp="Progress stays in this browser and does not sync with your account. Use one active Last Stand tab. Settings has separate tutorial and purchase-suggestion switches. Essential save errors and confirmations remain visible.";
         // Retain the original complete text for existing callers and compatibility checks.
         public static string Help => "CONTROLS\n"+ControlsHelp+"\n\nWAVES & REWARDS\n"+WavesHelp+

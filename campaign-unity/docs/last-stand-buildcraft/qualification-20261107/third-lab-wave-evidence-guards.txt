@@ -1,0 +1,21 @@
+✔ earned-research preview preserves every field except monotonic clock metadata (5.1859ms)
+✔ funded third-lab comparison preserves research business fields and both fittings (1.8352ms)
+✔ current idle wave save accepts only clock metadata changes and rejects historical or altered progression (1.8915ms)
+✔ abandon records one bounded final history entry without rewards, time loss or aggregate inflation (1.7674ms)
+✔ actual foreground and background collectors select the current result transition instead of a later session row (0.1999ms)
+✔ actual hidden terminal caller records its hidden boundary before native return and refuses early visibility (0.3203ms)
+✔ actual hidden terminal path retains throttled debt and requires deterministic completion after native return (0.1742ms)
+✔ actual away owner verifies the hidden boundary after its minimum interval and before native return (0.32ms)
+✔ actual background terminal collector retains native edges from its verified model observation (0.1636ms)
+✔ fresh wave oracle rejects malformed, incomplete and contradictory output (1.3342ms)
+✔ natural wave terminal proof rejects changed identities, fabricated rows and duplicate payout (1.8108ms)
+✔ resume evidence requires fresh paused state, same document and immutable saved state (1.0921ms)
+✔ terminal payout binds the final same-session completed wave even on a simultaneous clear (0.4426ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.9032

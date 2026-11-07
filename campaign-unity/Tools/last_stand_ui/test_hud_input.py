@@ -52,9 +52,11 @@ def run_input_checks():
     materials = {project/"Assets/SeedPack02/Generated/Materials"/name: values
                  for name,values in rounding.items()}
     material_before = {path:path.read_bytes() for path in materials}
-    inputs = list((project/"Assets/Scripts").glob("*.cs")) + [project/"Assets/Editor/LastStandHudChecks.cs",
-        project/"ProjectSettings/InputManager.asset",Path(__file__), root/"campaign-unity/Tools/make_web_entry.py",
-        root/"campaign-unity/Tools/web-index-template.html", *materials]
+    def input_paths():
+        return sorted(set((project/"Assets/Scripts").rglob("*.cs")) | set((project/"Assets/Editor").rglob("*.cs")) | {
+            project/"ProjectSettings/InputManager.asset",Path(__file__),Path(unity_check_runner.__file__),
+            root/"campaign-unity/Tools/make_web_entry.py",root/"campaign-unity/Tools/web-index-template.html", *materials})
+    inputs = input_paths()
     source = {p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
     startup = subprocess.STARTUPINFO()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -97,7 +99,7 @@ def run_input_checks():
             raise RuntimeError("Unexpected material change; retained without restoring: "+str(path))
         path.write_bytes(before)
     content=log.read_text(encoding="utf-8",errors="replace") if log.exists() else ""
-    after={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    after={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in input_paths()}
     (evidence/"result.json").write_text(json.dumps({"exit":process.returncode,"stdout":stdout,"stderr":stderr,
         "source_unchanged":source==after,"render_material_observed_writes":fixture_records,
         "log_sha256":hashlib.sha256(log.read_bytes()).hexdigest() if log.exists() else None},indent=2))
@@ -115,8 +117,6 @@ class HudInputTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        unity_check_runner.EVIDENCE = Path(
-            r"C:\Users\brenn\codearbiter-review-integration-20261006\ui-t08-author-20261008")
         cls.exit_code, cls.log = run_input_checks()
 
     def check_case(self, name):

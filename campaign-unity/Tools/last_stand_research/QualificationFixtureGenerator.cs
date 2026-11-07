@@ -51,6 +51,7 @@ static class QualificationFixtureGenerator
     {
         long total=0;
         foreach(var row in LastStandResearchCatalog.Tracks)
+            if(!row.IsCombatSnapshot)
             for(int rank=1;rank<=(row.Id==LastStandResearchTrackId.GameSpeed?8:25);rank++)
                 total=checked(total+row.DurationMilliseconds(rank,row.Id==LastStandResearchTrackId.ScrapLogistics?25:0));
         return total;
@@ -60,6 +61,7 @@ static class QualificationFixtureGenerator
         const int wallet=2000000;long duration=MatureDuration(),utc=now()-duration,start=utc;
         var store=new Store();var profile=Seed(legacy,store,wallet,500,utc);long funding=0;
         foreach(var row in LastStandResearchCatalog.Tracks)
+        if(!row.IsCombatSnapshot)
         for(int rank=1;rank<=(row.Id==LastStandResearchTrackId.GameSpeed?8:25);rank++) {
             int before=profile.Wallet;Fund(profile,LastStandResearchAction.Start,row.Id,rank,utc);
             funding+=before-profile.Wallet;

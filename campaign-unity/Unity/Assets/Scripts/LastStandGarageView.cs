@@ -11,9 +11,9 @@ namespace SingedTerra.LastStand
     {
         readonly LastStandLoopController loop;
         public readonly RectTransform TierCard,FittingCard;
-        public readonly Button TierPrevious,TierNext,FittingPrevious,FittingNext,ResearchEntry;
+        public readonly Button TierPrevious,TierNext,ArmoryEntry,ResearchEntry;
         public readonly LastStandFittingCallout Callout;
-        readonly Text tierName,tierDetail,fittingName,fittingDescription,save;
+        readonly Text tierName,tierDetail,fittingDescription,save;
         static readonly Color Brass=LastStandUiPrimitives.Brass,Paper=LastStandUiPrimitives.Paper;
         public LastStandGarageView(LastStandLoopController loop,Canvas canvas,RectTransform root,LastStandHudElements elements)
         {
@@ -27,9 +27,7 @@ namespace SingedTerra.LastStand
             tierName=Label("GarageTierName",TierCard,16);tierName.color=Brass;tierName.alignment=TextAnchor.MiddleCenter;
             tierDetail=Label("GarageTierDetail",TierCard,14);tierDetail.alignment=TextAnchor.UpperCenter;
             FittingCard=Panel("GarageFittingCard",root);
-            FittingPrevious=Action("FittingPrevious","<",FittingCard,() => loop.MoveGarageFitting(-1));
-            FittingNext=Action("FittingNext",">",FittingCard,() => loop.MoveGarageFitting(1));
-            fittingName=Label("GarageFittingName",FittingCard,16);fittingName.color=Brass;fittingName.alignment=TextAnchor.MiddleCenter;
+            ArmoryEntry=Action("ArmoryEntry","ARMORY & BUILDS",FittingCard,loop.OpenArmory);
             fittingDescription=Label("GarageFittingDescription",FittingCard,14);
             save=Label("GarageSave",root,14);save.color=Paper;
             Callout=root.gameObject.AddComponent<LastStandFittingCallout>();
@@ -42,8 +40,7 @@ namespace SingedTerra.LastStand
             {
                 tierName.text=loop.GarageTierSelection.Current.Name.ToUpperInvariant();
                 tierDetail.text=loop.GarageTierSelection.Current.Description;
-                fittingName.text=loop.GarageFittingSelection.Current.Name.ToUpperInvariant();
-                fittingDescription.text=loop.GarageFittingSelection.Current.Description;
+                fittingDescription.text=loop.BuildLabel(loop.Progression.SelectedLoadout)+"\n"+loop.Progression.EquipmentBayCount+" / 2 bays unlocked";
                 save.text=loop.GarageIssue!=""?loop.GarageIssue:
                     canDeploy?"SALVAGE "+loop.Progression.Wallet+"  |  WAVE 1: +"+LastStandRewardCatalog.At(LastStandTierCatalog.Get(loop.Progression.SelectedTier),1).RepeatableSalvage:
                     "DEPLOY: "+refusal;

@@ -1,0 +1,120 @@
+RUN last_stand_buildcraft_ui test_armory_hud.py
+Unity evidence: C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Evidence\last-stand-buildcraft\armory-ui\editor-20261107T062253Z-73e46ae1
+test_imported_build_preview_apply_resume_and_accessibility (test_armory_hud.ArmoryHudTests.test_imported_build_preview_apply_resume_and_accessibility) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 11.795s
+
+OK
+RUN last_stand_architecture test_observation_contract.py
+test_actual_emitter_shared_contract_and_consumers (test_observation_contract.ObservationContractTests.test_actual_emitter_shared_contract_and_consumers) ... ok
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062305Z-14adfb5c
+PASS actual Unity packets admitted by JavaScript; omitted control rejected
+
+----------------------------------------------------------------------
+Ran 1 test in 24.441s
+
+OK
+RUN last_stand_ui test_hud_garage.py
+test_deploy_readiness_and_primary_hierarchy (test_hud_garage.HudGarageTests) ... ok
+test_garage_profile_geometry_and_contrast (test_hud_garage.HudGarageTests) ... ok
+test_live_values_and_fitting (test_hud_garage.HudGarageTests) ... ok
+test_short_landscape_garage_readability (test_hud_garage.HudGarageTests) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 15.509s
+
+OK
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062330Z-b5bfc4d9
+RUN last_stand_ui test_hud_input.py
+test_conditional_wrapper_focus_and_geometry (test_hud_input.HudInputTests)
+Real DOM geometry/event boundary with a controlled loader only. ... ok
+test_keyboard_activation_and_focus_style (test_hud_input.HudInputTests) ... FAIL
+test_pointer_targets_match_visual_bounds (test_hud_input.HudInputTests) ... FAIL
+test_visible_enabled_navigation_order (test_hud_input.HudInputTests) ... FAIL
+
+======================================================================
+FAIL: test_keyboard_activation_and_focus_style (test_hud_input.HudInputTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 140, in test_keyboard_activation_and_focus_style
+    self.check_case(self._testMethodName)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 127, in check_case
+    self.assertEqual(self.exit_code, 0, summary or self.log[-3000:])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : ST_LS_HUD_PASS test_visible_enabled_navigation_order
+ST_LS_HUD_PASS test_keyboard_activation_and_focus_style
+ST_LS_HUD_FAIL test_pointer_targets_match_visual_bounds System.InvalidOperationException: Menu pointer holds active run
+ST_LS_HUD_PASS test_effects_control_preserves_run_and_setting_state
+
+======================================================================
+FAIL: test_pointer_targets_match_visual_bounds (test_hud_input.HudInputTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 143, in test_pointer_targets_match_visual_bounds
+    self.check_case(self._testMethodName)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 125, in check_case
+    self.assertTrue("ST_LS_HUD_PASS " + name in self.log, summary or self.log[-3000:])
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : ST_LS_HUD_PASS test_visible_enabled_navigation_order
+ST_LS_HUD_PASS test_keyboard_activation_and_focus_style
+ST_LS_HUD_FAIL test_pointer_targets_match_visual_bounds System.InvalidOperationException: Menu pointer holds active run
+ST_LS_HUD_PASS test_effects_control_preserves_run_and_setting_state
+
+======================================================================
+FAIL: test_visible_enabled_navigation_order (test_hud_input.HudInputTests)
+----------------------------------------------------------------------
+Unity input evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-input-df4633d5
+Traceback (most recent call last):
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 130, in test_visible_enabled_navigation_order
+    self.check_case(self._testMethodName)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brenn\.codex\worktrees\last-stand-research-farming\singedTerra\campaign-unity\Tools\last_stand_ui\test_hud_input.py", line 127, in check_case
+    self.assertEqual(self.exit_code, 0, summary or self.log[-3000:])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : ST_LS_HUD_PASS test_visible_enabled_navigation_order
+ST_LS_HUD_PASS test_keyboard_activation_and_focus_style
+ST_LS_HUD_FAIL test_pointer_targets_match_visual_bounds System.InvalidOperationException: Menu pointer holds active run
+ST_LS_HUD_PASS test_effects_control_preserves_run_and_setting_state
+
+----------------------------------------------------------------------
+Ran 4 tests in 63.815s
+
+FAILED (failures=3)
+RUN last_stand_ui test_hud_outcomes.py
+test_settling_pending_and_claim_states (test_hud_outcomes.HudOutcomeTests) ... ok
+test_storage_errors_retry_and_profile_readability (test_hud_outcomes.HudOutcomeTests) ... ok
+test_workshop_purchase_cap_and_redeploy_gates (test_hud_outcomes.HudOutcomeTests) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 118.234s
+
+OK
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062449Z-636f2de7
+RUN LastStandFittingChecks.Run
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062647Z-3f18a996
+ST_LS_FITTING_PASS both_authored_modules_across_profiles
+ST_LS_FITTING_PASS hero_bounds_fit_and_invalid_or_active_framing_refuses
+ST_LS_FITTING_PASS independent_ui_camera_canvas_scale_and_dpr
+ST_LS_FITTING_PASS resize_same_owner_retains_actual_attachment
+ST_LS_FITTING_PASS inactive_behind_camera_offscreen_and_disabled
+ST_LS_FITTING_PASS actual_menu_and_encounter_lifecycle
+ST_LS_FITTING_PASS five_modules_use_shared_projection
+RUN LastStandShopChecks.RunWorkshop
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062701Z-d68b1db7
+ST_LS_SHOP_FAIL test_workshop_garage_post_claim_prices_and_save_error System.InvalidOperationException: Last Stand shop deployment check failed: browsing unfunded permanent cards creates no run, charge, claim or save
+RUN LastStandShopChecks.RunDeploy
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062708Z-ccb8fcba
+ST_LS_SHOP_OBLIGATION_FAIL launcher-frozen-effects System.InvalidOperationException: Last Stand shop deployment check failed: one verified reservation precedes actual deployment
+ST_LS_SHOP_OBLIGATION_FAIL repair-frozen-effects System.InvalidOperationException: Last Stand shop deployment check failed: one verified reservation precedes actual deployment
+ST_LS_SHOP_OBLIGATION_FAIL fresh-zero-baseline System.InvalidOperationException: Last Stand shop deployment check failed: deployment starts zero Scrap accounting and initial revision
+ST_LS_SHOP_OBLIGATION_FAIL save-focus-admission System.InvalidOperationException: Last Stand shop deployment check failed: fresh ledger belongs to reserved run and fitting
+ST_LS_SHOP_OBLIGATION_PASS shared-scene-parity
+ST_LS_SHOP_FAIL test_deploy_frozen_permanent_snapshot_and_fittings
+RUN LastStandShopChecks.RunPolish
+Unity evidence: C:\Users\brenn\AppData\Local\Temp\laststand-buildcraft-unity-20261107\editor-20261107T062717Z-6cd3a8df
+ST_LS_SHOP_FAIL test_shop_only_fitted_modules_visible_and_focusable System.InvalidOperationException: Last Stand shop deployment check failed: visibility and fitting changes do not purchase or write saves
+ST_LS_SHOP_FAIL test_shop_plain_compact_readable_composition System.InvalidOperationException: Last Stand shop deployment check failed: open context does not repeat the selected card or wallet
+FAILED ['test_hud_input.py', 'LastStandShopChecks.RunWorkshop', 'LastStandShopChecks.RunDeploy', 'LastStandShopChecks.RunPolish']

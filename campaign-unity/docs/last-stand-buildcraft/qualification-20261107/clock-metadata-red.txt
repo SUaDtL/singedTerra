@@ -1,0 +1,38 @@
+✖ earned-research preview preserves every field except monotonic clock metadata (5.0473ms)
+✔ current idle wave save accepts only clock metadata changes and rejects historical or altered progression (2.2829ms)
+✔ abandon records one bounded final history entry without rewards, time loss or aggregate inflation (1.9755ms)
+✔ actual foreground and background collectors select the current result transition instead of a later session row (0.1924ms)
+✔ actual hidden terminal caller records its hidden boundary before native return and refuses early visibility (0.3321ms)
+✔ actual hidden terminal path retains throttled debt and requires deterministic completion after native return (0.1804ms)
+✔ actual away owner verifies the hidden boundary after its minimum interval and before native return (0.396ms)
+✔ actual background terminal collector retains native edges from its verified model observation (0.1344ms)
+✔ fresh wave oracle rejects malformed, incomplete and contradictory output (1.4042ms)
+✔ natural wave terminal proof rejects changed identities, fabricated rows and duplicate payout (1.7207ms)
+✔ resume evidence requires fresh paused state, same document and immutable saved state (1.0639ms)
+✔ terminal payout binds the final same-session completed wave even on a simultaneous clear (0.4352ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 75.6574
+
+✖ failing tests:
+
+test at scripts\ci\lastStandWaveEvidence.test.mjs:14:1
+✖ earned-research preview preserves every field except monotonic clock metadata (5.0473ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/brenn/.codex/worktrees/last-stand-research-farming/singedTerra/scripts/ci/lastStandWaveEvidence.test.mjs:26:51)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

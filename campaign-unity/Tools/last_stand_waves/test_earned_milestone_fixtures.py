@@ -26,8 +26,8 @@ class EarnedMilestoneFixtureTests(unittest.TestCase):
             with self.subTest(fitting=case["fitting"], wave=case["targetWave"]):
                 before, after = json.loads(case["save"]), json.loads(case["expectedSave"])
                 target = case["targetWave"]
-                self.assertEqual(before["version"], 7)
-                self.assertEqual(after["version"], 7)
+                self.assertEqual(before["version"], 8)
+                self.assertEqual(after["version"], 8)
                 self.assertEqual(before["checkpoint"]["encounter"]["completedWave"], target - 1)
                 self.assertEqual(after["checkpoint"]["encounter"]["completedWave"], target)
                 self.assertEqual(after["checkpoint"]["runId"], before["checkpoint"]["runId"])
@@ -98,7 +98,7 @@ console.log(JSON.stringify({inputs:MILESTONE_FIXTURE_SOURCES.length,cases:manife
             result = subprocess.run(["node", "--input-type=module", "-e", script, str(manifest)],
                                     cwd=REPO, text=True, capture_output=True, encoding="utf-8", timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual(json.loads(result.stdout), {"inputs": 36, "cases": 4})
+            self.assertEqual(json.loads(result.stdout), {"inputs": 39, "cases": 4})
 
     def test_saved_bytes_are_exact_and_existing_output_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory(prefix="st-earned-fixture-test-") as folder:

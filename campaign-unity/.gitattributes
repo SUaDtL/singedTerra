@@ -8,3 +8,20 @@
 *.fbx binary
 *.blend binary
 *.png binary
+
+# Buildcraft evidence binds exact recorded bytes, including Windows transcripts.
+# Do not normalize line endings and invalidate the retained artifact digests.
+docs/last-stand-buildcraft/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/buildcraft-balance-500-wave-report.json linguist-generated=true
+docs/last-stand-buildcraft/buildcraft-balance-report.json linguist-generated=true
+docs/last-stand-buildcraft/buildcraft-farming-report.json linguist-generated=true
+docs/last-stand-buildcraft/buildcraft-sensitivity-500-wave-report.json linguist-generated=true
+docs/last-stand-buildcraft/buildcraft-sensitivity-report.json linguist-generated=true
+# These exact retained transcripts include whitespace emitted by Mono or TAP.
+# Preserve their recorded hashes while retaining other whitespace checks.
+docs/last-stand-buildcraft/buildcraft-balance-initial-report.progress.log whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/qualification-20261107/portable-final.txt whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/qualification-20261107/research-applicability-red.txt whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/qualification-20261107/research-applicability-intermediate.txt whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/verification/laststand-retained-receipt-red.log whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/last-stand-buildcraft/verification/laststand-support-observer-red.log whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

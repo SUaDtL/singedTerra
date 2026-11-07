@@ -101,33 +101,32 @@ namespace SingedTerra.LastStand
             bool ready=progress.SaveState=="ready",garage=phase=="garage",workshop=phase=="workshop";
             bool battle=phase=="battle",settling=phase=="settling",result=phase=="result";
             bool cards=loop.GarageCardsVisible,checkpoint=progress.HasCheckpoint;
-            string fittingName=loop.FittingId.ToUpperInvariant();
-            foreach(var option in LastStandFittingCatalog.Options)if(option.Id==loop.FittingId)fittingName=option.Name;
+            string fittingName=loop.BuildLabel(model?.Loadout??progress.Checkpoint?.Loadout??progress.SelectedLoadout);
             bool canDeploy=ready && loop.Session.CanRun && progress.PendingDefeat==null &&
                 (checkpoint || !loop.HasLockedTierPreview && progress.NextRunId!=int.MaxValue);
             bool canPause=(battle||settling) && model!=null && !loop.Session.CheckpointBlocked && loop.Session.Failure=="" &&
                 !loop.Session.CatchingUp && (!loop.Session.Paused||loop.Session.CanRun);
-            bool canClaim=ready && result && !checkpoint;
+            bool canClaim=ready && result && !checkpoint &&
+                (progress.PendingDefeat==null || progress.PendingDefeat.Reward<=int.MaxValue-progress.Wallet);
             var state=new Presentation {Phase=phase,Primary=garage?"Deploy":workshop?"Redeploy":result?"Claim":battle||settling?"SpeedRate":"RetrySave",
                 Active=new[]{false,garage,result,false,workshop,!ready,false,false,false,false,true,battle||settling,battle||settling,battle||settling,
-                    cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen},
+                    cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen,cards&&!shopOpen},
                 Available=new[]{loop.CanSelectLoadout,canDeploy,canClaim,false,canDeploy,true,canPause,true,loop.CanSelectLoadout,CanChangeEffects(),
                     loop.CanOpenMenu,battle&&canPause&&loop.Session.SelectedSpeed>0,canPause,battle&&canPause&&loop.Session.SelectedSpeed<loop.Session.MaximumSpeed,
                     loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanPrevious,
                     loop.CanSelectLoadout&&loop.GarageTierSelection!=null&&loop.GarageTierSelection.CanNext,
-                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanPrevious,
-                    loop.CanSelectLoadout&&loop.GarageFittingSelection!=null&&loop.GarageFittingSelection.CanNext,loop.CanOpenMenu},
+                    loop.CanCustomizeBuild,loop.CanOpenMenu},
                 Labels=new[]{"FITTING: "+fittingName,canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE",
                     progress.PendingDefeat!=null && progress.PendingDefeat.Reward>0?"CLAIM LEGACY REWARD":"CONTINUE","UPGRADES",canDeploy?checkpoint?"RESUME RUN":"DEPLOY":"UNAVAILABLE","RETRY SAVE",
                     canPause?loop.Session.Paused?"RESUME":"PAUSE":"WAIT",loop.Muted?"SOUND OFF":"SOUND ON","TIER "+runTier,
-                    loop.Session.View.FullEffects?"FX FULL":"FX LOW","Menu","-",!canPause?"WAIT":loop.Session.Paused?"0x\nPAUSED":loop.Session.EffectiveSpeed.ToString("0.0")+"x","+","<",">","<",">","RESEARCH"}};
+                    loop.Session.View.FullEffects?"FX FULL":"FX LOW","Menu","-",!canPause?"WAIT":loop.Session.Paused?"0x\nPAUSED":loop.Session.EffectiveSpeed.ToString("0.0")+"x","+","<",">","ARMORY & BUILDS","RESEARCH"}};
             if(garage||workshop)
             {
                 state.Heading=checkpoint?"RESUME YOUR RUN":"LAST STAND";
                 state.Detail=checkpoint?"Tier "+progress.Checkpoint.Tier+" / Wave "+(progress.Checkpoint.CompletedWave+1)+
                     "\nSaved hull "+progress.Checkpoint.Encounter.Hull+" / "+progress.Checkpoint.Encounter.MaximumHull+
-                    "\nFitting: "+fittingName+"\nResume starts paused. Menu > New Run abandons this checkpoint.":
-                    TierSummary(progress)+"\nFitting: "+fittingName+"\nSalvage "+progress.Wallet;
+                    "\nBuild: "+fittingName+"\nResume starts paused. Menu > New Run abandons this checkpoint.":
+                    TierSummary(progress)+"\nBuild: "+fittingName+"\nSalvage "+progress.Wallet;
             }
             else if(battle&&model!=null)
             {
@@ -156,7 +155,7 @@ namespace SingedTerra.LastStand
                 state.Readouts.Add("HullValue","HULL "+model.Hull+" / "+model.CurrentMaximumHull);
                 state.Readouts.Add("ElapsedTime","T"+runTier+" / WAVE "+model.Wave+" >");
                 state.Readouts.Add("DisabledCount","LEFT "+model.RemainingWaveEnemies);
-                state.Readouts.Add("CannonDamage","NEXT +"+reward.RepeatableSalvage+" SALVAGE");
+                state.Readouts.Add("CannonDamage",model.HasShield?"SHIELD "+model.Shield+" / "+model.CurrentShieldCapacity:"NEXT +"+reward.RepeatableSalvage+" SALVAGE");
                 state.Readouts.Add("Fitting",LastStandTierHudText.NextMilestone(runTier,model.CompletedWave).ToUpperInvariant());
             }
             return state;

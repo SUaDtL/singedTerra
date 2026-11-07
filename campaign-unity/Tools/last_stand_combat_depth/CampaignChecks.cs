@@ -35,34 +35,34 @@ static class CampaignChecks
     static void Sequential()
     {
         var s=Gifted();var p=Load(s);long expected=0;
-        for(int tier=1;tier<=4;tier++){
-            Check(LastStandTierCatalog.Get(tier).Playable,"Four authored campaign tiers must be playable");
+        for(int tier=1;tier<=6;tier++){
+            Check(LastStandTierCatalog.Get(tier).Playable,"Six authored campaign tiers must be playable");
             Check(p.IsTierUnlocked(tier)&&p.TrySelectTier(tier)&&p.TryDeploy(),"Explicit earned tier deployment");
             var m=p.Checkpoint.RestoreModel();var shop=p.Checkpoint.RestoreShop();int run=p.ActiveRunId;
             for(int wave=1;wave<=300;wave++){
-                Clear(m,shop);if(tier<4&&wave==299)Check(!p.IsTierUnlocked(tier+1),"No early tier unlock");
+                Clear(m,shop);if(tier<6&&wave==299)Check(!p.IsTierUnlocked(tier+1),"No early tier unlock");
                 var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(tier),wave);expected+=reward.RepeatableSalvage+reward.FirstClearSalvage;
                 Check(p.TryCommitWave(m,shop),"Actual campaign boundary commit");
                 Check(p.Wallet==expected&&p.ActiveRunId==run&&p.SelectedTier==tier&&p.ActiveTier==tier&&m.Profile.Tier==tier,"Unlock never promotes, terminates, or adds extra Salvage");
                 if(wave<300)m.ContinueAfterCheckpoint();
             }
-            if(tier<4)Check(p.IsTierUnlocked(tier+1)&&!p.TrySelectTier(tier+1)&&p.LastReceipt.UnlockedTier==tier+1,"Unlock visible but active run selection immutable");
+            if(tier<6)Check(p.IsTierUnlocked(tier+1)&&!p.TrySelectTier(tier+1)&&p.LastReceipt.UnlockedTier==tier+1,"Unlock visible but active run selection immutable");
             Check(p.TryFinalizeRun(null,"abandon")&&p.Wallet==expected,"Explicit end has no extra payout");p=Load(s);
         }
-        Check(p.SelectedTier==4&&p.GetBestWave(4)==300,"Four independent earned tier records retained");
+        Check(p.SelectedTier==6&&p.GetBestWave(6)==300,"Six independent earned tier records retained");
     }
     static void Preview()
     {
         var s=Gifted();var p=Load(s);string raw=s.Raw;int writes=s.Writes;
-        for(int unlocked=1;unlocked<=4;unlocked++){
+        for(int unlocked=1;unlocked<=6;unlocked++){
             int last=unlocked;var selector=new LastStandSelection(LastStandContentCatalog.Current.TierOptions(id=>id<=last,null,true),"1",true);
-            Check(selector.Count==Math.Min(4,unlocked+1),"Only unlocked tiers and first locked preview appear");
-            while(selector.Move(1)){}Check(selector.Current.Id==Math.Min(4,unlocked+1).ToString(),"Arrow endpoint matches first lock");
-            if(unlocked<4)Check(!selector.Current.Unlocked,"Last choice is preview only");
+            Check(selector.Count==Math.Min(6,unlocked+1),"Only unlocked tiers and first locked preview appear");
+            while(selector.Move(1)){}Check(selector.Current.Id==Math.Min(6,unlocked+1).ToString(),"Arrow endpoint matches first lock");
+            if(unlocked<6)Check(!selector.Current.Unlocked,"Last choice is preview only");
         }
         Check(!p.TrySelectTier(3)&&!p.TrySelectTier(4)&&s.Raw==raw&&s.Writes==writes,"Locked preview cannot save or select");
         var all=LastStandContentCatalog.Current.FittingOptions(_=>false);var fitting=new LastStandSelection(all,"repair",false);
-        Check(fitting.Count==5,"Five fittings use the same bounded window");while(fitting.Move(1)){}Check(fitting.Current.Id=="railgun"&&!fitting.Current.Unlocked,"Final fitting preview keeps lock");
+        Check(fitting.Count==7,"Seven fittings use the same bounded window");while(fitting.Move(1)){}Check(fitting.Current.Id=="shield"&&!fitting.Current.Unlocked,"Final fitting preview keeps lock");
         Check(LastStandContentCatalog.Current.EnvironmentForTier(3).Name=="Cinder Basin"&&LastStandContentCatalog.Current.EnvironmentForTier(4).Name=="Storm Foundry","Stable environment identities");
     }
     static void Atomic()
@@ -102,7 +102,8 @@ static class CampaignChecks
         Check(guidance.Tutorial==""&&guidance.Suggestion=="","Optional prompts disabled");
         string help=LastStandGuidance.Help;Check(help.Contains("Mortar")&&help.Contains("500")&&help.Contains("Railgun")&&help.Contains("Tier 2 wave 100"),"Manual discovery survives both opt-outs");
         var current=LastStandMilestonePresentation.Rows(1);var mortar=current.Single(x=>x.Milestone.Wave==500);
-        Check(mortar.Milestone.FirstClearSalvage==250&&mortar.BaseRepeatableSalvage==6&&mortar.Unlock=="Mortar","Read model uses actual authored reward and fitting");
+        Check(mortar.Milestone.FirstClearSalvage==250&&mortar.BaseRepeatableSalvage==6&&mortar.Unlock=="Mortar + combat research","Read model uses actual authored reward bundle");
+        Check(LastStandMilestonePresentation.Rows(1,LastStandRunEdition.CombatDepth).Single(x=>x.Milestone.Wave==500).Unlock=="Mortar","Retained combat-depth read model keeps original grant");
         var road=LastStandMilestonePresentation.Roadmap(1,p.HasFirstClear);
         Check(road.Contains("Base rewards exclude Salvage Recovery")&&road.Contains(mortar.Describe(false))&&!road.Contains("Tier 3")&&!road.Contains("Tier 4"),"Roadmap exposes only this tier and its next tier, labels base values");
         var legacy=LastStandRunEdition.Legacy(LastStandUpgradeCatalog.PreviousEconomyVersion);
@@ -120,11 +121,11 @@ static class CampaignChecks
     static void Fittings()
     {
         var store=Gifted();var p=Load(store);
-        for(int tier=1;tier<=2;tier++){
+        for(int tier=1;tier<=3;tier++){
             Check(p.TrySelectTier(tier)&&p.TryDeploy(),"Earned fitting campaign deploy");var m=p.Checkpoint.RestoreModel();var shop=p.Checkpoint.RestoreShop();
-            int end=tier==1?500:100;
+            int end=tier==1?750:tier==2?500:100;
             for(int wave=1;wave<=end;wave++){
-                Clear(m,shop);string unlock=tier==1&&wave==100?"scattergun":tier==1&&wave==500?"mortar":tier==2&&wave==100?"railgun":null;
+                Clear(m,shop);string unlock=tier==1&&wave==100?"scattergun":tier==1&&wave==500?"mortar":tier==2&&wave==100?"railgun":tier==2&&wave==300?"arc":tier==3&&wave==100?"shield":null;
                 if(unlock!=null){
                     int wallet=p.Wallet,writes=store.Writes;string raw=store.Raw;var priorReceipt=p.LastReceipt;store.Fault="before";
                     Check(!p.TryCommitWave(m,shop)&&!p.IsFittingUnlocked(unlock)&&p.Wallet==wallet&&store.Raw==raw&&store.Writes==writes&&ReferenceEquals(priorReceipt,p.LastReceipt),"Fitting unlock and new receipt wait for durable save");

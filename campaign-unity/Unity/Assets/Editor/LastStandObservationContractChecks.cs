@@ -25,16 +25,16 @@ public static class LastStandObservationContractChecks
     }
     [Serializable] sealed class Packets { public string[] packets; }
     [Serializable] sealed class RunState { public string profileVersion,contentVersion,economyVersion;public int mortarShots,railgunShots,mortarDamage,railgunDamage; }
-    [Serializable] sealed class ModelState { public string contentVersion,economyVersion;public int scattergun,mortar,railgun,mortarDamage,railgunDamage; }
+    [Serializable] sealed class ModelState { public string contentVersion,economyVersion;public int scattergun,mortar,railgun,mortarDamage,railgunDamage,arc,arcDamage,shield,shieldCapacity,shieldRestored,shieldAbsorbed; }
     sealed class Storage:ILastStandStorage
     { string value;public string Read()=>value;public void Write(string next){value=next;} }
     static void Require(bool value,string message){if(!value)throw new InvalidOperationException(message);}
     static object Field(object value,string name)=>value.GetType().GetField(name).GetValue(value);
     static Contract CurrentContract()
     {
-        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v5.json"));
+        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v6.json"));
         var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
-        Require(contract.schema=="singedterra-last-stand-observation/v5"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+        Require(contract.schema=="singedterra-last-stand-observation/v6"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
         return contract;
     }
     internal static Dictionary<string,string[]> CurrentControlInventory()
@@ -74,6 +74,9 @@ public static class LastStandObservationContractChecks
                     foreach(string field in new[]{"scattergun","mortar","railgun"})Require(raw.Contains("\""+field+"\":"),"Missing actual counter: "+field);
                     Require(observed.scattergun==model.ScattergunShots&&observed.mortar==model.MortarShots&&observed.railgun==model.RailgunShots,"Actual armament counters differ");
                     Require(observed.mortarDamage==model.CurrentMortarDamage&&observed.railgunDamage==model.CurrentRailgunDamage,"Actual armament effects differ");
+                    foreach(string field in new[]{"arc","arcDamage","shield","shieldCapacity","shieldRestored","shieldAbsorbed"})Require(raw.Contains("\""+field+"\":"),"Missing actual buildcraft field: "+field);
+                    Require(observed.arc==model.ArcShots&&observed.arcDamage==model.CurrentArcDamage&&observed.shield==model.Shield&&
+                        observed.shieldCapacity==model.CurrentShieldCapacity&&observed.shieldRestored==model.ShieldRestored&&observed.shieldAbsorbed==model.ShieldAbsorbed,"Actual buildcraft observation differs from its model");
                 }
         }
         finally{modelField.SetValue(loop.Session,original);art.TrySelectFitting(originalFitting);}
@@ -117,7 +120,7 @@ public static class LastStandObservationContractChecks
                 var observations=hud.GetType().GetField("observations",Private).GetValue(hud);
                 var capture=observations.GetType().GetMethod("CaptureLayoutSnapshot",Private);
                 var packets=new List<string>();
-                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance"})
+                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance","armory"})
                 {
                     if(page!="")loop.OpenMenu(page);else loop.CloseMenu();loop.RefreshControls();
                     var snapshot=capture.Invoke(observations,new object[]{null});Check(snapshot,contract);

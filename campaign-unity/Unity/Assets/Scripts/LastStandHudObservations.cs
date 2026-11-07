@@ -35,14 +35,14 @@ namespace SingedTerra.LastStand
         Dictionary<string,Text> readouts=>combat.Readouts;
         Button tierPrevious=>garage.TierPrevious;
         Button tierNext=>garage.TierNext;
-        Button fittingPrevious=>garage.FittingPrevious;
-        Button fittingNext=>garage.FittingNext;
+        Button armoryEntry=>garage.ArmoryEntry;
         LastStandFittingCallout fittingCallout=>garage.Callout;
         LastStandSettingsHud settings=>modals.Settings;
         LastStandResearchHud research=>modals.Research;
         LastStandRunHistoryHud history=>modals.History;
         LastStandPlannerHud planner=>modals.Planner;
         LastStandAppearanceHud appearance=>modals.Appearance;
+        LastStandArmoryHud armory=>modals.Armory;
         bool CanOpenRunShop()=>shop.CanOpenRunShop();
         bool CanOpenPermanentShop()=>shop.CanOpenPermanentShop();
         static float PreferredPixelRatio()=>LastStandHudDisplay.PreferredPixelRatio();
@@ -175,15 +175,16 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
-            public string schema="singedterra-last-stand-observation/v5";
+            public string schema="singedterra-last-stand-observation/v6";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls,appearanceControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls,appearanceControls,armoryControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
             public float researchListScrollOffset,researchListMaximumScrollOffset,researchDetailScrollOffset,researchDetailMaximumScrollOffset;
             public float plannerScrollOffset,plannerMaximumScrollOffset;
             public float appearanceScrollOffset,appearanceMaximumScrollOffset;
+            public float armoryScrollOffset,armoryMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -197,7 +198,7 @@ namespace SingedTerra.LastStand
             var lo = RectTransformUtility.WorldToScreenPoint(null,corners[0]); var hi = RectTransformUtility.WorldToScreenPoint(null,corners[2]);
             return new Rect(lo.x,Screen.height-hi.y,hi.x-lo.x,hi.y-lo.y);
         }
-        Control[] ObserveControls(Button[] buttons, string mode)
+        Control[] ObserveControls(Selectable[] buttons, string mode)
         {
             var controls = new Control[buttons.Length];
             for (int i = 0; i < buttons.Length; i++)
@@ -206,7 +207,7 @@ namespace SingedTerra.LastStand
                 string track = ""; foreach (var cardControls in shopCards) if (button == cardControls.Buy) track = cardControls.Key;
                 string label = button==waveInfo ? readouts["ElapsedTime"].text : button.GetComponentInChildren<Text>(true)?.text ?? "";
                 controls[i] = new Control { name = button.name, label = label, accessibleLabel = button == shopClose ? "Close" : button==menu ? "Menu" :
-                    button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==fittingPrevious?"Previous fitting":button==fittingNext?"Next fitting":
+                    button==tierPrevious?"Previous tier":button==tierNext?"Next tier":button==armoryEntry?"Armory and saved builds":
                     button==shopQuantity?"Purchase quantity "+loop.ShopQuantity+". Cycle 1, 10, 100 or Max":
                     button==waveInfo?"Current wave enemy stats. "+label:PlanningControlLabel(button.name,label),
                     mode = mode, trackKey = track, x = bounds.x, y = bounds.y, width = bounds.width, height = bounds.height,
@@ -232,6 +233,15 @@ namespace SingedTerra.LastStand
                 case "RunHistoryRunBNext":return "Next run B";
                 case "AppearanceRotateLeft":return "Rotate tank left";
                 case "AppearanceRotateRight":return "Rotate tank right";
+                case "ArmoryRotateLeft":return "Rotate tank left";
+                case "ArmoryRotateRight":return "Rotate tank right";
+                case "ArmoryPresetPrevious":return "Previous saved build";
+                case "ArmoryName":return "Build name, up to 32 characters";
+                case "ArmoryPresetNext":return "Next saved build";
+                case "ArmoryBay1Previous":return "Previous fitting for Bay 1";
+                case "ArmoryBay1Next":return "Next fitting for Bay 1";
+                case "ArmoryBay2Previous":return "Previous fitting for Bay 2";
+                case "ArmoryBay2Next":return "Next fitting for Bay 2";
                 default:return fallback;
             }
         }
@@ -264,6 +274,7 @@ namespace SingedTerra.LastStand
                 researchControls=ObserveControls(research.Buttons,"Research"),historyControls=ObserveControls(history.Buttons,"History"),
                 plannerControls=ObserveControls(planner.Buttons,"Planner"),
                 appearanceControls=ObserveControls(appearance.Buttons,"Appearance"),
+                armoryControls=ObserveControls(armory.Controls,"Armory"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
@@ -274,6 +285,7 @@ namespace SingedTerra.LastStand
             layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
             layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
             layout.appearanceScrollOffset=appearance.ScrollOffset;layout.appearanceMaximumScrollOffset=appearance.MaximumScrollOffset;
+            layout.armoryScrollOffset=armory.ScrollOffset;layout.armoryMaximumScrollOffset=armory.MaximumScrollOffset;
             return layout;
         }
         public void ReportLayout()

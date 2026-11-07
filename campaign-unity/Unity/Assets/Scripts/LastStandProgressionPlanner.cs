@@ -54,7 +54,7 @@ namespace SingedTerra.LastStand
                 goals.Add(Tier(progression,tier));
             foreach(var definition in LastStandFittingCatalog.Definitions)if(definition.Playable)
                 goals.Add(Fitting(progression,definition));
-            var shop=LastStandShopPresentation.ProjectPermanent(progression,fitting,LastStandBulkQuantity.One);
+            var shop=LastStandShopPresentation.ProjectPermanent(progression,progression.SelectedLoadout,LastStandBulkQuantity.One);
             foreach(var card in shop.Cards)
                 goals.Add(Workshop(progression,card,Math.Min(card.CurrentLevel+1,card.Cap)));
             bool researchValid=LastStandResearchState.TryRestore(research,out _);
@@ -93,15 +93,16 @@ namespace SingedTerra.LastStand
         static LastStandPlannerGoal Workshop(LastStandProgression progression,LastStandShopCard card,int target)
         {
             var definition=LastStandUpgradeCatalog.Get(card.TrackId);
+            var research=progression.CompletedCombatResearch;
             bool achieved=card.CurrentLevel>=target;
             bool next=target==card.CurrentLevel+1;
             long? cost=achieved?(long?)null:next?card.NextPrice:definition.PermanentPrice(target);
             string availability=achieved?"Achieved":!next?"Complete earlier levels first":card.Reason;
             string detail="Permanent level "+card.CurrentLevel+" / "+card.Cap+"\n"+
-                (achieved?definition.DescribeEffect(target):definition.DescribeEffect(target-1)+" -> "+definition.DescribeEffect(target));
+                (achieved?definition.DescribeEffect(target,research):definition.DescribeEffect(target-1,research)+" -> "+definition.DescribeEffect(target,research));
             if(cost.HasValue)detail+="\n"+Funding(cost.Value,progression.Wallet);
             detail+="\n"+availability;
-            if(card.IsDormant)detail+="\nDormant for the selected fitting; choose its matching fitting to use this benefit.";
+            if(card.IsDormant)detail+="\nDormant for the selected loadout; equip a matching fitting in either bay to use this benefit.";
             if(progression.HasCheckpoint)detail+="\nA purchase benefits the next deployment. This saved run keeps its original permanent levels.";
             return new LastStandPlannerGoal(TargetKey("workshop",card.Key,target),"Workshop",
                 card.Name+" level "+target,detail,"shop",achieved,true,next&&card.CanPurchase,availability,cost,progression.Wallet);
@@ -114,9 +115,11 @@ namespace SingedTerra.LastStand
                 "Research data is unavailable. Open Research after the saved profile is ready.","research",false,true,false,
                 "Research unavailable",null,progression.Wallet);
             int rank=snapshot.Rank(definition.Id);bool achieved=rank>=target;
-            string effects=LastStandResearchPresentation.Effect(definition.Id,target);
+            var quote=LastStandResearchPresentation.ProjectQuote(snapshot,definition.Id,target,loadout:progression.SelectedLoadout);
+            string applicability="\nApplies to: "+quote.AppliesTo+"\n"+quote.LoadoutApplicability+"\n"+quote.ApplicationTiming;
+            string effects=quote.AfterEffect+applicability;
             if(achieved)return new LastStandPlannerGoal(key,"Research",title,"ACHIEVED\n"+effects,"research",true,true,false,"Achieved",null,progression.Wallet);
-            effects=LastStandResearchPresentation.Effect(definition.Id,target-1)+"\n-> "+effects;
+            effects=quote.BeforeEffect+"\n-> "+effects;
             foreach(var slot in snapshot.slots)
             {
                 foreach(var project in new[]{slot.active,slot.queued})if(project!=null&&project.track==definition.Id&&project.rank==target)
@@ -125,19 +128,19 @@ namespace SingedTerra.LastStand
                         "\nNo additional funding is required for this rank.","research",false,true,false,
                         project==slot.queued?"Queued":"Active",0,progression.Wallet);
             }
-            var quote=LastStandResearchPresentation.ProjectQuote(snapshot,definition.Id,target);
             long cost=quote.Cost,remaining=quote.RemainingMilliseconds;
             bool possible=false;
-            int unlocked=LastStandResearchCatalog.UnlockedSlots(progression.GetBestWave(1));
+            int unlocked=progression.UnlockedResearchLabCount;
+            bool trackUnlocked=LastStandResearchCatalog.IsUnlocked(definition,progression.GetBestWave(1));
             if(progression.SaveState=="ready"&&progression.PendingDefeat==null)
                 for(int slot=0;slot<unlocked;slot++)
                     foreach(var action in new[]{LastStandResearchAction.Start,LastStandResearchAction.Queue})
                     {
                         var intent=LastStandResearchPresentation.Intent(snapshot,slot,definition.Id,action);
-                        if(intent.Rank==target&&LastStandResearchPresentation.CanSubmit(snapshot,intent,progression.Wallet,progression.GetBestWave(1)))possible=true;
+                        if(intent.Rank==target&&LastStandResearchPresentation.CanSubmit(snapshot,intent,progression.Wallet,progression.GetBestWave(1),bestTierTwoWave:progression.GetBestWave(2)))possible=true;
                     }
             string availability=progression.SaveState!="ready"?"Save unavailable":progression.PendingDefeat!=null?"Resolve pending reward first":
-                unlocked==0?"Research unlocks at Tier 1 wave 25":possible?"Can fund in Research":
+                unlocked==0?"Research unlocks at Tier 1 wave 25":!trackUnlocked?"Combat research unlocks at Tier 1 wave 500":possible?"Can fund in Research":
                 target!=rank+1?"Complete earlier ranks first":progression.Wallet<cost?"Not enough Salvage":"Open Research to review occupied labs and queues";
             string detail=effects+"\n"+Funding(cost,progression.Wallet)+"\n"+
                 LastStandResearchPresentation.Duration(remaining)+(!quote.ResumesPartial?" real time (duration locks on start)":" remaining; resuming repays the refunded cost")+

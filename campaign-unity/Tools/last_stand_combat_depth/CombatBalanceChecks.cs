@@ -2,6 +2,21 @@ using System;
 using System.Collections.Generic;
 using SingedTerra.LastStand;
 
+namespace SingedTerra.Encounter
+{
+    public sealed partial class EncounterModel
+    {
+        // Finite isolated observer fixture, never a progression seed or reward proof.
+        public void SeedSupportObserver()
+        {
+            nextSpawn=1000000;waveSpawned=WaveEnemyCount;Spawned=WaveEnemyCount;
+            for(int i=0;i<Capacity;i++){var foe=foes[i];foe.Hull=0;if(i>1)continue;
+                foe.Id=i+1;foe.WaveOrdinal=i;foe.Lane=0;foe.Distance=1000;foe.Hull=foe.MaximumHull=10000;
+                foe.Kind=i==0?FoeKind.ArmoredBrute:FoeKind.ShieldCarrier;foe.Armor=i==0?10:0;foe.Damage=0;foe.SupportRemaining=i==0?0:1000;}
+        }
+    }
+}
+
 public static class CombatBalanceChecks
 {
     static void Check(bool condition,string message){if(!condition)throw new Exception(message);}
@@ -114,6 +129,14 @@ public static class CombatBalanceChecks
             Check(captured!=null,"Actual confirmed boundary captured");var abandoned=captured.Fork();
             Check(!abandoned.Profile.HasCheckpoint&&abandoned.Gross==15&&abandoned.Profile.Wallet==15,"Fork performs real abandon without replaying rewards or adding currency");
             Check(abandoned.Profile.HistorySnapshot.Recent[0].FinishReason=="abandon","Actual application finalization is retained");break;
+        case "support-attribution":
+            var supportLevels=new int[LastStandUpgradeCatalog.Tracks.Count];supportLevels[2]=1000;supportLevels[3]=500;
+            var supportShop=new LastStandShopState(1,LastStandFitting.Railgun,supportLevels,tier:5);
+            var supportModel=SingedTerra.Encounter.EncounterModel.CreatePlayable(LastStandFitting.Railgun,5,supportShop);
+            var supportEffects=new CombatBalanceMeasurements.RoleEffects();
+            supportModel.SeedSupportObserver();supportModel.Step();supportEffects.Observe(supportModel);
+            long supportKills=0;foreach(Dictionary<string,object> row in (List<object>)supportEffects.Snapshot()["damageByWeaponAndEnemy"])supportKills+=(long)row["kills"];
+            Check(supportKills==supportModel.Kills,"Support event observer retains actual unique kills");break;
         default:throw new ArgumentException("Unknown check "+name);
         }
     }

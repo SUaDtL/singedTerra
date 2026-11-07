@@ -121,10 +121,15 @@ namespace SingedTerra.LastStand
             new LastStandFittingDefinition(LastStandFitting.Scattergun,"scattergun","Auxiliary Scattergun",
                 "Hits up to three nearby enemies per burst alongside the automatic cannon.",1,100)
         });
-        public static IReadOnlyList<LastStandFittingDefinition> Definitions { get; } = Array.AsReadOnly(new[] {
+        public static IReadOnlyList<LastStandFittingDefinition> CombatDepth { get; } = Array.AsReadOnly(new[] {
             Legacy[0],Legacy[1],Legacy[2],
             new LastStandFittingDefinition(LastStandFitting.Mortar,"mortar","Mortar","Blasts clustered enemies around the nearest target. Armor reduces each hit; fires more slowly than the launcher.",1,500,true),
             new LastStandFittingDefinition(LastStandFitting.Railgun,"railgun","Railgun","Ignores armor on one target, prioritizing the most armored enemy. Fires more slowly than the launcher.",2,100,true)
+        });
+        public static IReadOnlyList<LastStandFittingDefinition> Definitions { get; } = Array.AsReadOnly(new[] {
+            CombatDepth[0],CombatDepth[1],CombatDepth[2],CombatDepth[3],CombatDepth[4],
+            new LastStandFittingDefinition(LastStandFitting.Arc,"arc","Arc Emitter","Chains to up to four distinct enemies within 7m per hop, retaining 75% damage each hop.",2,300),
+            new LastStandFittingDefinition(LastStandFitting.Shield,"shield","Reactive Shield","Absorbs incoming damage after armor. Recovers after a quiet period; Field Engineering improves recovery.",3,100)
         });
         public static IReadOnlyList<LastStandSelectionOption> Options { get; } = OptionsFor(_=>false);
         public static string Id(LastStandFitting fitting)
