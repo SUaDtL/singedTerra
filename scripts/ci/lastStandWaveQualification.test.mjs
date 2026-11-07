@@ -344,7 +344,7 @@ function matrixFixture(){
     }
     if(section==='entry'){
       report.actions=WAVE_ENTRY_ACTIONS.map(([name,action])=>({name,action,x:10,y:20}));
-      report.input_trace={matched:true,actions:9,observed_edges:18,outer_keyboard_edges:2};
+      report.input_trace={matched:true,actions:WAVE_ENTRY_ACTIONS.length,observed_edges:WAVE_ENTRY_ACTIONS.length*2,outer_keyboard_edges:2};
       report.retired_campaign_preservation={before_sha256:hash,after_launch_sha256:hash,native_return:'observed unchanged',retirement:'observed Last Stand only'};
       report.routes=clone(LAST_STAND_ENTRY_ROUTES);report.campaign_entry=p.entryViewports.map(viewport=>({viewport,order:['last-stand'],bounds:{x:0,y:0,width:44,height:44}}));
       report.lifecycle=[{kind:'new-run-cancel',layout:{selection:'ConfirmCancel'},confirmation:{runId:1},cancelled:{runId:1,paused:true},saved:JSON.stringify(resumeFixture().saved)}];
@@ -386,7 +386,7 @@ test('current aggregate retains ten real wave lifecycles, entry, recovery and ex
   for(const mutate of mutations){const copy=clone(reports);mutate(copy);assert.throws(()=>assertLastStandWaveMatrix(copy,expected));}
 });
 
-test('current entry producer uses the exact nine Linux pointer actions and current aggregate rejects contract drift',async()=>{
+test('current entry producer includes a verified pause and current aggregate rejects action drift',async()=>{
   const begin=source.indexOf("    if(section.entry){\n    await gameClick('Deploy','deploy');"),end=source.indexOf('    if(section.lifecycle){',begin);
   assert.ok(begin>0&&end>begin);
   const block=source.slice(begin,end).replace(/    if\(player\)\{[^\n]+\}\n/g,'');

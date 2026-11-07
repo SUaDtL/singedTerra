@@ -10,6 +10,17 @@ import { ensureOwnedNativeForeground, activateOwnedNativeWindow, retainAwayFailu
 import { changeLastStandSetting } from './lastStandJourneyActions.mjs';
 import {startMotion,frameTiming} from './lastStandMediaCapture.mjs';
 
+// Input/focus work can take seconds on software-rendered hosts. Freeze combat
+// through its real control before taking a baseline for Return or reload.
+export async function capturePausedJourneyCheckpoint({pause,readState,readSave}) {
+  await pause();
+  const state=readState();
+  assert.equal(state.phase,'battle');assert.equal(state.paused,true);
+  assert.equal(state.speed,0);assert.equal(state.saveState,'ready');
+  assert.equal(state.checkpointBlocked,false);
+  return {state,saved:await readSave()};
+}
+
 // Each operation receives the live caller state at invocation. Tests supply
 // explicit inert adapters; the runner uses these same imported operations.
 export function throwJourneyObserverFailure(error) { if(error)throw error; }

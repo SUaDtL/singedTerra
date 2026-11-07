@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
+  - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.
+  - Work type: fix
+  - Work ID: WORK-061011F03EA0CC17494D2A19ECE06374
+  - Work operation ID: laststand-deployment-boundaries-20261107
 - [x] Repair buildcraft CI save and combat mutation checks  (from github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards
   - Desc: PR 549 rejects valid version 8 checkpoints and Linux Mono stops two range-removal mutants on unused-local warnings. Require the current envelope without weakening wallet/checkpoint assertions, and compile the range mutants so their intended combat assertions detect them.

@@ -1,4 +1,4 @@
-import {verifyRetiredCampaignReturn,resumeReturnedJourney} from './lastStandJourneyRuntime.mjs';
+import {verifyRetiredCampaignReturn,resumeReturnedJourney,capturePausedJourneyCheckpoint} from './lastStandJourneyRuntime.mjs';
 export {verifyRetiredCampaignReturn,resumeReturnedJourney} from './lastStandJourneyRuntime.mjs';
 export {changeLastStandSetting,lastStandDeploymentControl,validateKeyboardSubmit} from './lastStandJourneyActions.mjs';
 import {admitJourneyPage,deployObservedJourney,purchaseJourneyCannon} from './lastStandJourneyRuntime.mjs';
@@ -1721,7 +1721,10 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     // abandon destroys it. Exercise both through the actual native controls.
     if(section.entry){
     await gameClick('Deploy','deploy');await page.waitForTimeout(1200);
-    const returnBefore=states.at(-1),returnSave=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
+    const stableCheckpoint=()=>capturePausedJourneyCheckpoint({
+      pause:async()=>{if(!states.at(-1).paused)await gameClick('SpeedRate','session',item=>item.paused);},
+      readState:()=>states.at(-1),readSave:()=>page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)});
+    const {state:returnBefore,saved:returnSave}=await stableCheckpoint();
     await keyboardFocus(page.locator('#last-stand-return'));await page.keyboard.press('Enter');
     await page.locator('[data-last-stand-command-view]').waitFor();
     check(await page.locator('#st-splash').count()===0,'Return reaches Campaigns without splash interception');
@@ -1745,7 +1748,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     report.lifecycle.push({kind:'new-run-cancel',confirmation,cancelled,layout:confirmationLayout,saved:returnSave});
     await gameClick('SettingsClose','menu-close');
     if(player){await gameClick('SpeedRate','session',item=>!item.paused);await liveBattleLayouts();}
-    const beforeReload=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
+    const {saved:beforeReload}=await stableCheckpoint();
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});
     restored=await until(states,start,item=>item.action==='ready',60);
     check(restored.hasCheckpoint && ['garage','workshop'].includes(restored.phase) && restored.runId===returnBefore.runId &&
