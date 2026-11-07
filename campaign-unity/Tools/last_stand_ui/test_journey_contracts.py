@@ -80,6 +80,7 @@ MAINTAINED_COMPLETE = ('every CI and Pages browser installer prepares the offici
  '15-minute CI partitions core, product, tier and every Campaigns viewport',
  'required CI runs current wave gate and checkpoint reader regressions',
  'required CI runs public parent configuration regressions',
+ 'Pages uses the complete bounded Last Stand candidate matrix',
  'every required check validates classified work and the complete browser matrix',
  'product CI supplies required FFmpeg tools before the Last Stand journey',
  'product CI supplies the compiler for fresh current-source model qualification',

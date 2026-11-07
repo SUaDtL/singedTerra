@@ -176,21 +176,44 @@ function assertWorkflow(source) {
 function assertCandidateMatrix(source) {
   const candidate = job(source, 'candidate-test');
   assert.match(candidate, /fail-fast: false/);
-  assert.match(candidate, /lane: \[core-1, core-2, product\]/);
-  for (const shard of [1, 2]) {
-    assert.ok(candidate.includes(`core-${shard}) npm run test:e2e -- --grep-invert @live --workers=2 --shard=${shard}/2 ;;`));
-  }
+  assert.match(job(source,'gate'), /browser_matrix: \$\{\{ steps.browser-matrix.outputs.browser_matrix \}\}/);
+  assert.match(job(source,'gate'), /id: browser-matrix\n        run: node scripts\/ci\/browserMatrix.mjs >> "\$GITHUB_OUTPUT"/);
+  assert.match(candidate, /matrix: \$\{\{ fromJSON\(needs.gate.outputs.browser_matrix\) \}\}/);
+  assert.ok(candidate.includes('core) npm run test:e2e -- --grep-invert "@live|@last-stand" --workers=2 --shard="$BROWSER_SHARD/4" ;;'));
   assert.match(candidate, /product\) npx playwright test -c playwright\.product-completion\.config\.ts ;;/);
-  assert.match(candidate, /BROWSER_LANE: \$\{\{ matrix\.lane \}\}/);
+  assert.match(candidate, /BROWSER_SUITE: \$\{\{ matrix\.suite \}\}/);
+  assert.match(candidate, /BROWSER_SHARD: \$\{\{ matrix\.shard \}\}/);
+  assert.match(candidate, /LAST_STAND_JOURNEY_SHARD: \$\{\{ matrix\.journey_shard \}\}/);
+  assert.match(candidate, /LAST_STAND_JOURNEY_SECTION: \$\{\{ matrix\.journey_section \}\}/);
+  for (const [suite,title] of [['tier','Last Stand earned waves'],['campaigns','Last Stand Campaigns journey']])
+    assert.ok(candidate.includes(`${suite}) node node_modules/@playwright/test/cli.js test e2e/last-stand-playable-loop.spec.ts --config=playwright.config.ts --project=desktop-fine --workers=1 --retries=0 --grep "${title}" ;;`));
   const checks = [...candidate.matchAll(/node scripts\/ci\/releaseCandidate\.mjs verify client\/dist/g)];
   assert.equal(checks.length, 2);
-  const execute = candidate.indexOf('case "$BROWSER_LANE"');
+  const execute = candidate.indexOf('case "$BROWSER_SUITE"');
   assert.ok(checks[0].index < execute && checks[1].index > execute);
   assert.match(candidate, /artifact-ids: \$\{\{ needs\.build\.outputs\.artifact_id \}\}/);
   assert.match(candidate, /E2E_DENY_EXTERNAL_NETWORK: '1'/);
-  assert.match(job(source, 'freshness'), /needs: \[gate, candidate-test\]/);
-  assert.match(job(source, 'publish'), /needs: \[gate, build, candidate-test, freshness\]/);
+  const aggregate=job(source,'candidate-matrix');
+  assert.match(aggregate,/needs: \[gate, candidate-test\]/);
+  assert.match(aggregate,/ref: \$\{\{ needs.gate.outputs.expected_main_sha \}\}/);
+  assert.match(aggregate,/pattern: candidate-browser-last-stand-\[0-9\]\*-\$\{\{ github.run_attempt \}\}/);
+  assert.match(aggregate,/run: node scripts\/ci\/lastStandMatrixResult.mjs "\$MATRIX_ROOT"/);
+  assert.doesNotMatch(aggregate,/continue-on-error:|if:|\|\|\s*(true|:)/);
+  assert.match(job(source, 'freshness'), /needs: \[gate, candidate-test, candidate-matrix\]/);
+  assert.match(job(source, 'publish'), /needs: \[gate, build, candidate-test, candidate-matrix, freshness\]/);
 }
+
+test('Pages uses the complete bounded Last Stand candidate matrix', () => {
+  assertCandidateMatrix(pages);
+  const lanes=browserMatrix().include;
+  assert.deepEqual(lanes.filter(l=>l.suite==='core').map(l=>l.shard),[1,2,3,4]);
+  assert.equal(lanes.filter(l=>l.suite==='tier').length,1);
+  assert.equal(new Set(lanes.map(l=>l.lane)).size,18);
+  assert.deepEqual(lanes.filter(l=>l.journey_section==='lifecycle').map(l=>l.journey_shard),
+    Array.from({length:10},(_,i)=>`${i+1}/10`));
+  for(const section of ['entry','recovery'])
+    assert.deepEqual(lanes.filter(l=>l.journey_section===section).map(l=>l.journey_shard),['']);
+});
 
 test('every required check validates classified work and the complete browser matrix', () => {
   assertWorkflow(ci);
@@ -342,13 +365,21 @@ test('Pages refuses missing or failure-only candidate journey evidence',()=>{
 });
 test('candidate matrix rejects omitted coverage or digest verification', () => {
   for (const [from, to] of [
-    ['lane: [core-1, core-2, product]', 'lane: [core-1, product]'],
-    ['--shard=2/2', '--shard=1/2'],
+    ['matrix: ${{ fromJSON(needs.gate.outputs.browser_matrix) }}', 'matrix: {lane: [core-1, product]}'],
+    ['--shard="$BROWSER_SHARD/4"', '--shard=1/4'],
+    ['"@live|@last-stand"', '@live'],
+    ['LAST_STAND_JOURNEY_SECTION: ${{ matrix.journey_section }}', 'LAST_STAND_JOURNEY_SECTION: full'],
+    ['--grep "Last Stand earned waves"', '--grep skipped'],
+    ['--grep "Last Stand Campaigns journey"', '--grep skipped'],
+    ['--retries=0', '--retries=1'],
     ['product) npx playwright test', 'product) echo skipped'],
     ['node scripts/ci/releaseCandidate.mjs verify client/dist', 'echo verified'],
     ["E2E_DENY_EXTERNAL_NETWORK: '1'", "E2E_DENY_EXTERNAL_NETWORK: '0'"],
     ['artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'name: arbitrary'],
-    ['needs: [gate, candidate-test]', 'needs: [gate]'],
+    ['node scripts/ci/lastStandMatrixResult.mjs "$MATRIX_ROOT"', 'echo complete'],
+    ['pattern: candidate-browser-last-stand-[0-9]*-${{ github.run_attempt }}', 'pattern: candidate-browser-last-stand-1-*'],
+    ['needs: [gate, candidate-test, candidate-matrix]', 'needs: [gate, candidate-test]'],
+    ['needs: [gate, build, candidate-test, candidate-matrix, freshness]', 'needs: [gate, build, candidate-test, freshness]'],
   ]) assert.throws(() => assertCandidateMatrix(pages.replaceAll(from, to)), from);
 });
 
