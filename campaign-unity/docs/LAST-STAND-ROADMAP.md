@@ -9,6 +9,32 @@ pack `singedTerra-visual-polish-source-update-2026-09-25.zip` (SHA-256
 The initial in-repo visual scope was
 [ST-VIS-01](../../.codearbiter/specs/unity-battlefield-visual-review.md).
 
+## Buildcraft and midgame, November 7, 2026
+
+The [buildcraft specification](../../.codearbiter/specs/last-stand-buildcraft-and-midgame.html)
+and [plan](../../.codearbiter/plans/last-stand-buildcraft-and-midgame.html) extend
+earned progression with two equipment bays, three named presets, Arc Emitter
+and Reactive Shield fittings, and shared effect and research-applicability quotes.
+The second bay unlocks at Tier 1 wave 750. Three combat research tracks unlock
+at Tier 1 wave 500; the third Lab unlocks at Tier 2 wave 500. Research and the
+Workshop continue to share Salvage, with real-time research and no offline combat.
+
+Glass Wastes and Frostline Relay add tiers 5 and 6. Carrier and Medic enemies
+have finite support budgets; Siege Commanders add a distinct hundred-wave
+encounter in those tiers. Milestone rewards use the existing durable transaction
+owner. Profile version 8 preserves the four retained combat/economy editions,
+paid research and checkpoints; a resumed run keeps its captured equipment and
+combat research and starts paused.
+
+[PR #549](https://github.com/SUaDtL/singedTerra/pull/549) owns integration and
+the latest hosted checks. The [validation index](last-stand-buildcraft/validation.json)
+records local model, balance, browser and package evidence. The
+[current readiness matrix](LAST-STAND-RELEASE-READINESS.md#current-qualification-matrix)
+owns remaining native input, physical Android, actual endurance, listening and
+owner acceptance. Numerical farming projections and successful development
+builds do not complete those obligations. Historical reports below retain their
+original scope and dates.
+
 ## Player tank appearance, October 31, 2026
 
 The [tank sprint](../../.codearbiter/plans/last-stand-tank-customization.html)
