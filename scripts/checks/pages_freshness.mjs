@@ -99,6 +99,7 @@ if (!process.argv.includes('--policy-only')) {
   const gateStart = workflow.indexOf('\n  gate:');
   const buildStart = workflow.indexOf('\n  build:');
   const candidateTestStart = workflow.indexOf('\n  candidate-test:');
+  const candidateMatrixStart = workflow.indexOf('\n  candidate-matrix:');
   const freshnessStart = workflow.indexOf('\n  freshness:');
   const publishStart = workflow.indexOf('\n  publish:');
   const smokeStart = workflow.indexOf('\n  live-smoke:');
@@ -106,13 +107,15 @@ if (!process.argv.includes('--policy-only')) {
     gateStart >= 0
       && buildStart > gateStart
       && candidateTestStart > buildStart
-      && freshnessStart > candidateTestStart
+      && candidateMatrixStart > candidateTestStart
+      && freshnessStart > candidateMatrixStart
       && publishStart > freshnessStart
       && smokeStart > publishStart,
   );
   const gate = workflow.slice(gateStart, buildStart);
   const build = workflow.slice(buildStart, candidateTestStart);
-  const candidateTest = workflow.slice(candidateTestStart, freshnessStart);
+  const candidateTest = workflow.slice(candidateTestStart, candidateMatrixStart);
+  const candidateMatrix = workflow.slice(candidateMatrixStart, freshnessStart);
   const freshness = workflow.slice(freshnessStart, publishStart);
   const publish = workflow.slice(publishStart, smokeStart);
   const smoke = workflow.slice(smokeStart);
@@ -146,7 +149,7 @@ if (!process.argv.includes('--policy-only')) {
   assert.match(candidateTest, /artifact-ids: \$\{\{ needs\.build\.outputs\.artifact_id \}\}/);
   assert.match(candidateTest, /E2E_DENY_EXTERNAL_NETWORK: '1'/);
   assert.match(candidateTest, /VITE_BASE: \$\{\{ needs\.build\.outputs\.base_path \}\}/);
-  assert.match(candidateTest, /npm run test:e2e -- --grep-invert @live --workers=2/);
+  assert.match(candidateTest, /npm run test:e2e -- --grep-invert "@live\|@last-stand" --workers=2/);
   assert.match(candidateTest, /playwright test -c playwright\.product-completion\.config\.ts/);
   assert.match(candidateTest, /Prove browser execution did not mutate candidate bytes/);
   assert.match(candidateTest, /CANDIDATE_METADATA_SHA256: \$\{\{ needs\.build\.outputs\.candidate_metadata_sha256 \}\}/);
@@ -163,9 +166,14 @@ if (!process.argv.includes('--policy-only')) {
   const noCredentialCheckouts = workflow.match(/persist-credentials: false/g)?.length ?? 0;
   assert.equal(noCredentialCheckouts, checkoutCount);
   assert.match(build, /path: client\/dist[\s\S]*include-hidden-files: true/);
-  assert.match(freshness, /needs: \[gate, candidate-test\]/);
+  assert.match(candidateMatrix, /needs: \[gate, candidate-test\]/);
+  assert.match(candidateMatrix, /ref: \$\{\{ needs.gate.outputs.expected_main_sha \}\}/);
+  assert.match(candidateMatrix, /permissions:\n      actions: read\n      contents: read\n/);
+  assert.match(candidateMatrix, /run: node scripts\/ci\/lastStandMatrixResult.mjs "\$MATRIX_ROOT"/);
+  assert.doesNotMatch(candidateMatrix, /pages:|id-token:|continue-on-error|\n        if:/);
+  assert.match(freshness, /needs: \[gate, candidate-test, candidate-matrix\]/);
   assert.match(freshness, /name: Verify source approval is still current main/);
-  assert.match(publish, /needs: \[gate, build, candidate-test, freshness\]/);
+  assert.match(publish, /needs: \[gate, build, candidate-test, candidate-matrix, freshness\]/);
   assert.match(publish, /concurrency:[\s\S]*group: pages/);
   assert.match(
     publish,

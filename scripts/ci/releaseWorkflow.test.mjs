@@ -4,7 +4,7 @@ import test from 'node:test';
 import { lastStandQualificationProfile, lastStandJourneyConfiguration } from '../../e2e/helpers/lastStandJourney.mjs';
 
 function assertLastStandCandidateSetup(workflow) {
-  const candidate = workflow.slice(workflow.indexOf('\n  candidate-test:'), workflow.indexOf('\n  freshness:'));
+  const candidate = workflow.slice(workflow.indexOf('\n  candidate-test:'), workflow.indexOf('\n  candidate-matrix:'));
   const browser = candidate.slice(candidate.indexOf('      - name: Run the selected browser suite'),
     candidate.indexOf('      - name: Prove browser execution'));
   const profile = browser.match(/\n          LAST_STAND_QUALIFICATION_PROFILE: ([^\n]+)/)?.[1];
@@ -17,7 +17,10 @@ function assertLastStandCandidateSetup(workflow) {
   const setup = command => {
     const step = steps.find(item => item[0].includes(command));
     assert.ok(step, `Candidate requires ${command}`);
-    assert.doesNotMatch(step[0], /continue-on-error|\|\|\s*(true|:)|\n        if:/);
+    assert.doesNotMatch(step[0], /continue-on-error|\|\|\s*(true|:)/);
+    assert.deepEqual([...step[0].matchAll(/\n        if: ([^\n]+)/g)].map(match=>match[1]),
+      ["matrix.suite == 'campaigns' || matrix.suite == 'tier'"],
+      'Every Last Stand lane requires exactly the same non-optional setup');
     assert.ok(step.index < candidate.indexOf('      - name: Run the selected browser suite'),
       'Prerequisites must precede every candidate browser lane');
     return step;
@@ -46,7 +49,7 @@ function assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpe
   assert.match(gate, /ref: \$\{\{ github\.event_name == 'workflow_dispatch' && 'refs\/heads\/main' \|\| github\.sha \}\}/);
   assert.doesNotMatch(pages, /ref:.*workflow_run|run-id:.*workflow_run|artifact-ids:.*workflow_run/);
   assert.match(gate, /timeout-minutes: 5/);
-  for (const id of ['build', 'candidate-test', 'freshness', 'publish', 'live-smoke']) {
+  for (const id of ['build', 'candidate-test', 'candidate-matrix', 'freshness', 'publish', 'live-smoke']) {
     const block = pages.match(new RegExp(`\\n  ${id}:\\n([\\s\\S]*?)(?=\\n  [a-z-]+:|$)`))?.[1];
     assert.ok(block, `Missing job ${id}`);
     assert.match(block, /ref: \$\{\{ needs\.gate\.outputs\.expected_main_sha \}\}/);
@@ -57,11 +60,11 @@ function assertReleaseWorkflow(ci, pages, generalConfig, productConfig, lobbySpe
   assert.match(pages, /required_ci_run_attempt: \$\{\{ steps\.release\.outputs\.required_ci_run_attempt \}\}/);
   assert.equal(pages.match(/github-pages-\$\{\{ github\.run_id \}\}/g)?.length, 2);
   assert.match(pages, /artifact-ids: \$\{\{ needs\.build\.outputs\.artifact_id \}\}/);
-  assert.match(pages, /needs: \[gate, build, candidate-test, freshness\]/);
+  assert.match(pages, /needs: \[gate, build, candidate-test, candidate-matrix, freshness\]/);
   assert.match(pages, /E2E_LIVE_URL: http:\/\/127\.0\.0\.1:4173\/\$\{\{ github\.event\.repository\.name \}\}\//);
   assert.match(pages, /VITE_BASE: \$\{\{ needs\.build\.outputs\.base_path \}\}/);
   assert.equal(pages.match(/VITE_SUPABASE_ANON_KEY: \$\{\{ secrets\.VITE_SUPABASE_ANON_KEY \}\}/g)?.length, 2);
-  assert.match(pages, /npm run test:e2e -- --grep-invert @live --workers=2/);
+  assert.match(pages, /npm run test:e2e -- --grep-invert "@live\|@last-stand" --workers=2/);
   assert.match(pages, /playwright test -c playwright\.product-completion\.config\.ts/);
   assert.match(pages, /artifact_name: github-pages-\$\{\{ github\.run_id \}\}/);
   const publishStart = pages.indexOf('\n  publish:');
@@ -114,6 +117,9 @@ test('Pages rejects missing, incompatible or optional Last Stand candidate setup
     ['run: node scripts/ci/prepareLastStandBrowser.mjs', 'run: echo sandbox skipped'],
     ['run: node scripts/ci/prepareLastStandEvidence.mjs', "if: matrix.lane == 'product'\n        run: node scripts/ci/prepareLastStandEvidence.mjs"],
     ['run: node scripts/ci/prepareLastStandBrowser.mjs', 'continue-on-error: true\n        run: node scripts/ci/prepareLastStandBrowser.mjs'],
+    ["if: matrix.suite == 'campaigns' || matrix.suite == 'tier'", "if: matrix.suite == 'campaigns'"],
+    ["if: matrix.suite == 'campaigns' || matrix.suite == 'tier'", "if: matrix.suite == 'tier'"],
+    ["if: matrix.suite == 'campaigns' || matrix.suite == 'tier'", 'if: false'],
   ]) {
     assert.notEqual(pages.replace(from, to), pages, `Mutation must apply: ${from}`);
     assert.throws(() => assertLastStandCandidateSetup(pages.replace(from, to)), from);
@@ -122,7 +128,8 @@ test('Pages rejects missing, incompatible or optional Last Stand candidate setup
 
 test('policy rejects missing gates, untrusted triggers, and alternate artifacts', () => {
   const mutations = [
-    pages.replace('needs: [gate, build, candidate-test, freshness]', 'needs: [build]'),
+    pages.replace('needs: [gate, build, candidate-test, candidate-matrix, freshness]', 'needs: [build]'),
+    pages.replace('needs: [gate, build, candidate-test, candidate-matrix, freshness]', 'needs: [gate, build, candidate-test, freshness]'),
     pages.replace('workflow_dispatch:', 'pull_request_target:\n  workflow_dispatch:'),
     pages.replace('types: [completed]', 'types: [requested]'),
     pages.replaceAll('ref: ${{ needs.gate.outputs.expected_main_sha }}', 'ref: refs/heads/main'),
@@ -136,12 +143,13 @@ test('policy rejects missing gates, untrusted triggers, and alternate artifacts'
     pages.replace('artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'artifact-ids: ${{ github.event.workflow_run.id }}'),
     pages.replaceAll('github-pages-${{ github.run_id }}', 'github-pages-pr'),
     pages.replace('artifact-ids: ${{ needs.build.outputs.artifact_id }}', 'name: github-pages'),
-    pages.replaceAll('npm run test:e2e -- --grep-invert @live --workers=2', 'echo skipped-general-suite'),
+    pages.replaceAll('npm run test:e2e -- --grep-invert "@live|@last-stand" --workers=2', 'echo skipped-general-suite'),
     pages.replace('npx playwright test -c playwright.product-completion.config.ts', 'echo skipped-product-suite'),
     pages.replace('node scripts/ci/releaseCandidate.mjs revalidate-ci', 'echo skipped-final-ci-check'),
     pages.replaceAll('CANDIDATE_METADATA_SHA256: ${{ needs.build.outputs.candidate_metadata_sha256 }}', 'CANDIDATE_METADATA_SHA256: omitted'),
   ];
   for (const mutated of mutations) {
+    assert.notEqual(mutated,pages,'Every policy mutation must actually change the current workflow');
     assert.throws(() => assertReleaseWorkflow(ci, mutated, generalConfig, productConfig, lobbySpec));
   }
 });
