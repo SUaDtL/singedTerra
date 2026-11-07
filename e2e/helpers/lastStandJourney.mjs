@@ -1791,7 +1791,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const savedState=states.at(-1);
     assertIdleWaveSave(savedWave);
-    check(savedWave.version===7 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
+    check(savedWave.version===8 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
       savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
       'cleared waves atomically bank rewards and complete checkpoints',savedWave);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),

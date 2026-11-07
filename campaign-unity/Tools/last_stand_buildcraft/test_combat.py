@@ -70,6 +70,8 @@ class BuildcraftCombatTests(unittest.TestCase):
         self.assert_mutations_detected(faults, "combat")
 
     def test_range_target_and_budget_guard_removals_are_detected(self):
+        # Reflexive aura positions bypass range without leaving unused locals;
+        # Mono treats those warnings as errors before the behavioral assertion.
         self.assert_mutations_detected([
             ("EncounterModel.cs", "if (!foe.Alive || foe.Distance > range) continue;",
              "if (!foe.Alive) continue;", "arc-ranges", "arc acquisition range boundary"),
@@ -80,13 +82,15 @@ class BuildcraftCombatTests(unittest.TestCase):
             ("EncounterBuildcraft.cs", "if(distance>(long)LastStandUpgradeCatalog.ArcHopRadius*LastStandUpgradeCatalog.ArcHopRadius)continue;",
              "if(distance>=(long)LastStandUpgradeCatalog.ArcHopRadius*LastStandUpgradeCatalog.ArcHopRadius)continue;", "arc-ranges", "arc hop radius boundary"),
             ("EncounterBuildcraft.cs", "if(!EncounterGeometry.WithinRadius(position,EncounterGeometry.Position(carrier.Lane,carrier.Id,carrier.Distance),stats.SupportRadius))continue;",
-             "", "aura-ranges", "carrier aura radius boundary"),
+             "if(!EncounterGeometry.WithinRadius(position,position,stats.SupportRadius))continue;",
+             "aura-ranges", "carrier aura radius boundary"),
             ("EncounterBuildcraft.cs", "if((carrier.ProtectedMask&bit)==0&&carrier.ProtectedCount>=stats.SupportTargets)continue;",
              "", "support-limits", "carrier distinct target cap"),
             ("EncounterBuildcraft.cs", "Math.Min(damage-1,carrier.SupportRemaining)",
              "damage-1", "support-limits", "carrier finite shield conservation"),
             ("EncounterBuildcraft.cs", "if(!EncounterGeometry.WithinRadius(center,EncounterGeometry.Position(target.Lane,target.Id,target.Distance),stats.SupportRadius))continue;",
-             "", "aura-ranges", "medic aura radius boundary"),
+             "if(!EncounterGeometry.WithinRadius(center,center,stats.SupportRadius))continue;",
+             "aura-ranges", "medic aura radius boundary"),
             ("EncounterBuildcraft.cs", "slot<Capacity&&targets<stats.SupportTargets&&medic.SupportRemaining>0",
              "slot<Capacity&&medic.SupportRemaining>0", "support-limits", "medic target cap"),
             ("EncounterBuildcraft.cs", "Math.Min(medic.SupportRemaining,Math.Min(stats.HealingPerPulse,target.MaximumHull-target.Hull))",

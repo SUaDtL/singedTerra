@@ -161,6 +161,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Repair buildcraft CI save and combat mutation checks  (from github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards)  (done 2026-11-07)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/42354077784/buildcraft-ci-guards
+  - Desc: PR 549 rejects valid version 8 checkpoints and Linux Mono stops two range-removal mutants on unused-local warnings. Require the current envelope without weakening wallet/checkpoint assertions, and compile the range mutants so their intended combat assertions detect them.
+  - Work type: fix
+  - Work ID: WORK-FD36B5B229E8260597F577CF7CA081C2
+  - Work operation ID: buildcraft-ci-guards-20261107
+  - Spec ID: ST-LS-BUILDCRAFT-SPEC
+  - Plan ID: ST-LS-BUILDCRAFT-PLAN
 - [~] Last Stand buildcraft: Candidate qualification and integration handoff  (from ST-LS-BUILDCRAFT-PLAN#CP-QUALIFY)  (started 2026-11-07)
   - Work origin: ST-LS-BUILDCRAFT-PLAN#CP-QUALIFY
   - Desc: Plan T-CANDIDATE, T-QUALIFY and T-DELIVERY: matched builds/CI, actual-target recovery/input/audio, real-time endurance and truthful543/544/546 stack delivery. Implementation pending owner review.
