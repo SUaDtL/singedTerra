@@ -46,7 +46,7 @@ asset pipeline and are not included in the browser bundle.
 
 ## Lucide Icons
 
-singedTerra uses selected icons from Lucide 1.61.0.
+singedTerra uses selected icons from Lucide 1.68.0.
 
 ISC License
 
@@ -1093,37 +1093,37 @@ SOFTWARE.
   },
   {
     "path": "node_modules/@vitest/coverage-v8",
-    "version": "5.0.5",
-    "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.0.5.tgz",
-    "integrity": "sha512-4KpkGdIrSqBihx/JyP/e+S+IKB98etg1XDQiLAxksLfcShnwi1VReGeOT9NI43hLHbknosKp/1CCLn9Zgcs8mg==",
+    "version": "5.1.0",
+    "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.1.0.tgz",
+    "integrity": "sha512-OY9aShBQG5KOIw2zCo9fDoCHI9RHliNHJ//nM7m6jGg41Hyke9JOGWmeMlK74xYErsxMoK8mIB3gAeEyFVA7LA==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@vitest/istanbul-lib-coverage",
-    "version": "1.0.2",
-    "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-1.0.2.tgz",
-    "integrity": "sha512-9J/JMwOf9AoJhAywhrn7ScKTL38hsWQP/qPG60OtaAFcQ5OXPwKsxZFlbnuCKmZ61m8/lGgHYnFpdyQZUvG/iA==",
+    "version": "2.1.0",
+    "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-2.1.0.tgz",
+    "integrity": "sha512-WOjuS+xcjSIy7ruYBQ+9BUcV7XZQ0FyVcbWbWxW9TRx/kLGx5SQaeFRIFDJxjNplb6YsT7SpKo2zuXXUo91OIQ==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@vitest/istanbul-lib-report",
-    "version": "1.0.2",
-    "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-1.0.2.tgz",
-    "integrity": "sha512-gUsfXZJbzPamoIY5TvHFiMMoXESBrUMo+xqaj+rYrWI69+EnvRlYBlP96ZnHPY4vX8kyUpgAnFUCg5wZG/HkDQ==",
+    "version": "2.1.0",
+    "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-2.1.0.tgz",
+    "integrity": "sha512-+ZFta25nWtGCOBG9/IET8w1RO5Oawsd6H8Uf6AJ9EA/StFuKVtKAEJEJ6uRt84OH+T4YkI0ASmIHAhRA+0KVxw==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@vitest/mocker",
-    "version": "5.0.5",
-    "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.0.5.tgz",
-    "integrity": "sha512-xLL3lkDegJZw+MGoGaCCsFayDZthGgpAtr3Vziyfc4p7xH89K7KRPcRBBh/kEYm0Aqkt5DtTmkYpBtRV/FrHZg==",
+    "version": "5.1.0",
+    "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.1.0.tgz",
+    "integrity": "sha512-5umB9/jlWcqVS6fsrFmv5Gdnpu6wAUio/lEOwAmvB7v+lFo/IW2B9FhAD0p19GCULTgMzLCdUmuCDCnAzWgppQ==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@vitest/spy",
-    "version": "5.0.5",
-    "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-5.0.5.tgz",
-    "integrity": "sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==",
+    "version": "5.1.0",
+    "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-5.1.0.tgz",
+    "integrity": "sha512-2DPO5OMHWKrBngC+fCmTQqemNF0gidRhp3lxbBmRhW+M1XJrfgPpqNqWVevXtn2f2ufD5ZaR1B6B641aAlcX5A==",
     "license": "MIT"
   },
   {
@@ -1513,9 +1513,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/lucide",
-    "version": "1.61.0",
-    "resolved": "https://registry.npmjs.org/lucide/-/lucide-1.61.0.tgz",
-    "integrity": "sha512-RPNMBgej6WjPKuCNEODg83CF8lnraCeDOsZ3HZ7KvUYf0O5hdJBzer/Ax/meBHl3xvrp5NmKX0IDA5myyzlvGw==",
+    "version": "1.68.0",
+    "resolved": "https://registry.npmjs.org/lucide/-/lucide-1.68.0.tgz",
+    "integrity": "sha512-rs3/CGsK3g8pex8lsN5QDxUsEe3awxhMLsxqeK441WBmOlyF9X1sYIdGxTNV0ubpGu6rYSuj0pxuf189ziUKvw==",
     "license": "ISC"
   },
   {
@@ -1527,9 +1527,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/magic-string",
-    "version": "1.4.3",
-    "resolved": "https://registry.npmjs.org/magic-string/-/magic-string-1.4.3.tgz",
-    "integrity": "sha512-z12OxmaPGE0F4xlpGdjuAUckipLpQlTAuAmyGhNoD7ODpYUzvDfvtxUbjM/jwznyP178oju/KDdyi220wNJ0RQ==",
+    "version": "1.4.5",
+    "resolved": "https://registry.npmjs.org/magic-string/-/magic-string-1.4.5.tgz",
+    "integrity": "sha512-oLLC2+YvQUfAa+vxoufE/yc1icb87M9iXIRqAoR/2EhE/8cb3SF/+Gi0c2By1B+5Vz2e2vQtUvHiu1+63Znh+w==",
     "license": "MIT"
   },
   {
@@ -1772,9 +1772,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/tinybench",
-    "version": "6.2.2",
-    "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-6.2.2.tgz",
-    "integrity": "sha512-nIZ2N2dFpjBsg2hgitKu7mA+FvsIJuGJOwysRngmVRRmWgR/UyPjwJj8c/fT/dhm8EkHnF5EOogRf+0Z2qrimA==",
+    "version": "6.2.3",
+    "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-6.2.3.tgz",
+    "integrity": "sha512-Al01C2JIBnO2CXCAPbpAl6sUiOZHeThGtHYNTa51JRw9PyWOCdr+9Ong05R4qg/Sk3+H645E8ov1h2c58ityNw==",
     "license": "MIT"
   },
   {
@@ -1877,9 +1877,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/vitest",
-    "version": "5.0.5",
-    "resolved": "https://registry.npmjs.org/vitest/-/vitest-5.0.5.tgz",
-    "integrity": "sha512-cPODOMF8YnkiiYtDdHo6n4wWmBrOBBbOIYH2d33M4l3CdNn72h+qMmO6uXffUN6A5AZFXNND/d+krS9mgkXRfg==",
+    "version": "5.1.0",
+    "resolved": "https://registry.npmjs.org/vitest/-/vitest-5.1.0.tgz",
+    "integrity": "sha512-MzmNFnrwa8v8lF1bLxw3UJ4EREwVOVb75VqJZmUDRjJ6EluK/x9th7qTbaeDk41WxE1GxWqmTXcdsfobfH5sOA==",
     "license": "MIT"
   },
   {
