@@ -26,6 +26,9 @@ static class WavesSaveReviewChecks
         var record = LastStandSaveJson.Read(store.Raw);
         foreach (var track in LastStandUpgradeCatalog.Tracks)
             LastStandSaveJson.Object(record["permanentLevels"])[track.Key] = track.PermanentCap;
+        // This epoch-exhaustion fixture isolates the base reward. Income
+        // upgrades and their fractional carry have their own recovery cases.
+        LastStandSaveJson.Object(record["permanentLevels"])["scrapYield"]=0;
         record["selectedFitting"] = "launcher";
         store.Raw = LastStandSaveJson.Write(record);
         var progression = LastStandProgression.Load(store);

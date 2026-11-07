@@ -4,14 +4,16 @@ Run: C:/Python314/python.exe -B -m unittest discover -s campaign-unity/Tools/las
 No Unity Editor or audio device is started. Rendered/browser audio needs separate checks.
 """
 from pathlib import Path
-import subprocess
+import re
+import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
+
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
 
 
@@ -20,24 +22,38 @@ class AudioSettingsTests(unittest.TestCase):
     def setUpClass(cls):
         cls.output = tempfile.TemporaryDirectory(prefix="st-audio-settings-")
         cls.executable = Path(cls.output.name) / "AudioSettingsChecks.exe"
-        sources = [SCRIPTS / name for name in ("LastStandAudio.cs", "LastStandPreferences.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs")]
-        sources.append(Path(__file__).with_name("AudioSettingsChecks.cs"))
-        music = SCRIPTS / "LastStandMusic.cs"
-        if music.exists():
-            sources.append(music)
-        command = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"] + [str(p) for p in sources]
-        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        if result.returncode:
-            cls.output.cleanup()
-            raise AssertionError("Actual-source C# compilation failed (not behavioral RED):\n" + result.stdout + result.stderr)
+        sources = complete_sources(SCRIPTS, [SCRIPTS / name for name in (
+            "LastStandAudio.cs", "LastStandMusic.cs", "LastStandPreferences.cs", "LastStandStore.cs",
+            "LastStandRunClock.cs", "LastStandSpeedPolicy.cs", "EncounterModel.cs", "LastStandProgression.cs")])
+        # Exercise the actual controller call site and admission owner without
+        # importing Unity UI. Only platform/session inputs are bounded doubles.
+        controller = (SCRIPTS / "LastStandLoopController.cs").read_text(encoding="utf-8-sig")
+        def method(name):
+            marker = "        void " + name + "("
+            if controller.count(marker) != 1:
+                raise AssertionError("Actual caller seam moved: " + name)
+            start = controller.index(marker)
+            brace = controller.index("{", start)
+            depth, end = 1, brace + 1
+            while depth:
+                depth += (controller[end] == "{") - (controller[end] == "}")
+                end += 1
+            return controller[start:end].replace("        void ", "        public void ", 1)
+        constants = re.findall(r"const double MaximumForegroundFeedbackInterval = [^;]+;", controller)
+        if len(constants) != 1:
+            raise AssertionError("Actual admission interval seam moved")
+        caller = Path(cls.output.name) / "ActualAudioCaller.cs"
+        caller.write_text("using SingedTerra.LastStand; using SingedTerra.Encounter;\n"
+                          "public partial class ActualAudioCaller {\n" + constants[0] + "\n" +
+                          method("OnSessionStepped") + "\n" + method("SyncAudioAdmission") + "\n}\n", encoding="utf-8")
+        compile_csharp(cls.executable, sources + [Path(__file__).with_name("AudioSettingsChecks.cs"), caller], warnings_as_errors=True)
 
     @classmethod
     def tearDownClass(cls):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=60)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -73,3 +89,10 @@ class AudioSettingsTests(unittest.TestCase):
 
     def test_music_transition_uses_unscaled_time_and_normal_pitch(self):
         self.case("music_transition_uses_unscaled_time_and_normal_pitch")
+
+    def test_new_weapons_have_distinct_finite_cues(self): self.case("new_weapon_cues")
+    def test_mortar_batch_is_one_firing_and_aggregate_impact(self): self.case("mortar_batch")
+    def test_new_batch_keeps_freshness_holds_and_no_replay(self): self.case("batch_holds")
+    def test_actual_step_batches_audio_without_suppressing_hit_telemetry(self): self.case("actual_caller")
+    def test_generated_new_clips_and_sources_are_released(self): self.case("cleanup")
+    def test_invalid_blast_batch_cannot_mutate_voices(self): self.case("invalid_batch")

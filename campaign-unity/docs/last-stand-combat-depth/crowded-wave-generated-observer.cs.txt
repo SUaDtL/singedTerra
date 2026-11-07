@@ -1,0 +1,470 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using SingedTerra.Encounter;
+using SingedTerra.LastStand;
+
+// Measurement policy, not a player feature. The report never modifies production catalogs.
+public static class CombatBalanceMeasurements
+{
+    public static readonly int[] Thresholds={0,100,1000,10000,100000,1000000};
+    public static readonly int[] Waves={1,100,300,500,2000,5000};
+    public const int FundingRuns=128,FundingTicks=20000000,RunTicks=5000000,MatrixTicks=60000000;
+    public const long CalendarMilliseconds=90L*24*3600000;
+    public static void Require(bool value,string message){if(!value)throw new InvalidOperationException(message);}
+    public static void ValidateIncome(long gross,long repeatable,long first,long bonus,long wallet,long permanent,long research)
+    {
+        Require(gross>=0&&repeatable>=0&&first>=0&&bonus>=0&&wallet>=0&&permanent>=0&&research>=0,"Negative currency");
+        try {Require(gross==checked(repeatable+first+bonus)&&gross==checked(wallet+permanent+research),"Salvage conservation/first-clear separation");}
+        catch(OverflowException){throw new InvalidOperationException("Currency sum overflow");}
+    }
+    public sealed class Cadence
+    {
+        long next=900000,last;
+        public bool Due(long activeMilliseconds)
+        {
+            Require(activeMilliseconds>=last,"Active clock reversed");last=activeMilliseconds;
+            if(activeMilliseconds<next)return false;
+            next=checked((activeMilliseconds/900000+1)*900000);return true;
+        }
+    }
+    public sealed class Store:ILastStandStorage
+    {public string Raw;public int Writes;public string Read()=>Raw;public void Write(string value){Raw=value;Writes++;}}
+    public sealed class Clock:ILastStandTime
+    {
+        public const long Epoch=1790000000000L;
+        public decimal Elapsed;
+        public long UtcMilliseconds=>Epoch+(long)Elapsed;
+        public double MonotonicSeconds=>(double)(Elapsed/1000m);
+    }
+    public sealed class Context
+    {
+        public readonly Store Store;public readonly Clock Clock;public readonly LastStandProgression Profile;
+        public readonly LastStandResearchCoordinator Research;
+        public long PermanentSpent,ResearchSpent,ActiveMilliseconds,ClosedMilliseconds;
+        public int PermanentCursor,ResearchCursor;public readonly List<object> ResearchJournal=new List<object>();
+        public readonly List<object> Completions=new List<object>();
+        public Context(string raw=null,decimal elapsed=0,long permanent=0,long research=0)
+        {
+            Store=new Store{Raw=raw};Clock=new Clock{Elapsed=elapsed};Profile=LastStandProgression.Load(Store,()=>Clock.UtcMilliseconds);
+            Require(Profile.SaveState=="ready","Profile did not load: "+Profile.SaveError);
+            Research=new LastStandResearchCoordinator(Profile,Clock);Require(Research.Initialize(),"Research initialization");
+            PermanentSpent=permanent;ResearchSpent=research;
+            int[] announced=(int[])Profile.ResearchSnapshot.completedRanks.Clone();
+            Research.Confirmed+=()=>{var ranks=Profile.ResearchSnapshot.completedRanks;for(int slot=0;slot<ranks.Length;slot++)
+                if(ranks[slot]>announced[slot])Completions.Add(D("trackSlot",slot,"previousRank",announced[slot],"confirmedRank",ranks[slot],"calendarMilliseconds",(long)Clock.Elapsed));
+                announced=(int[])ranks.Clone();};
+        }
+        public long Repeatable=>Profile.HistorySnapshot.Lifetime.RepeatableSalvage+(Profile.HistorySnapshot.Current?.RepeatableSalvage??0);
+        public long FirstClear=>Profile.HistorySnapshot.Lifetime.MilestoneSalvage+(Profile.HistorySnapshot.Current?.MilestoneSalvage??0);
+        public long ResearchBonus=>Profile.HistorySnapshot.Lifetime.ResearchBonusSalvage+(Profile.HistorySnapshot.Current?.ResearchBonusSalvage??0);
+        public long Gross=>Repeatable+FirstClear+ResearchBonus;
+        public void Audit()
+        {ValidateIncome(Gross,Repeatable,FirstClear,ResearchBonus,Profile.Wallet,PermanentSpent,ResearchSpent);}
+    }
+    public sealed class Seed
+    {
+        public int Threshold;public string Raw;public decimal Elapsed;public long Permanent,Research,Gross;
+        public Seed(Context c,int threshold){Threshold=threshold;Raw=c.Store.Raw;Elapsed=c.Clock.Elapsed;Permanent=c.PermanentSpent;Research=c.ResearchSpent;Gross=c.Gross;}
+        public Context Fork(){var c=new Context(Raw,Elapsed,Permanent,Research);
+            // A confirmed unlock can be captured during a live saved run. Each
+            // branch uses the real abandon transaction before choosing a fitting.
+            if(c.Profile.HasCheckpoint)Require(c.Profile.TryFinalizeRun(reason:"abandon"),"Confirmed checkpoint fork abandon");
+            Require(c.Gross==Gross,"Earned fork changed gross income");c.Audit();return c;}
+    }
+    public sealed class TimeLedger
+    {
+        readonly long[] pending=new long[10];
+        public void Add(long milliseconds,double speed){Require(milliseconds>=0&&LastStandSpeedPolicy.Allows(speed,5)&&speed>0,"Invalid observed time");pending[(int)(speed*2)-1]+=milliseconds;}
+        public void Flush(LastStandRunHistory history){for(int n=0;n<pending.Length;n++)if(pending[n]>0){history.AddActiveTime(pending[n],(n+1)*.5);pending[n]=0;}}
+    }
+    public sealed class RoleEffects
+    {
+        readonly long[,] totalDamage=new long[8,5],totalKills=new long[8,5],totalArmor=new long[8,5];
+        long[,] waveDamage=new long[8,5],waveKills=new long[8,5],waveArmor=new long[8,5];
+        readonly long[] laterDamage=new long[EncounterModel.Capacity];
+        readonly List<object> witnesses=new List<object>();int wave,areaCasts,extraTargets;long bypass,healed;
+        readonly long[] incoming=new long[5],rawIncoming=new long[5];
+        static bool Outgoing(EncounterEventKind kind)=>kind==EncounterEventKind.Cannon||kind==EncounterEventKind.Launcher||kind==EncounterEventKind.Scattergun||kind==EncounterEventKind.Mortar||kind==EncounterEventKind.Railgun;
+        static int Raw(EncounterModel m,EncounterEventKind kind)
+        {switch(kind){case EncounterEventKind.Cannon:return m.CurrentCannonDamage;case EncounterEventKind.Launcher:return m.CurrentLauncherDamage;
+            case EncounterEventKind.Scattergun:return m.CurrentScattergunDamage;case EncounterEventKind.Mortar:return m.CurrentMortarDamage;default:return m.CurrentRailgunDamage;}}
+        public void Observe(EncounterModel model)
+        {
+            if(wave!=model.Wave){wave=model.Wave;waveDamage=new long[8,5];waveKills=new long[8,5];waveArmor=new long[8,5];}
+            if(model.Events.Count==0)return;Array.Clear(laterDamage,0,laterDamage.Length);int mortarTargets=0;long tickBypass=0;
+            for(int n=model.Events.Count-1;n>=0;n--){var hit=model.Events[n];
+                if(hit.Kind==EncounterEventKind.Repair){healed+=hit.Amount;continue;}
+                if(hit.Kind==EncounterEventKind.CloseHit||hit.Kind==EncounterEventKind.RangedHit){var attacker=model.Foes[hit.Slot];incoming[(int)attacker.Kind]+=hit.Amount;rawIncoming[(int)attacker.Kind]+=attacker.Damage;continue;}
+                if(!Outgoing(hit.Kind))continue;
+                var foe=model.Foes[hit.Slot];int weapon=(int)hit.Kind,kind=(int)foe.Kind;long priorHull=foe.Hull+laterDamage[hit.Slot]+hit.Amount;
+                long mitigation=Math.Min(priorHull,Raw(model,hit.Kind))-hit.Amount;Require(mitigation>=0,"Observed hit exceeds raw weapon damage");
+                totalDamage[weapon,kind]+=hit.Amount;waveDamage[weapon,kind]+=hit.Amount;
+                totalArmor[weapon,kind]+=mitigation;waveArmor[weapon,kind]+=mitigation;
+                if(hit.Killed){totalKills[weapon,kind]++;waveKills[weapon,kind]++;}
+                if(hit.Kind==EncounterEventKind.Mortar)mortarTargets++;
+                if(hit.Kind==EncounterEventKind.Railgun){long advantage=hit.Amount-Math.Min(priorHull,Math.Max(1,model.CurrentRailgunDamage-foe.Armor));Require(advantage>=0,"Penetration cannot reduce damage");tickBypass+=advantage;}
+                laterDamage[hit.Slot]+=hit.Amount;
+            }
+            if(mortarTargets>1){areaCasts++;extraTargets+=mortarTargets-1;if(areaCasts==1)witnesses.Add(D("effect","mortar-multiple-targets","wave",wave,"tick",model.Tick,"targets",mortarTargets));}
+            if(tickBypass>0){if(bypass==0)witnesses.Add(D("effect","railgun-armor-bypass","wave",wave,"tick",model.Tick,"extraEffectiveDamage",tickBypass));bypass+=tickBypass;}
+        }
+        static List<object> Rows(long[,] damage,long[,] kills,long[,] armor)
+        {
+            var rows=new List<object>();foreach(var weapon in new[]{EncounterEventKind.Cannon,EncounterEventKind.Launcher,EncounterEventKind.Scattergun,EncounterEventKind.Mortar,EncounterEventKind.Railgun})
+                foreach(var kind in new[]{FoeKind.Close,FoeKind.Ranged,FoeKind.Swarmer,FoeKind.ArmoredBrute,FoeKind.SiegeElite})
+                    if(damage[(int)weapon,(int)kind]>0)rows.Add(D("weapon",weapon.ToString(),"enemy",kind.ToString(),"effectiveDamage",damage[(int)weapon,(int)kind],"kills",kills[(int)weapon,(int)kind],"armorPreventedDamage",armor[(int)weapon,(int)kind]));
+            return rows;
+        }
+        public List<object> WaveRows()=>Rows(waveDamage,waveKills,waveArmor);
+        public Dictionary<string,object> Snapshot()
+        {
+            var hits=new List<object>();for(int kind=0;kind<incoming.Length;kind++)if(incoming[kind]>0)hits.Add(D("enemy",((FoeKind)kind).ToString(),"effectiveDamage",incoming[kind],"rawDamage",rawIncoming[kind]));
+            return D("damageByWeaponAndEnemy",Rows(totalDamage,totalKills,totalArmor),"mortarMultiTargetCasts",areaCasts,"mortarAdditionalTargets",extraTargets,"railgunEffectiveArmorBypass",bypass,"restoredHull",healed,"incomingDamageByEnemy",hits,"firstEffectWitnesses",witnesses);
+        }
+    }
+    public static Dictionary<string,object> D(params object[] values)
+    {var d=new Dictionary<string,object>();for(int n=0;n<values.Length;n+=2)d.Add((string)values[n],values[n+1]);return d;}
+    public static string Hash(string value)
+    {using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(value))).Replace("-","").ToLowerInvariant();}
+    // Save JSON deliberately bounds player records. Stream larger measurement
+    // containers without changing that production save admission guard.
+    public static void WriteReport(TextWriter writer,object value)
+    {
+        if(value is Dictionary<string,object> map){writer.Write('{');bool first=true;foreach(var pair in map){if(!first)writer.Write(',');first=false;writer.Write(LastStandSaveJson.Write(pair.Key));writer.Write(':');WriteReport(writer,pair.Value);}writer.Write('}');}
+        else if(!(value is string)&&value is System.Collections.IEnumerable rows){writer.Write('[');bool first=true;foreach(var row in rows){if(!first)writer.Write(',');first=false;WriteReport(writer,row);}writer.Write(']');}
+        else writer.Write(LastStandSaveJson.Write(value));
+    }
+    static LastStandUpgradeTrackId Aux(LastStandFitting fitting)
+    {
+        switch(fitting){case LastStandFitting.Launcher:return LastStandUpgradeTrackId.LauncherAttack;
+        case LastStandFitting.Repair:return LastStandUpgradeTrackId.FieldRepair;case LastStandFitting.Scattergun:return LastStandUpgradeTrackId.ScattergunAttack;
+        case LastStandFitting.Mortar:return LastStandUpgradeTrackId.MortarAttack;default:return LastStandUpgradeTrackId.RailgunAttack;}
+    }
+    static LastStandUpgradeTrackId[] Order(LastStandFitting fitting,bool auxiliary=true)
+    {return auxiliary?new[]{LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.HullCapacity,LastStandUpgradeTrackId.ScrapYield,
+        LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.CannonCycle,Aux(fitting),LastStandUpgradeTrackId.Armor}:
+        new[]{LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.HullCapacity,LastStandUpgradeTrackId.ScrapYield,
+        LastStandUpgradeTrackId.CannonAttack,LastStandUpgradeTrackId.CannonCycle,LastStandUpgradeTrackId.Armor};}
+    public static void BuyPermanent(Context c,long spendingLimit,bool auxiliary)
+    {
+        var p=c.Profile;var order=Order(LastStandFittingCatalog.Parse(p.SelectedFitting),auxiliary);
+        for(int attempts=0;attempts<100000;attempts++){
+            bool candidate=false;
+            for(int scan=0;scan<order.Length;scan++){
+                var id=order[c.PermanentCursor%order.Length];var def=LastStandUpgradeCatalog.Get(id);
+                if(p.GetPermanentLevel(id)>=def.PermanentCap||!p.IsPermanentTrackApplicable(id)){c.PermanentCursor++;continue;}
+                candidate=true;var quote=p.QuotePermanent(id,LastStandBulkQuantity.One);
+                if(quote.Quantity==0||quote.Cost>spendingLimit-c.PermanentSpent)return;
+                int before=p.Wallet;Require(p.TryPurchasePermanent(id,LastStandBulkQuantity.One,p.Revision),"Permanent transaction refused");
+                Require(before-p.Wallet==quote.Cost,"Permanent exact debit");c.PermanentSpent+=quote.Cost;c.PermanentCursor++;break;
+            }
+            if(!candidate)return;
+        }
+        throw new InvalidOperationException("Permanent policy intent bound exceeded");
+    }
+    public static void FundResearch(Context c)
+    {
+        var order=new[]{LastStandResearchTrackId.GameSpeed,LastStandResearchTrackId.ResearchSpeed,LastStandResearchTrackId.SalvageRecovery,LastStandResearchTrackId.ScrapLogistics};
+        Require(c.Research.Reconcile(),"Research reconciliation before funding");
+        int slots=LastStandResearchCatalog.UnlockedSlots(c.Profile.GetBestWave(1));
+        for(int slot=0;slot<slots;slot++){
+            var snapshot=c.Profile.ResearchSnapshot;if(snapshot.slots[slot].active!=null)continue;
+            for(int scan=0;scan<order.Length;scan++){
+                var track=order[c.ResearchCursor%order.Length];var definition=LastStandResearchCatalog.Get(track);int rank=snapshot.Rank(track)+1;
+                bool occupied=false;foreach(var other in snapshot.slots)if(other.active!=null&&other.active.track==track)occupied=true;
+                if(rank>definition.MaximumRank||occupied){c.ResearchCursor++;continue;}
+                long cost=definition.Cost(rank);if(cost>c.Gross/2-c.ResearchSpent||cost>c.Profile.Wallet)return;
+                int before=c.Profile.Wallet;var intent=new LastStandResearchIntent{Action=LastStandResearchAction.Start,Slot=slot,Track=track,Rank=rank,ExpectedRevision=snapshot.revision};
+                Require(c.Research.Submit(intent),"Paid research start refused");Require(before-c.Profile.Wallet==cost,"Research exact debit");c.ResearchSpent+=cost;c.ResearchCursor++;
+                var project=c.Profile.ResearchSnapshot.slots[slot].active;
+                c.ResearchJournal.Add(D("track",definition.Key,"rank",rank,"cost",cost,"calendarMilliseconds",(long)c.Clock.Elapsed,
+                    "durationMilliseconds",project.durationMilliseconds,"projectIdentity",project.identity));break;
+            }
+        }
+        c.Audit();
+    }
+    public static Dictionary<string,object> BuySplit(Context c)
+    {
+        var fitting=LastStandFittingCatalog.Parse(c.Profile.SelectedFitting);long before=c.PermanentSpent;int wallet=c.Profile.Wallet;
+        long common=SpendAffordable(c,Order(fitting,false),wallet/2),auxiliary=SpendAffordable(c,new[]{Aux(fitting)},wallet-wallet/2);
+        c.Audit();return D("policy","split-common-aux-affordable-v1","walletBefore",wallet,"commonBudget",wallet/2,"auxiliaryBudget",wallet-wallet/2,
+            "commonSpent",common,"auxiliarySpent",auxiliary,"walletAfter",c.Profile.Wallet,"permanentSpentBefore",before,"permanentSpentAfter",c.PermanentSpent,"allocatedProfileSha256",Hash(c.Store.Raw));
+    }
+    static long SpendAffordable(Context c,LastStandUpgradeTrackId[] order,long budget)
+    {
+        long spent=0;int cursor=0,misses=0;
+        while(misses<order.Length){var id=order[cursor++%order.Length];var quote=c.Profile.QuotePermanent(id,LastStandBulkQuantity.One);
+            if(!c.Profile.IsPermanentTrackApplicable(id)||quote.Quantity==0||quote.Cost>budget-spent){misses++;continue;}
+            int before=c.Profile.Wallet;Require(c.Profile.TryPurchasePermanent(id,LastStandBulkQuantity.One,c.Profile.Revision),"Supplemental paid allocation");
+            Require(before-c.Profile.Wallet==quote.Cost,"Supplemental exact debit");c.PermanentSpent+=quote.Cost;spent+=quote.Cost;misses=0;
+        }
+        return spent;
+    }
+    static int BuyRun(EncounterModel model,LastStandShopState shop,ref int cursor,bool bulk,int maximum)
+    {
+        var order=Order(shop.Fitting);int accepted=0;
+        for(int attempt=0;attempt<maximum;attempt++){
+            bool candidate=false;
+            for(int scan=0;scan<order.Length;scan++){
+                var id=order[cursor%order.Length];var checkpoint=shop.CaptureCheckpoint();var def=shop.GetDefinition(id);
+                if(!def.IsEligible(shop.Fitting)||checkpoint.PermanentLevels[(int)id]+checkpoint.RunPurchases[(int)id]>=def.TotalCap){cursor++;continue;}
+                candidate=true;var intent=new LastStandShopPurchaseIntent(shop.RunId,shop.Version,id,bulk?LastStandBulkQuantity.Max:LastStandBulkQuantity.One);
+                var result=shop.TryPurchase(intent);if(!result.Accepted){Require(result.Refusal==LastStandShopPurchaseRefusal.InsufficientScrap,"Unexpected run purchase refusal");return accepted;}
+                accepted++;cursor++;model.ApplyShopProjection(shop);break;
+            }
+            if(!candidate)return accepted;
+        }
+        return accepted;
+    }
+    public static Dictionary<string,object> Run(Context c,int tier,string fitting,string policy,int speedHalf,int maxTicks,int stopWave=5000,Action<Context,EncounterModel> confirmedBoundary=null)
+    {
+        Require(policy=="none"||policy=="max900"||policy=="afterKill","Unknown policy");
+        var p=c.Profile;Require(p.TrySelectTier(tier)&&p.TrySelectFitting(fitting),"Unearned tier/fitting");
+        Require(speedHalf==0||LastStandSpeedPolicy.Allows(speedHalf*.5,p.MaximumGameSpeed),"Unearned speed");
+        Require(p.TryDeploy(),"Actual deployment");var model=p.Checkpoint.RestoreModel();var shop=p.Checkpoint.RestoreShop();
+        var history=new LastStandRunHistory(p.HistorySnapshot);var cadence=new Cadence();var outcomes=new Dictionary<string,object>();var time=new TimeLedger();var effects=new RoleEffects();
+        int cursor=0,intents=0,opportunities=0;decimal active=0;long historyMs=0,startCalendar=(long)c.Clock.Elapsed;
+        long startGross=c.Gross,startPermanent=c.PermanentSpent,startResearch=c.ResearchSpent;
+        string finish="tick-limit";long nextHeartbeat=(long)c.Clock.Elapsed+15000;
+        while(model.Tick<maxTicks&&model.Status==EncounterStatus.Running){
+            double speed=speedHalf==0?p.MaximumGameSpeed:speedHalf*.5;
+            Require(LastStandSpeedPolicy.Allows(speed,p.MaximumGameSpeed)&&speed>0,"Speed exceeds paid ceiling");
+            decimal elapsed=50m/(decimal)speed;c.Clock.Elapsed+=elapsed;active+=elapsed;
+            long whole=(long)active-historyMs;if(whole>0){time.Add(whole,speed);historyMs+=whole;}
+            Require(c.Research.ReconcileBenefits(),"Research benefit confirmation");
+            if((long)c.Clock.Elapsed>=nextHeartbeat){Require(c.Research.Reconcile(),"Research heartbeat");nextHeartbeat=(long)c.Clock.Elapsed+15000;}
+            int priorKills=model.Kills;CrowdedWaveMeasurements.Before(model,shop);model.Step();effects.Observe(model);shop.ObserveAuthoritativeKills(model,p.ResearchRank(LastStandResearchTrackId.ScrapLogistics));CrowdedWaveMeasurements.After(model,shop);
+            Require(shop.EarnedScrap==(long)shop.Scrap+shop.SpentScrap&&shop.UniqueKills==model.Kills,"Typed Scrap conservation");
+            if(model.Hull>0){
+                if(policy=="afterKill"&&model.Kills>priorKills){opportunities++;intents+=BuyRun(model,shop,ref cursor,false,1000);}
+                if(policy=="max900"&&cadence.Due((long)active)){opportunities++;intents+=BuyRun(model,shop,ref cursor,true,1);}
+            }
+            if(model.AwaitingWaveCommit){
+                time.Flush(history);
+                Require(c.Research.ReconcileBenefits()&&p.TryCommitWave(model,shop,history),"Actual wave transaction: "+p.SaveError);
+                history=new LastStandRunHistory(p.HistorySnapshot);c.Audit();
+                confirmedBoundary?.Invoke(c,model);
+                if(Array.IndexOf(Waves,model.CompletedWave)>=0)outcomes[model.CompletedWave.ToString(CultureInfo.InvariantCulture)]=
+                    D("outcome","cleared","ticks",model.Tick,"activeMilliseconds",(long)active,"hull",model.Hull,"earnedScrap",shop.EarnedScrap,"spentScrap",shop.SpentScrap,"salvageGross",c.Gross-startGross,"waveRoleEffects",effects.WaveRows());
+                if(model.Hull==0){finish="defeat";break;}
+                if(model.CompletedWave>=stopWave){finish="requested-boundary";break;}
+                Require(model.ContinueAfterCheckpoint(),"Actual wave continuation");
+            }
+        }
+        if(model.Status==EncounterStatus.Defeated||model.Hull==0)finish="defeat";
+        if(p.HasCheckpoint){time.Flush(history);Require(p.TryFinalizeRun(history,finish=="defeat"?"defeat":"abandon",shop),"Finalization transaction");}
+        c.ActiveMilliseconds+=(long)active;c.Audit();
+        Require(startPermanent==c.PermanentSpent&&startResearch==c.ResearchSpent,"A comparison run cannot secretly buy permanent levels/research");
+        var summary=p.HistorySnapshot.Recent[p.HistorySnapshot.Recent.Count-1];
+        // Recent ordering is irrelevant: select the actual just-finalized run identity.
+        foreach(var record in p.HistorySnapshot.Recent)if(record.RunId==shop.RunId)summary=record;
+        Require(summary.RunId==shop.RunId&&summary.Finalized&&summary.ActiveMilliseconds==(long)active,"Actual history matches run accounting");
+        foreach(int wave in Waves)if(!outcomes.ContainsKey(wave.ToString(CultureInfo.InvariantCulture)))outcomes[wave.ToString(CultureInfo.InvariantCulture)]=D("outcome",finish=="defeat"?"defeated-before-checkpoint":finish=="requested-boundary"?"outside-selected-window":"resource-limited","highestClearedWave",model.CompletedWave,"partialWaveRoleEffects",wave==model.Wave?effects.WaveRows():new List<object>());
+        return D("tier",tier,"fitting",fitting,"policy",policy,"speedHalfSteps",speedHalf,"outcome",finish,"ticks",model.Tick,
+            "activeMilliseconds",(long)active,"selectedWindowEndWave",stopWave,"calendarStartMilliseconds",startCalendar,"calendarEndMilliseconds",(long)c.Clock.Elapsed,
+            "kills",model.Kills,"highestClearedWave",model.CompletedWave,"finalHull",model.Hull,"purchaseIntents",intents,"purchaseOpportunities",opportunities,
+            "earnedScrap",shop.EarnedScrap,"spentScrap",shop.SpentScrap,"remainingScrap",shop.Scrap,"repeatableSalvage",summary.RepeatableSalvage,
+            "researchBonusSalvage",summary.ResearchBonusSalvage,"firstClearSalvage",summary.MilestoneSalvage,"salvageGross",c.Gross-startGross,
+            "checkpoints",outcomes,"roleEffects",effects.Snapshot(),"researchRanksAfter",p.ResearchSnapshot.completedRanks,"maximumSpeedHalfStepsAfter",(int)(p.MaximumGameSpeed*2));
+    }
+    static Dictionary<string,object> Missing(int tier,string fitting,string policy,int speed,string reason)
+    {
+        var outcomes=new Dictionary<string,object>();foreach(int wave in Waves)outcomes[wave.ToString(CultureInfo.InvariantCulture)]=D("outcome","unavailable","reason",reason);
+        return D("tier",tier,"fitting",fitting,"policy",policy,"speedHalfSteps",speed,"outcome","unavailable","reason",reason,"checkpoints",outcomes);
+    }
+    static Dictionary<string,object> SeedDescription(Seed seed)
+    {
+        var c=seed.Fork();var levels=new List<object>();foreach(var def in LastStandUpgradeCatalog.Tracks)levels.Add(D("track",def.Key,"level",c.Profile.GetPermanentLevel(def.Id)));
+        return D("threshold",seed.Threshold,"cumulativeEarnedSalvage",seed.Gross,"profileSha256",Hash(seed.Raw),"profileBytesUtf8",Encoding.UTF8.GetByteCount(seed.Raw),
+            "profileJson",seed.Raw,"calendarMilliseconds",(long)seed.Elapsed,"wallet",c.Profile.Wallet,"permanentSpent",seed.Permanent,"researchSpent",seed.Research,
+            "permanentLevels",levels,"researchRanks",c.Profile.ResearchSnapshot.completedRanks,"maximumSpeedHalfSteps",(int)(c.Profile.MaximumGameSpeed*2));
+    }
+    static List<object> Hypothetical()
+    {
+        var rows=new List<object>();
+        foreach(int tier in new[]{1,2,3,4})foreach(var fitting in new[]{LastStandFitting.Repair,LastStandFitting.Launcher,LastStandFitting.Scattergun,LastStandFitting.Mortar,LastStandFitting.Railgun})
+        foreach(string policy in new[]{"none","max900","afterKill"}){
+            var levels=new int[LastStandUpgradeCatalog.Tracks.Count];foreach(var def in LastStandUpgradeCatalog.Tracks)levels[(int)def.Id]=Math.Min(500,def.PermanentCap);
+            var shop=new LastStandShopState(1,fitting,levels,tier);var model=EncounterModel.CreatePlayable(fitting,tier,shop);var cadence=new Cadence();
+            int cursor=0,intents=0;var outcomes=new Dictionary<string,object>();const int limit=5000000;
+            while(model.Status==EncounterStatus.Running&&model.Tick<limit){
+                int prior=model.Kills;model.Step();shop.ObserveAuthoritativeKills(model,25);
+                if(model.Hull>0){if(policy=="afterKill"&&model.Kills>prior)intents+=BuyRun(model,shop,ref cursor,false,1000);
+                    if(policy=="max900"&&cadence.Due(model.Tick*10L))intents+=BuyRun(model,shop,ref cursor,true,1);}
+                if(model.AwaitingWaveCommit){
+                    if(Array.IndexOf(Waves,model.CompletedWave)>=0)outcomes[model.CompletedWave.ToString(CultureInfo.InvariantCulture)]=D("outcome","cleared","ticks",model.Tick,"hull",model.Hull);
+                    if(model.Hull==0||model.CompletedWave>=5000)break;
+                    Require(model.ContinueAfterCheckpoint(),"Hypothetical continuous wave progression");
+                }
+            }
+            string finish=model.Hull==0?"defeat":model.CompletedWave>=5000?"requested-boundary":"tick-limit";
+            foreach(int wave in Waves)if(!outcomes.ContainsKey(wave.ToString(CultureInfo.InvariantCulture)))outcomes[wave.ToString(CultureInfo.InvariantCulture)]=D("outcome",finish=="defeat"?"defeated-before-checkpoint":"resource-limited");
+            rows.Add(D("origin","hypothetical-gifted-not-earned","tier",tier,"fitting",LastStandFittingCatalog.Id(fitting),"policy",policy,
+                "giftedPermanentLevels",levels,"giftedLogisticsRank",25,"hypotheticalSpeedHalfSteps",10,"outcome",finish,"ticks",model.Tick,
+                "projectedActiveMillisecondsAt5x",model.Tick*10L,"highestClearedWave",model.CompletedWave,"kills",model.Kills,"purchaseIntents",intents,
+                "earnedScrap",shop.EarnedScrap,"spentScrap",shop.SpentScrap,"remainingScrap",shop.Scrap,"checkpoints",outcomes));
+        }
+        return rows;
+    }
+    static List<object> Farming(Dictionary<int,Seed> seeds)
+    {
+        var rows=new List<object>();int ticks=0;
+        foreach(int threshold in Thresholds)for(int tier=1;tier<=3;tier++){
+            Seed seed;if(!seeds.TryGetValue(threshold,out seed)){rows.Add(D("threshold",threshold,"lowerTier",tier,"outcome","unavailable","reason","funding-horizon"));continue;}
+            var lower=seed.Fork();var upper=seed.Fork();
+            if(!lower.Profile.IsTierUnlocked(tier)||!upper.Profile.IsTierUnlocked(tier+1)){rows.Add(D("threshold",threshold,"lowerTier",tier,"outcome","unavailable","reason","tier-not-earned"));continue;}
+            foreach(var context in new[]{lower,upper}){Require(context.Profile.TrySelectFitting("launcher"),"Farm fitting");BuyPermanent(context,context.PermanentSpent+context.Profile.Wallet/2,true);}
+            Require(lower.Profile.Wallet==upper.Profile.Wallet&&lower.PermanentSpent==upper.PermanentSpent&&lower.Store.Raw==upper.Store.Raw,"Farm pair allocation mismatch");
+            var allocation=D("parentProfileSha256",Hash(seed.Raw),"allocatedProfileSha256",Hash(lower.Store.Raw),"permanentSpentBefore",seed.Permanent,
+                "permanentSpentAfter",lower.PermanentSpent,"walletBefore",seed.Fork().Profile.Wallet,"walletAfter",lower.Profile.Wallet);
+            var lowRuns=new List<object>();var highRuns=new List<object>();long lowIncome=0,highIncome=0,lowTime=0,highTime=0;bool sustainable=true,premature=true,complete=true;
+            for(int attempt=0;attempt<3;attempt++)foreach(bool low in new[]{true,false}){
+                if(ticks>=2000000){complete=false;continue;}
+                var run=Run(low?lower:upper,low?tier:tier+1,"launcher","max900",2,Math.Min(RunTicks,2000000-ticks),low?100:5000);ticks+=(int)run["ticks"];
+                long repeat=(long)run["repeatableSalvage"]+(long)run["researchBonusSalvage"],active=(long)run["activeMilliseconds"];
+                if(low){lowRuns.Add(run);lowIncome+=repeat;lowTime+=active;sustainable&=(int)run["highestClearedWave"]>=100&&(string)run["outcome"]=="requested-boundary"&&(int)run["finalHull"]>0;}
+                else {highRuns.Add(run);highIncome+=repeat;highTime+=active;premature&=(string)run["outcome"]=="defeat"&&(int)run["highestClearedWave"]<100;}
+            }
+            rows.Add(D("threshold",threshold,"lowerTier",tier,"origin","earned-byte-fork","parentProfileSha256",Hash(seed.Raw),"outcome",complete?"observed":"resource-limited",
+                "sustainableLower",sustainable&&complete,"prematureUpper",premature&&complete,"lowerRepeatableSalvage",lowIncome,"upperRepeatableSalvage",highIncome,
+                "lowerActiveMilliseconds",lowTime,"upperActiveMilliseconds",highTime,"lowerRuns",lowRuns,"upperRuns",highRuns,"oneTimeAllocation",allocation,
+                "lowerRateWins",complete&&sustainable&&premature&&lowTime>0&&highTime>0&&(decimal)lowIncome*highTime>(decimal)highIncome*lowTime));
+        }
+        return rows;
+    }
+    static List<object> UnlockComparisons(Dictionary<string,Seed> unlocks)
+    {
+        var result=new List<object>();
+        foreach(var entry in unlocks){
+            var description=SeedDescription(entry.Value);description.Remove("threshold");
+            var rows=new List<object>();int used=0;
+            // Each cohort has its own disclosed budget so a prior unlock cannot
+            // consume the later Tier4 cohort's measurement opportunity.
+            foreach(string policy in new[]{"max900"})foreach(int tier in new[]{1,2,3,4})
+            foreach(string fitting in new[]{"repair","launcher","scattergun","mortar","railgun"}){
+                var branch=entry.Value.Fork();var p=branch.Profile;string unavailable=!p.IsTierUnlocked(tier)?"tier-not-earned":!p.IsFittingUnlocked(fitting)?"fitting-not-earned":used>=10000000?"cohort-tick-budget":null;
+                Dictionary<string,object> row;
+                if(unavailable!=null)row=Missing(tier,fitting,policy,2,unavailable);
+                else {
+                    Require(p.TrySelectFitting(fitting),"Confirmed unlock comparison fitting");BuyPermanent(branch,branch.PermanentSpent+p.Wallet/2,true);branch.Audit();
+                    string allocated=Hash(branch.Store.Raw);long wallet=p.Wallet,spent=branch.PermanentSpent;
+                    row=Run(branch,tier,fitting,policy,2,Math.Min(RunTicks,10000000-used));used+=(int)row["ticks"];
+                    row["walletBeforeDeployment"]=wallet;row["permanentSpentBeforeDeployment"]=spent;row["allocatedProfileSha256"]=allocated;
+                }
+                row["origin"]="confirmed-earned-unlock-byte-fork";row["parentProfileSha256"]=Hash(entry.Value.Raw);row["cumulativeEarnedSalvageAtFork"]=entry.Value.Gross;rows.Add(row);
+            }
+            var supplemental=new List<object>();int supplementalTicks=0;
+            foreach(int tier in new[]{1,2,3,4})foreach(string fitting in new[]{"repair","launcher","scattergun","mortar","railgun"}){
+                var branch=entry.Value.Fork();var p=branch.Profile;string unavailable=!p.IsTierUnlocked(tier)?"tier-not-earned":!p.IsFittingUnlocked(fitting)?"fitting-not-earned":supplementalTicks>=10000000?"cohort-tick-budget":null;
+                Dictionary<string,object> row;
+                if(unavailable!=null)row=Missing(tier,fitting,"none",2,unavailable);
+                else {
+                    Require(p.TrySelectFitting(fitting),"Supplemental fitting admission");var allocation=BuySplit(branch);
+                    row=Run(branch,tier,fitting,"none",2,Math.Min(RunTicks,10000000-supplementalTicks),500);supplementalTicks+=(int)row["ticks"];row["oneTimeAllocation"]=allocation;
+                }
+                row["origin"]="confirmed-earned-unlock-byte-fork";row["parentProfileSha256"]=Hash(entry.Value.Raw);row["cumulativeEarnedSalvageAtFork"]=entry.Value.Gross;supplemental.Add(row);
+            }
+            result.Add(D("trigger",entry.Key,"seed",description,"ticks",used,"comparisons",rows,"supplementalTicks",supplementalTicks,"supplementalComparisons",supplemental));
+        }
+        return result;
+    }
+    public static List<object> EarlyAffordabilityBounds()
+    {
+        const long salvageUpper=9342,scrapUpper=12096000; // 300*10*3+342; 300*20*28*8*9.
+        foreach(int tier in new[]{1,2,3,4}){
+            long milestones=0;for(int wave=1;wave<=300;wave++){
+                var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(tier),wave);Require(reward.RepeatableSalvage<=10,"Early Salvage exceeds independent conservative bound");milestones+=reward.FirstClearSalvage;
+                var cohort=LastStandWaveCatalog.ForWave(tier,wave);Require(cohort.EnemyCount<=20,"Early cohort bound");
+                for(int ordinal=0;ordinal<cohort.EnemyCount;ordinal++)Require(LastStandEconomyCatalog.Get(LastStandUpgradeCatalog.EconomyVersion).BaseScrapForEnemy(LastStandTierCatalog.Get(tier),wave,ordinal,LastStandRunEdition.Current)<=28*8,"Early typed bounty exceeds independent bound");
+            }
+            Require(milestones<=342,"Early first-clear bound");
+        }
+        Require(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.ScrapYield).TotalCap==200&&LastStandResearchCatalog.Get(LastStandResearchTrackId.ScrapLogistics).MaximumRank==100&&LastStandResearchCatalog.Get(LastStandResearchTrackId.SalvageRecovery).MaximumRank==100,"Research/income upper bounds changed");
+        var rows=new List<object>();foreach(var definition in LastStandUpgradeCatalog.Tracks)if(definition.TotalCap==5000){
+            int permanent=0,temporary=0;long paid=0;
+            while(permanent<definition.PermanentCap&&paid+definition.PermanentPrice(permanent+1)<=salvageUpper)paid+=definition.PermanentPrice(++permanent);
+            paid=0;while(temporary<definition.TotalCap&&paid+definition.RunPrice(temporary+1)<=scrapUpper)paid+=definition.RunPrice(++temporary);
+            Require(permanent+temporary<5000,"Early currency can cap a long-term track");
+            rows.Add(D("track",definition.Key,"origin","conservative-analytic-bound-not-earned-profile","salvageUpper",salvageUpper,"scrapUpper",scrapUpper,
+                "maximumPermanentRanks",permanent,"maximumTemporaryRanks",temporary,"maximumCombinedRanks",permanent+temporary));
+        }
+        return rows;
+    }
+    public static Dictionary<string,object> Measure()
+    {
+        Require(LastStandUpgradeCatalog.EconomyVersion=="combat-depth-economy-v4","This harness requires the v4 production owner");
+        var c=new Context();Require(c.Profile.Wallet==0&&c.Gross==0&&c.Profile.MaximumGameSpeed==1,"Empty origin grants no investment");
+        foreach(var def in LastStandUpgradeCatalog.Tracks)Require(c.Profile.GetPermanentLevel(def.Id)==0,"Empty origin has seeded levels");
+        var seeds=new Dictionary<int,Seed>();seeds.Add(0,new Seed(c,0));var funding=new List<object>();int totalTicks=0;
+        var unlocks=new Dictionary<string,Seed>();
+        Action<Context,EncounterModel> captureUnlock=(context,model)=>{
+            foreach(string fitting in new[]{"scattergun","mortar","railgun"})if(context.Profile.IsFittingUnlocked(fitting)&&!unlocks.ContainsKey("fitting-"+fitting))unlocks.Add("fitting-"+fitting,new Seed(context,0));
+            foreach(int tier in new[]{2,3,4})if(context.Profile.IsTierUnlocked(tier)&&!unlocks.ContainsKey("tier-"+tier))unlocks.Add("tier-"+tier,new Seed(context,0));
+        };
+        for(int run=0;run<FundingRuns&&totalTicks<FundingTicks&&(long)c.Clock.Elapsed<CalendarMilliseconds;run++){
+            Require(c.Profile.TrySelectFitting("launcher"),"Canonical Launcher selection");
+            BuyPermanent(c,c.Gross/2,false);FundResearch(c);
+            int tier=1;if(run%4==3)for(int candidate=2;candidate<=4;candidate++)if(c.Profile.IsTierUnlocked(candidate)&&LastStandTierCatalog.Get(candidate).Playable)tier=candidate;
+            int remainingCalendarTicks=(int)Math.Min(int.MaxValue,decimal.Floor((CalendarMilliseconds-c.Clock.Elapsed)/50m*(decimal)c.Profile.MaximumGameSpeed));
+            int allowance=Math.Min(Math.Min(RunTicks,FundingTicks-totalTicks),remainingCalendarTicks);if(allowance<1)break;
+            var row=Run(c,tier,"launcher","afterKill",0,allowance,5000,captureUnlock);totalTicks+=(int)row["ticks"];row["deployment"]=run+1;funding.Add(row);
+            foreach(int threshold in Thresholds)if(!seeds.ContainsKey(threshold)&&c.Gross>=threshold)seeds.Add(threshold,new Seed(c,threshold));
+            FundResearch(c);long closed=Math.Min(20L*3600000,Math.Max(0,CalendarMilliseconds-(long)c.Clock.Elapsed));
+            c.Clock.Elapsed+=closed;c.ClosedMilliseconds+=closed;Require(c.Research.Reconcile(),"Paid closed-time research");c.Audit();
+        }
+        var seedRows=new List<object>();foreach(int threshold in Thresholds)seedRows.Add(seeds.ContainsKey(threshold)?SeedDescription(seeds[threshold]):D("threshold",threshold,"outcome","unavailable","reason","funding-horizon"));
+        var matrix=new List<object>();int used=0;
+        var cells=new List<Tuple<int,int,string,string,int>>();
+        foreach(int threshold in Thresholds)foreach(int tier in new[]{1,2,3,4})foreach(string fit in new[]{"repair","launcher","scattergun","mortar","railgun"})foreach(string policy in new[]{"none","max900","afterKill"})for(int speed=1;speed<=10;speed++)cells.Add(Tuple.Create(threshold,tier,fit,policy,speed));
+        Func<Tuple<int,int,string,string,int>,int> priority=cell=>cell.Item5==2?(cell.Item4=="max900"?0:1):2;
+        // Round through fittings/tiers at the primary1x cadence before spending
+        // the finite pilot budget on secondary speeds. No outcome-driven order.
+        cells.Sort((a,b)=>{int comparison=priority(a).CompareTo(priority(b));if(comparison!=0)return comparison;
+            comparison=a.Item1.CompareTo(b.Item1);if(comparison!=0)return comparison;comparison=a.Item2.CompareTo(b.Item2);if(comparison!=0)return comparison;
+            comparison=StringComparer.Ordinal.Compare(a.Item3,b.Item3);if(comparison!=0)return comparison;comparison=StringComparer.Ordinal.Compare(a.Item4,b.Item4);
+            return comparison!=0?comparison:a.Item5.CompareTo(b.Item5);});
+        foreach(var cell in cells){
+            int threshold=cell.Item1,tier=cell.Item2,speed=cell.Item5;string fit=cell.Item3,policy=cell.Item4;
+            Dictionary<string,object> row;Seed seed;string missing=null;Context branch=null;
+            if(!seeds.TryGetValue(threshold,out seed))missing="funding-horizon";
+            else {
+                branch=seed.Fork();var p=branch.Profile;
+                if(!LastStandTierCatalog.Get(tier).Playable)missing="unimplemented-tier";
+                else if(!p.IsTierUnlocked(tier))missing="tier-not-earned";
+                else if(!p.IsFittingUnlocked(fit))missing="fitting-not-earned";
+                else if(!LastStandSpeedPolicy.Allows(speed*.5,p.MaximumGameSpeed))missing="speed-not-earned";
+                else if(used>=MatrixTicks)missing="matrix-tick-budget";
+            }
+            if(missing!=null)row=Missing(tier,fit,policy,speed,missing);
+            else {
+                Require(branch.Profile.TrySelectFitting(fit),"Branch fitting admission");
+                BuyPermanent(branch,branch.PermanentSpent+branch.Profile.Wallet/2,true);
+                string deployedProfile=Hash(branch.Store.Raw);long wallet=branch.Profile.Wallet,permanent=branch.PermanentSpent;
+                row=Run(branch,tier,fit,policy,speed,Math.Min(RunTicks,MatrixTicks-used));used+=(int)row["ticks"];
+                row["walletBeforeDeployment"]=wallet;row["permanentSpentBeforeDeployment"]=permanent;row["allocatedProfileSha256"]=deployedProfile;
+            }
+            row["budgetThreshold"]=threshold;row["origin"]=seed==null?"unavailable-no-earned-seed":"earned-byte-fork";
+            if(seed!=null){row["parentProfileSha256"]=Hash(seed.Raw);row["cumulativeEarnedSalvageAtFork"]=seed.Gross;row["researchSpentAtFork"]=seed.Research;}
+            matrix.Add(row);
+        }
+        unlocks.Add("final-earned",new Seed(c,0));
+        return D("schemaVersion",1,"policyId","v4-expanded-2","economyVersion",LastStandUpgradeCatalog.EconomyVersion,"rulesVersion",LastStandRunEdition.Current.RulesVersion,
+            "contentVersion",LastStandRunEdition.Current.ContentVersion,"thresholds",Thresholds,"waveCheckpoints",Waves,
+            "limits",D("fundingRuns",FundingRuns,"fundingTicks",FundingTicks,"perRunTicks",RunTicks,"matrixTicks",MatrixTicks,"calendarMilliseconds",CalendarMilliseconds,"farmTicks",2000000,"hypotheticalPerRunTicks",5000000,"perUnlockCohortTicks",10000000),
+            "funding",funding,"fundingTicks",totalTicks,"fundingCalendarMilliseconds",(long)c.Clock.Elapsed,"fundingActiveMilliseconds",c.ActiveMilliseconds,
+            "fundingClosedMilliseconds",c.ClosedMilliseconds,"fundingGrossSalvage",c.Gross,"fundingResearchPurchases",c.ResearchJournal,"fundingResearchCompletions",c.Completions,
+            "fundingBalances",D("wallet",c.Profile.Wallet,"permanentSpent",c.PermanentSpent,"researchSpent",c.ResearchSpent,"repeatableSalvage",c.Repeatable,"researchBonusSalvage",c.ResearchBonus,"firstClearSalvage",c.FirstClear),
+            "seeds",seedRows,"matrix",matrix,"matrixTicks",used,"farmingComparisons",Farming(seeds),"unlockCohorts",UnlockComparisons(unlocks),"hypotheticalProbes",Hypothetical(),"earlyAffordabilityBounds",EarlyAffordabilityBounds(),
+            "qualification","Bounded production-model pilot. No live player/render/device/endurance qualification. Unreached budgets and waves do not satisfy balance acceptance.");
+    }
+    public static int CanonicalMain(string[] args)
+    {
+        try {if(args.Length==2&&args[0]=="check"){CombatBalanceChecks.Run(args[1]);Console.WriteLine("PASS "+args[1]);}
+            else {WriteReport(Console.Out,Measure());Console.WriteLine();}return 0;}
+        catch(Exception e){Console.Error.WriteLine(e);return 1;}
+    }
+}

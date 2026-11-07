@@ -7,10 +7,11 @@ static class EconomyChecks
     {
         try {
             if(args[0]=="legacy") for(int n=0;n<=8;n++) {
-                Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(n,1)==20+10*n,"Existing attack effect preserved.");
-                Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.HullCapacity).EffectAt(n,1)==120+15*n,"Existing hull effect preserved.");
-                Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle).EffectAt(n,1)==20-n,"Existing cadence preserved.");
-                if(n<3) Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).PermanentPrice(n+1)==n+1,"Existing permanent investment price preserved.");
+                var old=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion);
+                Check(old.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(n,1)==20+10*n,"Existing attack effect preserved.");
+                Check(old.Get(LastStandUpgradeTrackId.HullCapacity).EffectAt(n,1)==120+15*n,"Existing hull effect preserved.");
+                Check(old.Get(LastStandUpgradeTrackId.CannonCycle).EffectAt(n,1)==20-n,"Existing cadence preserved.");
+                if(n<3) Check(old.Get(LastStandUpgradeTrackId.CannonAttack).PermanentPrice(n+1)==n+1,"Legacy price remains available to immutable fixtures.");
             }
             if(args[0]=="bounds") {
                 foreach(var track in LastStandUpgradeCatalog.Tracks) {
@@ -22,7 +23,10 @@ static class EconomyChecks
                     }
                 }
                 Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonCycle).TotalCap<LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).TotalCap,"Per-track utility bounds.");
-                Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(200,1)>5000,"Useful mature attack growth.");
+                var cannon=LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.CannonAttack);
+                Check(cannon.EffectAt(200,1)>cannon.EffectAt(100,1)*2,"Long-term attack grows beyond a flat early-game increment.");
+                Check(cannon.EffectAt(200,1)<LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion)
+                    .Get(LastStandUpgradeTrackId.CannonAttack).EffectAt(200,1),"New income and old explosive attack growth must not silently recombine.");
                 Check(LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.ScattergunAttack).IsEligible(LastStandFitting.Scattergun),"Third fitting has explicit track.");
                 Check(!LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.FieldRepair).IsEligible(LastStandFitting.Scattergun),"Third fitting cannot silently become repair.");
             }

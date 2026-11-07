@@ -8,13 +8,14 @@ import json
 from pathlib import Path
 from test_catalogs import execute, SCRIPTS
 from test_wave_model import MODEL_SOURCES
+from last_stand_source_closure import complete_sources
 
 DIRECTORY = Path(__file__).resolve().parent
 PROJECT = DIRECTORY.parents[1]
 
 
 def measure():
-    sources = [SCRIPTS / name for name in MODEL_SOURCES] + [DIRECTORY / "BalanceMeasurements.cs", Path(__file__)]
+    sources = complete_sources(SCRIPTS, [SCRIPTS / name for name in MODEL_SOURCES]) + [DIRECTORY / "BalanceMeasurements.cs", Path(__file__)]
     before = {str(path.relative_to(PROJECT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
     output = execute(DIRECTORY / "BalanceMeasurements.cs", MODEL_SOURCES, "all")
     after = {str(path.relative_to(PROJECT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
@@ -38,7 +39,7 @@ def measure():
             "Build rows gift the declared permanent levels, clamped per track. Earned-trajectory rows start with zero investment and award first-clear milestones once across runs.",
             "Each measurement stops at defeat or wave 5001; the game does not stop or promote there.",
             "Scattergun rows assume it is unlocked for a matched fitting comparison; live unlock remains Tier 1 wave 100.",
-            "Tier 10 is an explicit synthetic fixture and 5x is a future research projection. Only two real tiers and at most 1x speed ship.",
+            "Tier 10 is an explicit synthetic stress fixture, not balanced or shipped content. Only two real tiers ship; 5x projections assume completed speed research.",
             "Ticks include intermissions; storage, rendering, scheduling, human interaction and paused time add wall time. No unavailable measurements are represented as zero.",
             "The purchase policy is a deterministic benchmark, not a strategy optimizer or an implemented auto-purchase feature.",
         ],

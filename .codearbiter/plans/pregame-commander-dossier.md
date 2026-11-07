@@ -102,3 +102,12 @@
 - Placeholder scan: no TBD, TODO, or deferred implementation instruction remains.
 - Type consistency: all class names produced in Task 1 are the selectors consumed in Task 2.
 - Scope check: one client-only presentation slice with no independent subsystem bundled in.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current account and career presentation. Current source/oracles: `client/src/ui/AccountPanelView.ts`, `client/src/ui/AccountPanelView.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `86a8df1b8eb0` (Keep commander dossier legible before deployment (#394)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

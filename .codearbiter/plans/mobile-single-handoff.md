@@ -113,3 +113,12 @@
 - [ ] **Step 4: Persist the receipt and select the next slice**
 
   Record exact commit, PR, merge, CI, package, mutation, Pages, and production evidence. Merge the docs-only receipt after exact-head green, then SMARTS-select the next remaining adversarial player-experience finding.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current splash/orientation owners. Current source/oracles: `client/src/ui/Splash.ts`, `client/src/ui/Splash.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `559352a96299` (feat(mobile): unify landscape handoff). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -93,7 +93,7 @@ public static class PartsLibraryImport
     [MenuItem("singedTerra/Import new parts library")]
     public static void Prepare()
     {
-        if(Application.unityVersion!="6000.3.24f1")throw new Exception("Unexpected editor version");
+        if(Application.unityVersion!="6000.3.27f2")throw new Exception("Unexpected editor version");
         if(Directory.Exists(Root))throw new Exception("Library already imported; preserve authored edits");
         Directory.CreateDirectory(Root+"/Materials");Directory.CreateDirectory(Root+"/Prefabs");
         AssetDatabase.Refresh();var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);

@@ -155,6 +155,50 @@ static class SpeedChecks
             Check(ticks == 400 && clock.AtHorizon && !clock.TryTakeStep(), "horizon admits exactly once");
         }
     }
+    static void EarnedCap()
+    {
+        var weighted=new LastStandRunClock(0,100,1,5);
+        Check(weighted.SetSpeed(.049,.5) && weighted.Observe(.051) && weighted.TryTakeStep(),"mixed fractional tick consumed");
+        Near(weighted.StepWallMilliseconds(1),49,"old one-speed fraction keeps its real wall duration");
+        Near(weighted.StepWallMilliseconds(0),2,"new half-speed fraction keeps its real wall duration");
+        for(int n=2;n<10;n++)Near(weighted.StepWallMilliseconds(n),0,"unused rate has no invented history");
+        var session=Session();session.AdvanceAt(10);
+        int tick=session.Model.Tick;
+        Check(session.CatchingUp && session.GrantMaximumSpeed(5),"earned ceiling can arrive during retained debt");
+        Near(session.LastPositiveSpeed,1,"unlock never accelerates selected rate");
+        Check(session.Model.Tick==tick,"unlock consumes no admitted steps");
+        Drain(session,10);Check(session.Model.Tick==200,"old debt remains at old speed after unlock");
+        Check(session.TrySetMenuPausedAt(10,true),"menu pause");
+        Check(!session.GrantMaximumSpeed(4.5) && !session.GrantMaximumSpeed(5.5),"ceiling is monotonic and bounded");
+        Check(session.Paused && session.MenuPaused,"grant cannot release a pause");
+        Check(session.TrySetMenuPausedAt(10,false),"close menu");
+        double now=10;
+        foreach(double speed in new[]{.5,1,1.5,2,2.5,3,3.5,4,4.5,5})
+        {
+            Check(session.TrySetSpeedAt(now,speed),"earned half step accepted");
+            int before=session.Model.Tick;now+=.1;Drain(session,now);
+            Check(session.Model.Tick-before==(int)(speed*2),"actual session scales each earned rate");
+        }
+        session.ReturnToInspection();session.ConfigureSpeed(5);
+        Near(session.LastPositiveSpeed,5,"earned preferred speed restores before deployment");
+    }
+    static void SaveHoldDuringAction()
+    {
+        foreach(string action in new[]{"resume","speed","menu"})
+        {
+            var session=Session();session.TogglePauseAt(0);
+            session.BeforeAdvance=()=>{session.HoldCheckpoint();return false;};
+            bool accepted=false;
+            if(action=="resume")session.TogglePauseAt(.1);
+            else if(action=="speed")accepted=session.TrySetSpeedAt(.1,.5);
+            else accepted=session.TrySetMenuPausedAt(.1,true);
+            Check(!accepted && session.CheckpointBlocked && session.Paused && session.ManualPaused &&
+                !session.MenuPaused && session.Reason=="checkpoint-save",
+                "Save failure during action retains checkpoint hold and original pause causes: "+action);
+            Near(session.LastPositiveSpeed,1,"Failed action cannot change selected rate");
+            Check(session.Model.Tick==0,"Failed pre-advance gate admits no model time");
+        }
+    }
     static void Terminal()
     {
         foreach (bool launcher in new[] { false, true })
@@ -230,6 +274,8 @@ static class SpeedChecks
                 case "pause_holds_resume_and_plus_from_zero": Holds(); break;
                 case "production_cap_and_invalid_rates": Cap(); break;
                 case "future_policy_fixture_and_horizon": Future(); break;
+                case "earned_cap_preserves_debt_pause_and_preference": EarnedCap(); break;
+                case "save_hold_during_clock_action": SaveHoldDuringAction(); break;
                 case "terminal_settling_uses_wall_seconds": Terminal(); break;
                 case "focus_background_and_legacy_preserved": Legacy(); break;
                 default: throw new Exception("Unknown check");

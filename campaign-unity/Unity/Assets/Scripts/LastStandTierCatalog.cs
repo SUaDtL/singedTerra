@@ -12,10 +12,12 @@ namespace SingedTerra.LastStand
         public int GoalTicks { get; }
         public string EncounterProfileId { get; }
         public string EnvironmentId { get; }
+        public string EnemyMixId { get; }=LastStandEnemyCatalog.Onboarding;
         public int RequiredTier { get; }
         public int RequiredTicks { get; }
         public int EnemyHullNumerator { get; }
         public int EnemyHullDenominator { get; }
+        public bool Playable { get; }=true;
         internal LastStandTierDefinition(int id, int goal, string profile, string environment,
             int numerator, int denominator, int requiredTier=0, int requiredTicks=0)
         { Id=id; GoalTicks=goal; EncounterProfileId=profile; EnvironmentId=environment;
@@ -23,7 +25,7 @@ namespace SingedTerra.LastStand
           EnemyHullNumerator=numerator; EnemyHullDenominator=denominator;
           RequiredTier=requiredTier; RequiredTicks=requiredTicks; }
         public LastStandTierDefinition(int id, string key, string profile, string environment,
-            int numerator, int denominator, int requiredTier=0, int requiredWave=0)
+            int numerator, int denominator, int requiredTier=0, int requiredWave=0,bool playable=true,string enemyMixId=LastStandEnemyCatalog.Onboarding)
         {
             if(id<1 || String.IsNullOrWhiteSpace(key) || String.IsNullOrWhiteSpace(profile) ||
                 String.IsNullOrWhiteSpace(environment) || numerator<1 || denominator<1 ||
@@ -32,6 +34,8 @@ namespace SingedTerra.LastStand
             Id=id;Key=key;EncounterProfileId=profile;EnvironmentId=environment;
             EnemyHullNumerator=numerator;EnemyHullDenominator=denominator;
             RequiredTier=requiredTier;RequiredWave=requiredWave;
+            Playable=playable;
+            LastStandEnemyCatalog.ValidateMix(enemyMixId);EnemyMixId=enemyMixId;
         }
         public string LockReason => RequiredTier==0 ? "" : "Clear wave " + RequiredWave +
             " in Tier " + RequiredTier + " to unlock.";
@@ -44,9 +48,13 @@ namespace SingedTerra.LastStand
         // Retained solely for old time/kill records and their migration parser.
         public const string ProfileVersion = LegacyProfileVersion;
         public const int HorizonTicks = LegacyHorizonTicks;
-        public static IReadOnlyList<LastStandTierDefinition> All { get; } = Array.AsReadOnly(new[] {
+        public static IReadOnlyList<LastStandTierDefinition> Legacy { get; } = Array.AsReadOnly(new[] {
             new LastStandTierDefinition(1,1200,"playable-prototype-v1","sunlit-ash",1,1),
             new LastStandTierDefinition(2,1800,"playable-prototype-tier2-v1","iron-perimeter",5,4,1,1200) });
+        public static IReadOnlyList<LastStandTierDefinition> All { get; } = Array.AsReadOnly(new[] {
+            Legacy[0],new LastStandTierDefinition(2,"tier-2","playable-prototype-tier2-v1","iron-perimeter",5,4,1,300,true,LastStandEnemyCatalog.Mixed),
+            new LastStandTierDefinition(3,"tier-3","cinder-basin","cinder-basin",1,1,2,300,true,LastStandEnemyCatalog.Cinder),
+            new LastStandTierDefinition(4,"tier-4","storm-foundry","storm-foundry",1,1,3,300,true,LastStandEnemyCatalog.Foundry) });
         public static void Validate(IReadOnlyList<LastStandTierDefinition> definitions)
         {
             if(definitions==null || definitions.Count==0) throw new ArgumentException("A catalog requires tiers.");
@@ -71,7 +79,8 @@ namespace SingedTerra.LastStand
             if(unlocked==null)throw new ArgumentNullException(nameof(unlocked));
             var visible=new List<LastStandTierDefinition>();bool preview=false;
             foreach(var tier in definitions)
-                if(unlocked(tier.Id))visible.Add(tier);
+                if(!tier.Playable)continue;
+                else if(unlocked(tier.Id))visible.Add(tier);
                 else if(!preview){visible.Add(tier);preview=true;}
             return visible.AsReadOnly();
         }

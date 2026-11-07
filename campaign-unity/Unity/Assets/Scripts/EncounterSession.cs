@@ -7,7 +7,7 @@ using SingedTerra.LastStand;
 namespace SingedTerra.Encounter
 {
     // One owner for this transient, non-awarding session and its admitted ticks.
-    public sealed class EncounterSession : MonoBehaviour
+    public sealed class EncounterSession : MonoBehaviour, ILastStandPurchaseSession
     {
         TankPresentation art;
         EncounterModel model;
@@ -31,7 +31,8 @@ namespace SingedTerra.Encounter
         public string Failure { get; private set; } = "";
         public bool CanRun => focused && !applicationPaused;
         public bool BackgroundContinuation => loop && runClock != null;
-        public double MaximumSpeed => LastStandSpeedPolicy.InitialMaximum;
+        public double MaximumSpeed { get; private set; } = LastStandSpeedPolicy.InitialMaximum;
+        public double StepWallMilliseconds(int speedIndex)=>runClock?.StepWallMilliseconds(speedIndex)??0;
         public double LastPositiveSpeed => runClock?.LastPositiveSpeed ?? configuredSpeed;
         public double SelectedSpeed => runClock?.SelectedSpeed ?? configuredSpeed;
         public double EffectiveSpeed => Paused ? 0 : runClock?.EffectiveSpeed ?? configuredSpeed;
@@ -47,6 +48,7 @@ namespace SingedTerra.Encounter
         public event Action Changed;
         public event Action<EncounterModel> Stepped;
         public event Action<EncounterModel> WaveCleared;
+        public Func<bool> BeforeAdvance;
         public void Initialize(TankPresentation presentation, ArtHud hud, Canvas canvas, Font font)
         {
             art = presentation; focused = Application.isFocused;
@@ -87,6 +89,7 @@ namespace SingedTerra.Encounter
             View.Clear(); View.Render(model); Emit("deploy");
             if (runClock != null && runClock.Failed) Fail("InvalidClock");
         }
+        void ILastStandPurchaseSession.ApplyShopProjection() => ApplyShopProjection();
         internal void ApplyShopProjection()
         {
             model.ApplyShopProjection(Shop);
@@ -119,19 +122,32 @@ namespace SingedTerra.Encounter
         public bool ConfigureSpeed(double speed)
         {
             if (model != null) return false;
-            configuredSpeed = LastStandSpeedPolicy.RestorePositive(speed);
+            configuredSpeed = LastStandSpeedPolicy.RestorePositive(speed,MaximumSpeed);
             return true;
         }
         public bool TrySetSpeed(double speed) => TrySetSpeedAt(Time.realtimeSinceStartupAsDouble, speed);
         public bool TrySetSpeedAt(double timestamp, double speed)
         {
-            if (!LastStandSpeedPolicy.Allows(speed) || !PrepareClockAction(timestamp)) return false;
+            if (!LastStandSpeedPolicy.Allows(speed,MaximumSpeed) || !PrepareClockAction(timestamp)) return false;
             if (!runClock.SetSpeed(timestamp, speed))
             { if (runClock.Failed) Fail("InvalidClock"); return false; }
             configuredSpeed = runClock.LastPositiveSpeed;
             PublishClockAction("speed"); return true;
         }
         public bool TrySetMenuPaused(bool paused) => TrySetMenuPausedAt(Time.realtimeSinceStartupAsDouble, paused);
+        public bool GrantMaximumSpeed(double maximum)
+        {
+            if(!LastStandSpeedPolicy.IsValidMaximum(maximum) || maximum<MaximumSpeed)return false;
+            if(runClock!=null && !runClock.GrantMaximum(maximum))return false;
+            MaximumSpeed=maximum;return true;
+        }
+        internal bool RestoreProfileSpeed(double maximum,double preferred)
+        {
+            // A confirmed whole-profile replacement can lower research ranks.
+            // Never lower a ceiling on an active run or alter its clock.
+            if(model!=null || runClock!=null || !LastStandSpeedPolicy.IsValidMaximum(maximum))return false;
+            MaximumSpeed=maximum;configuredSpeed=LastStandSpeedPolicy.RestorePositive(preferred,maximum);return true;
+        }
         public bool TrySetMenuPausedAt(double timestamp, bool paused)
         {
             if (!PrepareClockAction(timestamp)) return false;
@@ -146,7 +162,7 @@ namespace SingedTerra.Encounter
             // Advance may trigger a terminal/controller transition, so recheck
             // the live owners before changing either pause cause.
             AdvanceAt(timestamp);
-            return BackgroundContinuation && model != null && Failure == "" && !CatchingUp;
+            return BackgroundContinuation && model != null && Failure == "" && !CheckpointBlocked && !CatchingUp;
         }
         void PublishClockAction(string action)
         {
@@ -201,6 +217,7 @@ namespace SingedTerra.Encounter
         {
             StepsThisCallback = 0; CallbackElapsedSeconds = 0;
             if (CheckpointBlocked || !BackgroundContinuation || model == null || Failure != "") return;
+            if(BeforeAdvance!=null && !BeforeAdvance())return;
             double previousTimestamp = runClock.LastTimestamp, priorPending = runClock.PendingSeconds;
             double elapsed = timestamp - previousTimestamp;
             if (!runClock.Observe(timestamp)) { Fail("InvalidClock"); return; }
@@ -324,6 +341,7 @@ namespace SingedTerra.Encounter
         void OnApplicationFocus(bool value)
         {
             focused = value;
+            UpdateNativeSuspension();
             // Idle Last Stand controls also depend on focus. A terminal run
             // releases its clock while hidden, so notify its HUD on return.
             if (loop) Emit("visibility"); else if (!value) Suspend("focus");
@@ -331,12 +349,26 @@ namespace SingedTerra.Encounter
         void OnApplicationPause(bool value)
         {
             applicationPaused = value;
+            UpdateNativeSuspension();
             if (loop) Emit("visibility"); else if (value) Suspend("application");
+        }
+        void UpdateNativeSuspension()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (loop && runClock != null)
+            {
+                runClock.SetHostSuspended(Time.realtimeSinceStartupAsDouble, !focused || applicationPaused);
+                Paused = runClock.Paused;
+                Reason = runClock.HostSuspended ? "application" : runClock.MenuPaused ? "menu" : runClock.ManualPaused ? "user" : "";
+                art.SetEncounterPaused(Paused);
+            }
+#endif
         }
         [Serializable] sealed class State
         {
-            public string action, rules, status, fitting, reason, summary;
-            public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, healed, closeHits, rangedHits;
+            public string action, rules, status, fitting, reason, summary,contentVersion,economyVersion;
+            public int run, tick, hp, maxHp, spawned, kills, cannon, launcher, scattergun,mortar,railgun,healed, closeHits, rangedHits;
+            public int mortarDamage,railgunDamage;
             public int alive, visibleUnits, pool;
             public int wave,completedWave,remainingWaveEnemies;
             public bool awaitingWaveCommit,checkpointBlocked;
@@ -352,6 +384,7 @@ namespace SingedTerra.Encounter
             Debug.Log("ST_ENC_STATE " + JsonUtility.ToJson(new State
             {
                 action = action, rules = model?.Profile.Id ?? (loop ? EncounterProfile.PlayablePrototype.Id : review ? EncounterProfile.VisualReview.Id : EncounterModel.RulesVersion), run = run,
+                contentVersion=model?.Profile.Edition.ContentVersion??"",economyVersion=model?.Profile.Edition.EconomyVersion??"",
                 status = model == null ? "Fitting" : model.Status.ToString(),
                 fitting = model == null ? art.FittingId : LastStandFittingCatalog.Id(model.Fitting),
                 reason = Reason, paused = Paused, focused = focused, applicationPaused = applicationPaused,
@@ -364,6 +397,9 @@ namespace SingedTerra.Encounter
                 tick = model?.Tick ?? 0, hp = model?.Hull ?? 120, maxHp = model?.CurrentMaximumHull ?? 120,
                 spawned = model?.Spawned ?? 0, kills = model?.Kills ?? 0,
                 cannon = model?.CannonShots ?? 0, launcher = model?.LauncherShots ?? 0,
+                scattergun=model?.ScattergunShots??0,mortar=model?.MortarShots??0,railgun=model?.RailgunShots??0,
+                mortarDamage=model?.CurrentMortarDamage??LastStandUpgradeCatalog.BaseMortarDamage,
+                railgunDamage=model?.CurrentRailgunDamage??LastStandUpgradeCatalog.BaseRailgunDamage,
                 healed = model?.Restored ?? 0, closeHits = model?.CloseHits ?? 0, rangedHits = model?.RangedHits ?? 0,
                 alive = model?.ActiveCount ?? 0, visibleUnits = View.VisibleUnits, pool = View.PoolSize,
                 wave=model?.Wave??0,completedWave=model?.CompletedWave??0,remainingWaveEnemies=model?.RemainingWaveEnemies??0,

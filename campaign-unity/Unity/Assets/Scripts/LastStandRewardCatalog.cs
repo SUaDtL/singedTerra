@@ -38,28 +38,40 @@ namespace SingedTerra.LastStand
             return Milestones(tier,LastStandTierCatalog.All);
         }
         public static IReadOnlyList<LastStandMilestone> Milestones(LastStandTierDefinition tier,IReadOnlyList<LastStandTierDefinition> definitions)
+            => Milestones(tier,definitions,LastStandFittingCatalog.Definitions);
+        public static IReadOnlyList<LastStandMilestone> Milestones(LastStandTierDefinition tier,IReadOnlyList<LastStandTierDefinition> definitions,
+            IReadOnlyList<LastStandFittingDefinition> fittings)
         {
             if(tier==null)throw new ArgumentNullException(nameof(tier));
             LastStandTierCatalog.Validate(definitions);
             var waves=new SortedSet<int>(milestoneWaves);
             var unlocks=new Dictionary<int,int>();
-            foreach(var candidate in definitions)if(candidate.RequiredTier==tier.Id) {
+            if(fittings==null)throw new ArgumentNullException(nameof(fittings));
+            var fittingUnlocks=new Dictionary<int,string>();
+            foreach(var fitting in fittings)if(fitting!=null && fitting.Playable && fitting.UnlockTier==tier.Id) {
+                if(fittingUnlocks.ContainsKey(fitting.UnlockWave))throw new ArgumentException("One milestone can unlock only one fitting.");
+                waves.Add(fitting.UnlockWave);fittingUnlocks.Add(fitting.UnlockWave,fitting.Id);
+            }
+            foreach(var candidate in definitions)if(candidate.Playable && candidate.RequiredTier==tier.Id) {
                 if(unlocks.ContainsKey(candidate.RequiredWave))throw new ArgumentException("One milestone can unlock only one tier.");
                 waves.Add(candidate.RequiredWave);unlocks.Add(candidate.RequiredWave,candidate.Id);
             }
             var rows=new List<LastStandMilestone>();
             foreach(int wave in waves) {
                 unlocks.TryGetValue(wave,out int unlock);
-                rows.Add(new LastStandMilestone(tier.Key,wave,Math.Max(5,wave/2),unlock,tier.Id==1 && wave==100?"scattergun":null));
+                fittingUnlocks.TryGetValue(wave,out string fitting);
+                rows.Add(new LastStandMilestone(tier.Key,wave,Math.Max(5,wave/2),unlock,fitting));
             }
             return rows.AsReadOnly();
         }
         public static LastStandWaveReward At(LastStandTierDefinition tier,int wave)
+            =>At(tier,wave,LastStandRunEdition.Current);
+        public static LastStandWaveReward At(LastStandTierDefinition tier,int wave,LastStandRunEdition edition)
         {
             if(wave<1)throw new ArgumentOutOfRangeException(nameof(wave));
             if(tier==null)throw new ArgumentNullException(nameof(tier));
             LastStandMilestone milestone=null;
-            foreach(var row in Milestones(tier))if(row.Wave==wave){milestone=row;break;}
+            foreach(var row in Milestones(tier,edition.Tiers,edition.Fittings))if(row.Wave==wave){milestone=row;break;}
             // Depth makes a lower-tier farm valuable; higher tiers trade risk for a bounded multiplier.
             // Higher-tier premiums start beyond onboarding; repeatedly dying at
             // its first few waves must not beat an established lower-tier farm.

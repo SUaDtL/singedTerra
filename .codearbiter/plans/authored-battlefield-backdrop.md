@@ -192,3 +192,12 @@ built-in image generation, local ffmpeg WebP encoding.
   Require CI, Edge, rendering E2E, CodeQL workflow, and repository CodeQL to
   succeed on the exact final governance receipt head. Supabase Preview may be
   skipped because this slice has no backend change. Do not merge or deploy.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/renderer/BattlefieldBackdrop.ts`, `client/src/renderer/Renderer.battlefieldBackdrop.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `49f9f0854aa4` (docs(governance): record authored backdrop PR). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

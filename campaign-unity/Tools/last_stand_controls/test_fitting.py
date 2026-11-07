@@ -18,6 +18,7 @@ CASES = (
     "resize_same_owner_retains_actual_attachment",
     "inactive_behind_camera_offscreen_and_disabled",
     "actual_menu_and_encounter_lifecycle",
+    "five_modules_use_shared_projection",
 )
 
 

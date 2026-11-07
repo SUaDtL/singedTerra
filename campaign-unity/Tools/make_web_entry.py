@@ -32,6 +32,19 @@ function showError(message){console.error('Last Stand load failed',message);docu
 // Register before Unity: native Return/Retry keep normal browser activation.
 const wrapperKeyboardControls=[document.querySelector('#last-stand-return'),document.querySelector('#retry')];
 let lastStandInstance;
+// A browser-owned exclusive lock serializes the entire profile writer. The
+// lock lasts for this document, including hidden combat; closing it releases
+// ownership. A second tab can inspect the saved profile but cannot spend it.
+window.__lastStandSaveWriter=false;
+function acquireLastStandSave(){
+  if(!navigator.locks || typeof navigator.locks.request!=='function')return Promise.resolve(false);
+  return new Promise(resolve=>{
+    navigator.locks.request('singedTerra.lastStand.prototype.v1',{mode:'exclusive',ifAvailable:true},lock=>{
+      window.__lastStandSaveWriter=!!lock;resolve(!!lock);
+      if(lock)return new Promise(()=>{});
+    }).catch(()=>resolve(false));
+  });
+}
 document.querySelector('#last-stand-return').addEventListener('click',event=>{
   if(lastStandInstance){event.preventDefault();canvas.focus();lastStandInstance.SendMessage('LastStandBrowserBridge','RequestReturn','');}
 });
@@ -50,7 +63,7 @@ function keepWrapperKeyboard(event){
 }
 ['keydown','keyup','keypress'].forEach(type=>window.addEventListener(type,keepWrapperKeyboard,true));
 if(typeof createUnityInstance !== 'function')showError('Unity loader unavailable');
-else Promise.resolve().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(instance=>{lastStandInstance=instance;document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
+else acquireLastStandSave().then(()=>createUnityInstance(canvas,config,p=>document.querySelector('#progress').value=p)).then(instance=>{lastStandInstance=instance;document.querySelector('#loading').style.display='none';canvas.focus();console.info('ST_WEB_LOADED')}).catch(showError);"""
 
 def render_web_entry(build: Path, scene: str, root: Path) -> str:
     text = (root / 'Tools/web-index-template.html').read_text(encoding='utf-8')

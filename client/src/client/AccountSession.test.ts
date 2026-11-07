@@ -1535,6 +1535,97 @@ describe('AccountSession', () => {
   })
 })
 
+describe('AccountSession account replacement admission', () => {
+  it.each(['resolve', 'reject', 'pending'] as const)(
+    'revokes the old account before a replacement profile can %s',
+    async (outcome) => {
+      let onUser!: (user: { id: string } | null) => void
+      let resolveProfile!: (profile: AccountProfile) => void
+      let rejectProfile!: (error: Error) => void
+      const replacement = new Promise<AccountProfile>((resolve, reject) => {
+        resolveProfile = resolve
+        rejectProfile = reject
+      })
+      const source = backend({
+        restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+        subscribe: vi.fn((callback) => { onUser = callback; return vi.fn() }),
+        loadProfile: vi.fn(async (id) => id === 'user-1'
+          ? { id, displayName: 'Ranger A', summary: null }
+          : replacement),
+      })
+      const session = new AccountSession(() => undefined, {
+        isConfigured: () => true,
+        loadBackend: async () => source,
+      })
+      await session.initialize()
+
+      onUser({ id: 'user-2' })
+      expect(session.state).toEqual({ status: 'loading', busy: true, error: '' })
+      const result = { matchId: '00000000-0000-4000-8000-000000000081', won: true }
+      await expect(session.recordHotSeatMatch(result)).resolves.toBeNull()
+      await expect(session.startVerifiedDeployment()).resolves.toBeNull()
+      expect(source.recordHotSeatMatch).not.toHaveBeenCalled()
+      expect(source.startVerifiedDeployment).not.toHaveBeenCalled()
+
+      if (outcome === 'resolve') {
+        resolveProfile({ id: 'user-2', displayName: 'Ranger B', summary: null })
+        await vi.waitFor(() => expect(session.state).toMatchObject({
+          status: 'authenticated', profile: { id: 'user-2' },
+        }))
+        await session.startVerifiedDeployment()
+        expect(source.startVerifiedDeployment).toHaveBeenCalledOnce()
+      } else if (outcome === 'reject') {
+        rejectProfile(new Error('profile unavailable'))
+        await vi.waitFor(() => expect(session.state).toMatchObject({
+          status: 'authenticated-error', userId: 'user-2',
+        }))
+        await expect(session.recordHotSeatMatch(result)).resolves.toBeNull()
+        await expect(session.startVerifiedDeployment()).resolves.toBeNull()
+        expect(source.recordHotSeatMatch).not.toHaveBeenCalled()
+        expect(source.startVerifiedDeployment).not.toHaveBeenCalled()
+      }
+      session.dispose()
+    },
+  )
+
+  it.each(['replace', 'sign-out', 'dispose'] as const)(
+    'cancels a hot-seat retry when its account boundary changes by %s',
+    async (transition) => {
+      vi.useFakeTimers()
+      try {
+        let onUser!: (user: { id: string } | null) => void
+        const recordHotSeatMatch = vi.fn()
+          .mockRejectedValueOnce(new Error('temporary outage'))
+          .mockResolvedValue(true)
+        const source = backend({
+          restoreUser: vi.fn(async () => ({ id: 'user-1' })),
+          subscribe: vi.fn((callback) => { onUser = callback; return vi.fn() }),
+          loadProfile: vi.fn(async (id) => ({ id, displayName: id, summary: null })),
+          recordHotSeatMatch,
+        })
+        const session = new AccountSession(() => undefined, {
+          isConfigured: () => true,
+          loadBackend: async () => source,
+        })
+        await session.initialize()
+        const result = { matchId: '00000000-0000-4000-8000-000000000082', won: true }
+        const delivered = session.recordHotSeatMatch(result)
+        await vi.advanceTimersByTimeAsync(0)
+        expect(recordHotSeatMatch).toHaveBeenCalledExactlyOnceWith(result)
+
+        if (transition === 'dispose') session.dispose()
+        else onUser(transition === 'replace' ? { id: 'user-2' } : null)
+        await vi.advanceTimersByTimeAsync(201)
+        await expect(delivered).resolves.toBeNull()
+        expect(recordHotSeatMatch).toHaveBeenCalledTimes(1)
+        session.dispose()
+      } finally {
+        vi.useRealTimers()
+      }
+    },
+  )
+})
+
 describe('verified deployment Supabase adapter', () => {
   const rawStart = {
     sessionId: verifiedSessionId,

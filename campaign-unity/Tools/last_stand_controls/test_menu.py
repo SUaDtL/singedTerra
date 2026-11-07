@@ -13,8 +13,16 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 CASES = (
+    "test_restore_comparison_includes_current_and_backup_research", "test_previous_save_requires_readable_predecessor",
+    "test_closing_backup_preview_clears_stale_instructions",
+    "test_backup_preview_cancel_restore_and_cap", "test_pending_backup_restore_retry",
+    "test_return_to_garage_keeps_checkpoint", "test_help_topics_and_save_navigation",
+    "test_registered_modal_pages_own_input",
+    "test_sister_screens_explain_next_actions",
+    "test_planner_navigation_preserves_progression_and_pause",
+    "test_planning_panes_fit_compact_height",
     "test_idle_controls_restore_after_focus_and_visibility",
     "test_scalable_selector_entries",
     "test_locked_tier_preview_preserves_admission",
@@ -55,12 +63,9 @@ class MenuControllerTests(unittest.TestCase):
             env=env, capture_output=True, text=True, timeout=30)
         if ownership.returncode:
             raise RuntimeError("An existing Unity Editor owns this project; refusing a concurrent launch.")
-        source_paths = sorted(PROJECT.glob("Assets/Scripts/LastStand*.cs")) + [
-            PROJECT / "Assets/Scripts/EncounterSession.cs", PROJECT / "Assets/Scripts/TankPresentation.cs",
-            PROJECT / "Assets/Scripts/ArtHud.cs", PROJECT / "Assets/Scripts/BattlefieldReview.cs",
-            PROJECT / "Assets/Editor/LastStandControlsChecks.cs", PROJECT / "Assets/Scenes/LastStandPrototype.unity",
-            PROJECT / "Assets/Editor/LastStandTestPreferencesScope.cs",
-        ]
+        source_paths = sorted(set((PROJECT / "Assets/Scripts").rglob("*.cs")) |
+                              set((PROJECT / "Assets/Editor").rglob("*.cs")) |
+                              {PROJECT / "Assets/Scenes/LastStandPrototype.unity"})
         hashes = subprocess.run(["node", "-e", HASH_SCRIPT], input=json.dumps([str(p) for p in source_paths]),
                                 capture_output=True, text=True, cwd=ROOT, timeout=30, check=True)
         argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
@@ -78,6 +83,13 @@ class MenuControllerTests(unittest.TestCase):
             raise
         cls.exit_code = process.returncode
         cls.content = cls.log_path.read_text(encoding="utf-8", errors="replace") if cls.log_path.exists() else ""
+        after_paths = sorted(set((PROJECT / "Assets/Scripts").rglob("*.cs")) |
+                             set((PROJECT / "Assets/Editor").rglob("*.cs")) |
+                             {PROJECT / "Assets/Scenes/LastStandPrototype.unity"})
+        after = subprocess.run(["node", "-e", HASH_SCRIPT], input=json.dumps([str(p) for p in after_paths]),
+                               capture_output=True, text=True, cwd=ROOT, timeout=30, check=True)
+        if json.loads(hashes.stdout) != json.loads(after.stdout):
+            raise RuntimeError("Controls source changed during the owned Editor launch")
         cls.extra_output = stdout + stderr
         (folder / "result.json").write_text(json.dumps({"exit": cls.exit_code, "stdout": stdout,
             "stderr": stderr, "passed": [name for name in CASES if "ST_LS_CONTROLS_PASS " + name in cls.content]}, indent=2), encoding="utf-8")

@@ -78,3 +78,10 @@ The Milestone 1 review correctly found that ADR-0012 forbids client-attested cas
 Milestone 1 rank presentation remains frozen and MUST NOT ship against casual XP. Before it can resume, the initiative must prove that the existing shared engine can be imported into the Deno Edge toolchain and can replay bounded canonical transcripts without a duplicate physics implementation. Product implementation then separates casual history from verified XP; only verified XP can produce rank identity or promotion claims.
 
 Ordinary hot-seat remains available offline and casual. Rank-eligible Verified Deployment requires an authenticated, connected session whose seed, options, ruleset version, engine version, expiry, and transcript bounds are server-owned. The client submits actions, not outcomes. The verifier derives the terminal result and awards progression idempotently. This verifies that the transcript produces the result, not that a human played unaided.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+Finite acceptance remainder, not another unlimited implementation epic: rank/promotion, First Strike and verified career/challenge owners exist. Remaining closure is the initiative-wide desktop/compact/touch, anonymous/signed-in, win/loss, promotion/non-promotion outcome matrix and an explicit owner retention assessment. Reuse campaign.observation.0001; do not invent proof or reopen completed feature work.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md). Original requirements and historical statuses above are preserved.

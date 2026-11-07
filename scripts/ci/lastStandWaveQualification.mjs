@@ -3,10 +3,11 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {resolve,dirname,basename} from 'node:path';
 import {LAST_STAND_JOURNEY_INPUTS,validateCheckpointResume,validateWaveTerminal,validateGameplayInput,validateKeyboardGameplayInput,validateModelObservation,
-  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateHiddenWaveTerminal} from '../../e2e/helpers/lastStandJourney.mjs';
-import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
+  validateAdmittedClock,validateExplicitPause,validateBackgroundInterval,waveIntervalEvents,validateBackgroundWaveTerminal,
+  assertIdleWaveSave,assertWaveSavePreserved,validateWaveAbandonSave,validateBackgroundCheckpoint} from '../../e2e/helpers/lastStandJourney.mjs';
+import {WAVE_ORACLE_SOURCES,parseWaveOracleCsv,CURRENT_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 
-export const WAVE_CONTRACT='last-stand-waves/v1';
+export const WAVE_CONTRACT='last-stand-waves/v2';
 export const WAVE_RUNTIME_KEYS=Object.freeze(['manifest_sha256','receipt_sha256','source_lock_sha256','source_inventory_sha256','wrapper_sha256','build']);
 export const WAVE_RECOVERY_CHECKS=Object.freeze(['.loader.js: real Retry recovered genuine scene','.wasm: real Retry recovered genuine scene',
   'corrupt bytes preserved by Retry','blocked writes recover through real Retry']);
@@ -14,7 +15,7 @@ export const WAVE_ERROR_CHECK='no unclassified browser/Unity/shader/request erro
 export const WAVE_LIFECYCLE_CHECKS=Object.freeze(['normal-speed automatic baseline deployed','first base cannon leaves identical 30 HP foe at 10 HP',
   'pause stops combat ticks','cleared waves atomically bank rewards and complete checkpoints','wave rewards require no manual Claim',
   'saved wave survives reload and awaits explicit Resume','Resume restores saved state paused without offline catch-up',
-  'confirmed abandon keeps banked rewards and finalizes run','one salvage commits Cannon Attack level1',
+  'confirmed abandon keeps banked rewards and finalizes run','two salvage commits Cannon Attack level1',
   'purchase reload retains permanent level and spent balance','same first foe one-hit defeated by real 30 damage',
   'background wave rewards and checkpoint share one durable save','natural defeat finalizes checkpoint without a second payout',
   'Continue cannot pay a second reward','finalized natural defeat cannot resume after reload',
@@ -58,7 +59,7 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   for(const item of Object.values(served)){sha(item.sha256);assert.ok(Number.isSafeInteger(item.bytes)&&item.bytes>0);}
   for(const key of WAVE_RUNTIME_KEYS){assert.ok(runtime[key]);assert.equal(report.binding[key],runtime[key],'Changed runtime binding: '+key);}
   assert.deepEqual(report.binding.served,served);assert.deepEqual(report.binding.served_after,served,'Runtime drift during execution');
-  const wave=report.wave_model;assert.equal(wave?.format,'st-last-stand-wave-model-oracle/1');assert.equal(wave.host,host);
+  const wave=report.wave_model;assert.equal(wave?.format,'st-last-stand-wave-model-oracle/2');assert.deepEqual(wave.edition,CURRENT_WAVE_EDITION);assert.equal(wave.host,host);
   assert.deepEqual(Object.keys(waveSources).sort(),[...WAVE_ORACLE_SOURCES].sort());
   assert.deepEqual(wave.source_lf_sha256,waveSources,'Wave oracle compiled different production sources');
   assert.equal(wave.qualification,'compiled actual wave model bound to inspected player export');
@@ -67,8 +68,8 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   assert.equal(wave.commands?.length,2);assert.ok(wave.commands.every(c=>c.exit===0&&!c.error));
   for(const command of wave.commands){sha(command.stdoutSha256);sha(command.stderrSha256);assert.ok(command.argv?.length>=2);}
   sha(wave.output_sha256);sha(wave.executable_sha256);assert.equal(wave.commands[1].stdoutSha256,wave.output_sha256);
-  assert.deepEqual([...wave.profiles].sort(),[1,2].flatMap(tier=>['repair','launcher','scattergun'].flatMap(fitting=>[20,30,40,50].map(d=>`${tier}:${fitting}:${d}`))).sort());
-  assert.ok(Number.isSafeInteger(wave.rows)&&wave.rows>=24);assert.ok(Number.isInteger(wave.maximumTicks)&&wave.maximumTicks>=100&&wave.maximumTicks<=24000);
+  assert.deepEqual([...wave.profiles].sort(),waveOracleProfileKeys().sort());
+  assert.ok(Number.isSafeInteger(wave.rows)&&wave.rows>=80);assert.ok(Number.isInteger(wave.maximumTicks)&&wave.maximumTicks>=100&&wave.maximumTicks<=24000);
   assert.equal(report.input_trace?.matched,true);assert.equal(report.input_trace.actions,report.actions?.length);
   assert.equal(report.input_trace.observed_edges,report.actions.length*2,'Exact planned pointer edges required');
   assert.equal(report.keyboard_trace?.matched,true);assert.equal(report.keyboard_trace.actions,report.keyboard_actions?.length);
@@ -78,6 +79,22 @@ export function assertWaveBinding(report,{head,inputs,runtime,served,waveSources
   requireWaveChecks(report,[WAVE_ERROR_CHECK]);
 }
 const only=(rows,kind)=>{const found=rows?.filter(row=>row.kind===kind);assert.equal(found?.length,1,'Exactly one '+kind+' proof required');return found[0];};
+function assertOracleCheckpoint(checkpoint,row){
+  const e=checkpoint.encounter;
+  assert.equal(e.rulesVersion,row.rulesVersion,'Saved checkpoint rules differ from source oracle');
+  assert.equal(checkpoint.contentVersion,row.contentVersion,'Saved checkpoint content differs from source oracle');
+  assert.equal(checkpoint.shop?.economyVersion,row.economyVersion,'Saved checkpoint economy differs from source oracle');
+  if(Object.hasOwn(e,'scattergunShots'))assert.equal(e.scattergunShots,row.scattergun,'Saved scattergun counter differs');
+  if(e.rulesVersion==='last-stand-waves-v2')for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
+    ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage'],['nextMortarTick','nextMortarTick'],['nextRailgunTick','nextRailgunTick']])
+    assert.equal(e[field],row[key],'Saved armament differs from actual source boundary: '+field);
+}
+function assertOracleArmamentState(state,profile){
+  const row=profile[state.tick];assert.ok(row,'Observed tick absent from source oracle');
+  for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
+    ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage']])
+    assert.equal(state[field],row[key],'Observed armament differs from actual source tick: '+field);
+}
 function assertWaveIntervalClock(record){
   const e=record.evidence;assert.equal(e?.clock?.basis,'admitted-clock/v1','Current wave interval requires actual admitted clock evidence');
   assert.deepEqual(validateAdmittedClock(record.kind==='explicit-pause'?e.resumed:e.before,e.after),e.clock);
@@ -88,14 +105,14 @@ export function assertWaveLifecycle(report) {
   assert.ok(resume.stable.t>=resume.resumed.t+1000,'Fresh post-wait state required');
   assert.ok(resume.saved.checkpoint.encounter.completedWave>0,'Earned checkpoint required');
   const abandon=only(report.lifecycle,'checkpoint-abandon');assert.deepEqual(abandon.before,resume.saved);
-  assert.deepEqual(abandon.after,{...abandon.before,checkpoint:null,lastFinalizedRunId:abandon.before.checkpoint.runId},'Abandon changes only durable run finalization');
-  const purchase=report.checks.find(c=>c.name==='one salvage commits Cannon Attack level1').detail;
-  assert.equal(purchase?.wallet,resume.saved.credits-1);assert.equal(purchase.level,1);assert.equal(purchase.cannonDamage,30);
+  validateWaveAbandonSave(abandon);
+  const purchase=report.checks.find(c=>c.name==='two salvage commits Cannon Attack level1').detail;
+  assert.equal(purchase?.wallet,resume.saved.credits-2);assert.equal(purchase.level,1);assert.equal(purchase.cannonDamage,30);
   const background=only(report.lifecycle,'background-wave'),cp=background.saved?.checkpoint;
-  assert.equal(background.saved?.version,4);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
+  assertIdleWaveSave(background.saved);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
   assert.ok(cp.encounter.completedWave>=1);assert.equal(background.saved.pendingDefeat,null);
-  assert.equal(cp.runId,background.after?.loop?.runId);assert.equal(background.saved.credits,background.after.loop.wallet);
-  assert.equal(cp.encounter.rulesVersion,'last-stand-waves-v1');assert.equal(cp.encounter.tier,background.after.loop.activeTier);
+  validateBackgroundCheckpoint(background);
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2'].includes(cp.encounter.rulesVersion));assert.equal(cp.encounter.rulesVersion,background.after.loop.profileVersion);assert.equal(cp.encounter.tier,background.after.loop.activeTier);
   assert.ok(background.interval?.begin<background.interval.recovered);
   assert.ok(background.after.t>=background.interval.recovered);assert.equal(background.after.load,background.interval.before.load);
   assert.equal(background.after.timeOrigin,background.interval.before.timeOrigin);
@@ -127,17 +144,18 @@ export function assertWaveTerminals(report) {
     }
     assert.equal(result.action,'result');assert.equal(result.phase,'result');assert.equal(result.wallet,staged.wallet);
     assert.ok(before.t<terminal.t&&terminal.t<=staged.t&&staged.t<=result.t);
-    assert.equal(saved?.version,4);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
+    assertIdleWaveSave(saved);assert.equal(saved.checkpoint,null);assert.equal(saved.pendingDefeat,null);
     assert.equal(saved.lastFinalizedRunId,before.loop.runId);assert.equal(saved.credits,staged.wallet);
     assert.ok(layouts?.length&&layouts.every(layout=>layout.phase==='settling'&&layout.load===before.load&&
       layout.timeOrigin===before.timeOrigin&&layout.t>=terminal.t&&layout.t<=result.t&&
       !layout.controls.some(c=>c.name==='Claim'&&c.active&&c.interactable)));
     if(row.mode==='hidden'){
-      validateHiddenWaveTerminal(row);
+      assert.deepEqual(row.continuation,validateBackgroundWaveTerminal({...row,callbackRecords:row.continuation?.callbacks}),
+        'Background terminal must declare its observed completion mode');
     }
   }
   const foreground=terminals.find(row=>row.mode==='foreground').evidence,reload=only(report.lifecycle,'terminal-reload');
-  assert.deepEqual(reload.saved,foreground.saved);assert.ok(reload.state.load>foreground.result.load);
+  assertWaveSavePreserved(foreground.saved,reload.saved);assert.ok(reload.state.load>foreground.result.load);
   for(const key of ['runId','pendingRunId'])assert.equal(reload.state[key],0);
   assert.equal(reload.state.hasCheckpoint,false);assert.equal(reload.state.wallet,foreground.saved.credits);
   assert.equal(report.keyboard_actions.filter(a=>a.name==='Claim'&&a.action==='continue').length,2,'Both result acknowledgements use real keyboard input');
@@ -209,7 +227,7 @@ export function verifyWaveFiles(resultPath,report) {
   for(const [i,command]of model.commands.entries())for(const stream of ['stdout','stderr'])
     assert.equal(digest(bytes(`wave-model-oracle/${i?'run':'compile'}.${stream}`)),command[stream+'Sha256']);
   const raw=bytes('wave-model-oracle/run.stdout');assert.equal(digest(raw),model.output_sha256);
-  const profiles=parseWaveOracleCsv(raw);assert.deepEqual(Object.keys(profiles),model.profiles);
+  const profiles=parseWaveOracleCsv(raw,{edition:model.edition,format:2});assert.deepEqual(Object.keys(profiles),model.profiles);
   assert.equal(Object.values(profiles).reduce((sum,p)=>sum+Object.keys(p).length,0),model.rows);
   const telemetry=read('runtime-telemetry.json'),trace=read('input-trace.json');
   assert.deepEqual(validateGameplayInput(trace,report.actions),report.input_trace);
@@ -244,17 +262,21 @@ export function verifyWaveFiles(resultPath,report) {
       assert.deepEqual(proof,e,'Interval proof differs from actual admitted clock and source model');
     }else if(record.kind==='checkpoint-resume'){
       validateCheckpointResume(record);actualState(record.resumed);actualState(record.stable);
-      const e=record.saved.checkpoint.encounter,expected=profiles[`${e.tier}:${['launcher','repair','scattergun'][e.fitting]}:${e.committedCannonDamage}`]?.[e.tick];
+      const e=record.saved.checkpoint.encounter,expected=profiles[`${e.tier}:${['launcher','repair','scattergun','mortar','railgun'][e.fitting]}:${e.committedCannonDamage}`]?.[e.tick];
       assert.ok(expected,'Saved boundary absent from source model');
+      assertOracleCheckpoint(record.saved.checkpoint,expected);
       for(const [field,key]of [['hull','hp'],['kills','kills'],['completedWave','completedWave']])assert.equal(e[field],expected[key]);
     }else if(record.kind==='wave-terminal'){
       const proof=validateWaveTerminal({...record.evidence,...telemetry,oracle:oracle(record.evidence.before)});
       assert.deepEqual(proof,record.evidence,'Terminal proof differs from actual source-bound telemetry');
       if(record.mode==='hidden'){
         const {interval}=record;
-        const events=waveIntervalEvents(interval.before,{...interval.before,t:interval.recovered},trace);
+        const before=record.evidence.before;
+        const events=waveIntervalEvents(before,{...before,t:interval.recovered},trace);
         assert.deepEqual(events,interval.events,'Hidden terminal events differ from actual input trace');
-        validateHiddenWaveTerminal({...record,events});
+        assert.deepEqual(record.continuation,validateBackgroundWaveTerminal({...record,events,
+          callbackRecords:telemetry.callbackRecords,states:telemetry.states,cues:telemetry.cues}),
+          'Background completion must bind the raw callback, state and audio evidence');
       }
       if(record.interaction){actualState(record.interaction.paused);actualState(record.interaction.resumed);}
     }else if(record.kind==='terminal-reload')actualState(record.state);
@@ -262,6 +284,28 @@ export function verifyWaveFiles(resultPath,report) {
       const {loop,hull,...model}=record.after;
       assert.deepEqual(telemetry.encounters.find(item=>item.load===model.load&&item.timeOrigin===model.timeOrigin&&item.t===model.t&&item.action===model.action),model);
       actualState(loop);validateModelObservation(record.after,oracle(record.after));
+      validateBackgroundCheckpoint(record);
+      const state=record.checkpointState,matching=telemetry.states.filter(item=>item.load===state.load&&item.timeOrigin===state.timeOrigin&&
+        item.t===state.t&&item.action===state.action);
+      assert.equal(matching.length,1,'Exactly one raw paused checkpoint witness is required');
+      assert.deepEqual(matching[0],state,'Paused checkpoint differs from actual runtime telemetry');
+      const e=record.saved.checkpoint.encounter,profile=oracle(record.after),boundary=profile[e.tick],previous=profile[e.tick-1];
+      assert.ok(boundary&&previous,'Saved checkpoint tick must exist in the source oracle');
+      assertOracleCheckpoint(record.saved.checkpoint,boundary);
+      assert.equal(boundary.status,'Running');assert.equal(boundary.alive,0);
+      assert.equal(boundary.completedWave,e.completedWave);assert.equal(previous.completedWave,e.completedWave-1);
+      // Oracle rows and wave-committed HUD rows follow ContinueCommittedWave;
+      // the durable snapshot itself still names the just-cleared cohort.
+      assert.equal(boundary.wave,e.wave+1);
+      const commits=telemetry.states.filter(item=>item.action==='wave-committed'&&item.load===state.load&&
+        item.timeOrigin===state.timeOrigin&&item.scope===state.scope&&item.sessionRun===state.sessionRun&&
+        item.runId===state.runId&&Number.isFinite(item.t)&&item.t>=0&&item.t<=state.t).sort((a,b)=>b.t-a.t);
+      assert.ok(commits.length>0,'The paused checkpoint requires its actual committed boundary');
+      const committed=commits[0];assert.equal(commits.filter(item=>item.t===committed.t).length,1,'Latest committed boundary must be unique');
+      assert.equal(committed.tick,e.tick);assert.equal(committed.completedWave,e.completedWave);assert.equal(committed.wave,e.wave+1);
+      for(const witness of [loop,state,committed])assertOracleArmamentState(witness,profile);
+      for(const key of ['checkpointWave','wallet','activeTier','profileVersion','fittingId','cannonDamage','phase','saveState',
+        'hasCheckpoint','checkpointBlocked','pendingRunId'])assert.equal(committed[key],state[key],'Committed and paused checkpoint ownership must match');
     }else if(record.kind==='new-run-cancel'){
       actualState(record.confirmation);actualState(record.cancelled);actualLayout(record.layout);
     }

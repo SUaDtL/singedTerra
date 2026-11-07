@@ -33,3 +33,12 @@ blasts without changing gameplay or erasing special-weapon visual identity.
 - [x] Commit through the governed gate and open a ready PR.
 - [ ] Merge only after exact-head hosted CI/CodeQL and final adversarial review;
   then prove exact-SHA Pages deployment and live smoke.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `client/src/renderer/ExplosionArt.ts`, `client/src/renderer/Renderer.authoredExplosions.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `efbab1d1832c` (feat(renderer): add authored conventional explosions (#274)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

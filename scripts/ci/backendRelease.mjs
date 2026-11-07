@@ -16,7 +16,7 @@ const MANIFEST_PATH = 'supabase/backend-release-manifest.json';
 const MAX_MANIFEST_BYTES = 1024 * 1024;
 const MAX_API_BYTES = 2 * 1024 * 1024;
 const API_VERSION = '2022-11-28';
-const WORKFLOW_CONTRACT_SHA256 = '1dbce530a25be805670c241cb7e12ca3d3041b9bfab0b2dcdf925f2b66d993c5';
+const WORKFLOW_CONTRACT_SHA256 = 'c4bb006d07fa8182951a7a3a481836e4aacd59ce1628d9c9ab18f7acac0f7840';
 // Retained cq1 ships executable ESM plus its type-only facade and provenance
 // inside the existing shared/src tree. These are hashed source, not credentials.
 const RELEASE_SOURCE_EXTENSIONS = new Set(['.json', '.sql', '.toml', '.ts', '.mts', '.mjs']);

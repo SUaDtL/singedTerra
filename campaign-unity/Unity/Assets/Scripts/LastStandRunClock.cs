@@ -43,18 +43,21 @@ namespace SingedTerra.LastStand
         readonly int horizonTicks;
         double anchor, admittedThroughTimestamp;
         int admittedTicks;
+        readonly double[] pendingWallMilliseconds=new double[10],stepWallMilliseconds=new double[10];
+        public double StepWallMilliseconds(int speedIndex)=>stepWallMilliseconds[speedIndex];
 
         public double LastTimestamp => anchor;
         public double LastStepTimestamp { get; private set; }
         public double PendingSeconds { get; private set; }
         public int StepsThisCallback { get; private set; }
-        public double MaximumSpeed { get; }
+        public double MaximumSpeed { get; private set; }
         public double LastPositiveSpeed { get; private set; }
         public double SelectedSpeed => ManualPaused ? 0 : LastPositiveSpeed;
         public double EffectiveSpeed => Paused ? 0 : LastPositiveSpeed;
         public bool ManualPaused { get; private set; }
         public bool MenuPaused { get; private set; }
-        public bool Paused => ManualPaused || MenuPaused;
+        public bool HostSuspended { get; private set; }
+        public bool Paused => ManualPaused || MenuPaused || HostSuspended;
         public bool Failed { get; private set; }
         public bool Stopped { get; private set; }
         public bool AtHorizon => admittedTicks >= horizonTicks;
@@ -86,6 +89,13 @@ namespace SingedTerra.LastStand
             if (!ValidTimestamp(timestamp) || timestamp < anchor) return Fail();
             double previous = anchor, elapsed = timestamp - anchor;
             anchor = timestamp;
+            if (HostSuspended)
+            {
+                // Native suspension retains admitted debt but excludes time
+                // spent suspended, including terminal settling timestamps.
+                admittedThroughTimestamp += elapsed;
+                LastStepTimestamp += elapsed;
+            }
             if (!Paused && !Stopped)
             {
                 double remaining = (horizonTicks - admittedTicks) * StepSeconds - PendingSeconds;
@@ -93,6 +103,7 @@ namespace SingedTerra.LastStand
                 {
                     double admitted = Math.Min(elapsed * LastPositiveSpeed, remaining);
                     PendingSeconds += admitted;
+                    pendingWallMilliseconds[(int)(LastPositiveSpeed*2)-1]+=admitted*1000/LastPositiveSpeed;
                     admittedThroughTimestamp = previous + admitted / LastPositiveSpeed;
                 }
             }
@@ -104,6 +115,14 @@ namespace SingedTerra.LastStand
             if (Failed || Paused || Stopped || AtHorizon ||
                 StepsThisCallback >= MaximumStepsPerCallback ||
                 PendingSeconds + BoundaryTolerance < StepSeconds) return false;
+            Array.Clear(stepWallMilliseconds,0,stepWallMilliseconds.Length);
+            double remaining=StepSeconds;
+            int current=(int)(LastPositiveSpeed*2)-1;
+            // A rate change is admitted only below one pending tick. All older
+            // fractional rate contributions therefore precede this rate's new
+            // debt and fit within the next consumed tick.
+            for(int n=0;n<10;n++)if(n!=current)ConsumeWall(n,ref remaining);
+            ConsumeWall(current,ref remaining);
             PendingSeconds = Math.Max(0, PendingSeconds - StepSeconds);
             // Rate changes are admitted only below a complete pending tick.
             // After this step any remaining debt therefore belongs to the
@@ -147,7 +166,28 @@ namespace SingedTerra.LastStand
             return true;
         }
 
+        public bool SetHostSuspended(double timestamp, bool suspended)
+        {
+            if (!Observe(timestamp)) return false;
+            HostSuspended = suspended;
+            return true;
+        }
+
         public void Stop() { Stopped = true; }
+        void ConsumeWall(int index,ref double remaining)
+        {
+            double rate=(index+1)*.5;
+            double wall=Math.Min(pendingWallMilliseconds[index],Math.Max(0,remaining)*1000/rate);
+            pendingWallMilliseconds[index]-=wall;stepWallMilliseconds[index]=wall;
+            remaining-=wall*rate/1000;
+        }
+        // Raising an entitlement changes neither the selected rate nor already
+        // admitted combat debt. A profile cannot revoke an earned rank mid-run.
+        public bool GrantMaximum(double maximum)
+        {
+            if(!LastStandSpeedPolicy.IsValidMaximum(maximum) || maximum<MaximumSpeed)return false;
+            MaximumSpeed=maximum;return true;
+        }
 
         static bool ValidTimestamp(double timestamp) =>
             !double.IsNaN(timestamp) && !double.IsInfinity(timestamp) && timestamp >= 0;

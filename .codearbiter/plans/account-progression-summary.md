@@ -65,3 +65,12 @@
 - [ ] Log the standing-authority merge override, re-review and re-run hosted checks on its audit-only head, then squash merge.
 - [ ] Deploy Supabase config/functions and the exact-main Pages client. Verify remote function status, missing-auth rejection, anonymous compatibility, Pages provenance/assets, production rendering, and authenticated summary only when a safe existing session avoids a credential gate.
 - [ ] Mark `mvp2.progression.0002` done while leaving `mvp2.identity.0001` in progress, then SMARTS-select the next progression slice.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current implementation. Current source/oracles: `supabase/functions/account_summary/index.ts`, `supabase/functions/account_summary/account_summary.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `0df5ac476e41` (Show recorded match progress for authenticated accounts (#334)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

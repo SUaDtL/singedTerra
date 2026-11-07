@@ -67,3 +67,12 @@
 - [ ] Commit through the codeArbiter gate, push, open a ready PR, require hosted CI green on the exact reviewed head, and merge through the PR.
 - [ ] Verify Pages current-main provenance and live smoke, then update/close issue #45 with measured evidence.
 - [ ] Immediately select the next highest-value bounded sprint cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current bounded damage contexts. Current source/oracles: `shared/src/engine/Physics.ts`, `scripts/checks/blast_reach.mjs`.
+
+The latest change to this historical plan reachable from `origin/main` is `09b48a228f38` (feat(combat): make hot-seat starter hits more decisive (#236)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

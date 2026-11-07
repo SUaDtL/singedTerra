@@ -15,6 +15,9 @@ namespace SingedTerra.VisualReview
         {
             public Transform root;
             public GameObject close, ranged;
+            public GameObject bruteArmor,eliteTurret;
+            public LineRenderer warning;
+            public Vector3 closeScale,rangedScale;
             public Transform[] wheels;
             public Renderer[] paint;
             public Vector3 goal;
@@ -35,14 +38,18 @@ namespace SingedTerra.VisualReview
         readonly Transform root;
         readonly Vehicle[] vehicles = new Vehicle[EncounterModel.Capacity];
         readonly bool[] destructionPresented = new bool[EncounterModel.Capacity];
+        readonly bool[] mortarPresented = new bool[EncounterModel.Capacity];
+        readonly Mesh rolePlate;
         readonly Puff[] puffs = new Puff[80];
         readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
         int nextPuff;
         bool full = true;
+        bool currentGeometry;
         public int Active { get; private set; }
         public ReviewCombatVisuals(BattlefieldReview settings, TankPresentation tank, Transform parent)
         {
             this.settings=settings; this.tank=tank;
+            rolePlate=LastStandModuleGeometry.Prism(true,"Enemy role");
             root=new GameObject("Review combat visuals").transform; root.SetParent(parent,false);
             for(int i=0;i<vehicles.Length;i++)
             {
@@ -50,8 +57,26 @@ namespace SingedTerra.VisualReview
                 v.root=new GameObject("Review foe "+i).transform; v.root.SetParent(root,false);
                 v.close=UnityEngine.Object.Instantiate(settings.closeVehicle,v.root);
                 v.ranged=UnityEngine.Object.Instantiate(settings.rangedVehicle,v.root);
+                v.closeScale=v.close.transform.localScale;v.rangedScale=v.ranged.transform.localScale;
+                var steel=LastStandModuleGeometry.Material(tank,"Steel");
+                var armor=LastStandModuleGeometry.Material(tank,"Armor");
+                v.bruteArmor=new GameObject("Brute layered armor");v.bruteArmor.transform.SetParent(v.root,false);
+                for(int side=-1;side<=1;side+=2)
+                    LastStandModuleGeometry.Part("Brute side armor "+side,v.bruteArmor.transform,new Vector3(side*1.22f,.78f,0),new Vector3(.30f,.72f,1.95f),rolePlate,armor);
+                LastStandModuleGeometry.Part("Brute sloped prow",v.bruteArmor.transform,new Vector3(0,.68f,-1.05f),new Vector3(2.15f,.68f,.34f),rolePlate,steel).localRotation=Quaternion.Euler(-20,0,0);
+                v.eliteTurret=new GameObject("Elite twin siege turret");v.eliteTurret.transform.SetParent(v.root,false);
+                LastStandModuleGeometry.Part("Elite high turret",v.eliteTurret.transform,new Vector3(0,1.65f,.05f),new Vector3(1.65f,.75f,1.2f),rolePlate,armor);
+                for(int side=-1;side<=1;side+=2)
+                    LastStandModuleGeometry.Part("Elite heavy barrel "+side,v.eliteTurret.transform,new Vector3(side*.50f,1.85f,-1.1f),new Vector3(.30f,.32f,1.75f),rolePlate,steel);
                 v.wheels=v.root.GetComponentsInChildren<Transform>(true).Where(t=>t.name.StartsWith("Wheel_")).ToArray();
                 v.paint=v.root.GetComponentsInChildren<Renderer>(true);
+                v.warning=new GameObject("Elite attack warning").AddComponent<LineRenderer>();v.warning.transform.SetParent(v.root,false);
+                v.warning.useWorldSpace=false;v.warning.loop=true;v.warning.positionCount=16;
+                v.warning.startWidth=v.warning.endWidth=.14f;v.warning.sharedMaterial=settings.flashMaterial;
+                v.warning.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;v.warning.receiveShadows=false;
+                for(int point=0;point<16;point++){float angle=point*Mathf.PI/8;v.warning.SetPosition(point,new Vector3(Mathf.Sin(angle)*1.9f,.12f,Mathf.Cos(angle)*1.9f));}
+                var warningPaint=new MaterialPropertyBlock();warningPaint.SetColor("_BaseColor",new Color(1f,.75f,.25f));v.warning.SetPropertyBlock(warningPaint);
+                v.warning.gameObject.SetActive(false);
                 v.root.gameObject.SetActive(false);
             }
             for(int i=0;i<puffs.Length;i++)
@@ -69,6 +94,11 @@ namespace SingedTerra.VisualReview
         }
         public Vector3 Position(EncounterFoe foe)
         {
+            if(currentGeometry)
+            {
+                var point=EncounterGeometry.Position(foe.Lane,foe.Id,foe.Distance);
+                return tank.tank.position+new Vector3(point.X*.001f,0,point.Z*.001f);
+            }
             // Four clockwise columns follow fixed radial paths, keeping hulls
             // aligned with travel. The model still owns the exact radius.
             float radius=foe.Distance*.001f;
@@ -76,13 +106,16 @@ namespace SingedTerra.VisualReview
             float angle=foe.Lane*Mathf.PI/4+separation;
             return tank.tank.position+new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle))*radius;
         }
+        internal void BindModel(EncounterModel model)
+        { currentGeometry=model.Profile.IsWaveBased&&!model.Profile.Edition.IsLegacy; }
         public void Render(EncounterModel model)
         {
+            BindModel(model);
             Active=0;
             for(int i=0;i<vehicles.Length;i++)
             {
                 var v=vehicles[i];var foe=model.Foes[i];
-                if(!foe.Alive){v.root.gameObject.SetActive(false);continue;}
+                if(!foe.Alive){v.warning.gameObject.SetActive(false);v.root.gameObject.SetActive(false);continue;}
                 Active++;v.goal=Position(foe);
                 if(v.id!=foe.Id)
                 {
@@ -90,8 +123,16 @@ namespace SingedTerra.VisualReview
                     v.root.position=v.goal;
                 }
                 v.root.gameObject.SetActive(true);
-                bool ranged=foe.Kind==FoeKind.Ranged;
+                bool ranged=foe.Kind==FoeKind.Ranged||foe.Kind==FoeKind.SiegeElite;
                 v.close.SetActive(!ranged);v.ranged.SetActive(ranged);
+                v.close.transform.localScale=Vector3.Scale(v.closeScale,foe.Kind==FoeKind.Swarmer?new Vector3(.67f,.52f,.75f):
+                    foe.Kind==FoeKind.ArmoredBrute?new Vector3(1.14f,1.12f,1.05f):Vector3.one);
+                v.ranged.transform.localScale=v.rangedScale*(foe.Kind==FoeKind.SiegeElite?1.12f:1f);
+                v.bruteArmor.SetActive(foe.Kind==FoeKind.ArmoredBrute);v.eliteTurret.SetActive(foe.Kind==FoeKind.SiegeElite);
+                int warningTicks=model.Status==EncounterStatus.Running?model.TelegraphRemainingTicks(foe):0;
+                v.warning.gameObject.SetActive(warningTicks>0);
+                if(warningTicks>0)v.warning.transform.localScale=Vector3.one*(.9f+.1f*warningTicks/
+                    SingedTerra.LastStand.LastStandEnemyCatalog.Get(foe.Kind).TelegraphTicks);
                 Vector3 direction=Vector3.ProjectOnPlane(tank.tank.position-v.goal,Vector3.up);
                 if(direction.sqrMagnitude>.01f)v.root.rotation=Quaternion.LookRotation(-direction);
                 v.health=foe.Hull;
@@ -99,11 +140,14 @@ namespace SingedTerra.VisualReview
         }
         public void Present(EncounterModel model)
         {
+            BindModel(model);
             Array.Clear(destructionPresented,0,destructionPresented.Length);
+            Array.Clear(mortarPresented,0,mortarPresented.Length);
             foreach(var e in model.Events)
             {
                 if(e.Kind==EncounterEventKind.Repair)continue;
-                bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher||e.Kind==EncounterEventKind.Scattergun;
+                bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher||e.Kind==EncounterEventKind.Scattergun||
+                    e.Kind==EncounterEventKind.Mortar||e.Kind==EncounterEventKind.Railgun;
                 var foe=model.Foes[e.Slot];Vector3 position=Position(foe)+Vector3.up*.7f;
                 if(outgoing)
                 {
@@ -119,8 +163,20 @@ namespace SingedTerra.VisualReview
                         Emit(tank.muzzle.position,.10f,.25f,.85f,new Color(1f,.82f,.43f),settings.flashMaterial,false,Vector3.zero);
                     if(full&&e.Kind==EncounterEventKind.Scattergun)
                         Emit(tank.ScattergunMuzzle,.08f,.20f,.62f,new Color(1f,.70f,.40f),settings.flashMaterial,false,Vector3.zero);
+                    if(e.Kind==EncounterEventKind.Mortar&&!mortarPresented[e.AimSlot])
+                    {
+                        mortarPresented[e.AimSlot]=true;
+                        if(full)
+                        {
+                            Emit(tank.FittingMuzzle(SingedTerra.LastStand.LastStandFitting.Mortar),.12f,.25f,.8f,new Color(1f,.72f,.35f),settings.flashMaterial,false,Vector3.zero);
+                            var center=Position(model.Foes[e.AimSlot]);center.y=tank.tank.position.y+.04f;
+                            Emit(center,.30f,.45f,2.4f,new Color(.90f,.56f,.28f,.55f),settings.flashMaterial,true,Vector3.zero);
+                        }
+                    }
+                    if(full&&e.Kind==EncounterEventKind.Railgun)
+                        Emit(tank.FittingMuzzle(SingedTerra.LastStand.LastStandFitting.Railgun),.08f,.16f,.42f,new Color(.60f,.88f,1f),settings.flashMaterial,false,Vector3.zero);
                 }
-                else
+                else if(e.Kind==EncounterEventKind.CloseHit||e.Kind==EncounterEventKind.RangedHit)
                 {
                     if(full)Emit(position+Vector3.up*.35f,.10f,.18f,.55f,new Color(1f,.59f,.20f),settings.flashMaterial,false,Vector3.zero);
                     Emit(tank.tank.position+Vector3.up,full?.18f:.14f,full?.25f:.12f,full?.80f:.4f,
@@ -209,13 +265,14 @@ namespace SingedTerra.VisualReview
         }
         public void Clear()
         {
-            Active=0;nextPuff=0;
-            foreach(var v in vehicles){v.root.gameObject.SetActive(false);v.id=0;v.flash=0;v.dustClock=0;}
+            Active=0;nextPuff=0;currentGeometry=false;
+            foreach(var v in vehicles){v.root.gameObject.SetActive(false);v.warning.gameObject.SetActive(false);v.id=0;v.flash=0;v.dustClock=0;}
             foreach(var puff in puffs)puff.node.gameObject.SetActive(false);
         }
         public void Dispose()
         {
             if(root)UnityEngine.Object.Destroy(root.gameObject);
+            LastStandModuleGeometry.Release(rolePlate);
         }
     }
 }

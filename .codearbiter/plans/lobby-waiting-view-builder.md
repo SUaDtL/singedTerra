@@ -45,3 +45,12 @@
 - [x] Give one adversarial reviewer the spec, plan, exact diff, and evidence; correct every Critical, High, Medium, and merge blocker.
 - [ ] Commit through `$ca-commit`, open a ready PR referencing but not closing #129, obtain exact-head hosted CI, merge under standing PR-only authority, and verify Pages provenance plus live smoke.
 - [ ] Select the next bounded #129 view extraction.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current extracted view. Current source/oracles: `client/src/ui/LobbyWaitingView.ts`, `client/src/ui/LobbyWaitingView.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `f6c73fe24f16` (refactor(lobby): extract Waiting Room view builder (#248)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using SingedTerra.Art;
@@ -10,6 +11,9 @@ namespace SingedTerra.LastStand
     {
         Canvas canvas;
         TankPresentation art;
+        Func<IReadOnlyList<Renderer>> targetRenderers;
+        Func<string> targetName;
+        string observationPrefix="ST_LS_FITTING_CALLOUT";
         RectTransform card, layer, leader, connector, endpoint;
         RectTransform[] brackets;
         readonly Vector3[] cardCorners = new Vector3[4];
@@ -39,10 +43,17 @@ namespace SingedTerra.LastStand
             return rect;
         }
         public void Initialize(Canvas sharedCanvas, TankPresentation presentation, RectTransform fittingCard)
+            => Initialize(sharedCanvas,presentation,fittingCard,()=>presentation.ActiveFittingRenderers,
+                ()=>presentation.ActiveFittingModule?presentation.ActiveFittingModule.name:"","ST_LS_FITTING_CALLOUT");
+        public void Initialize(Canvas sharedCanvas,TankPresentation presentation,RectTransform fittingCard,
+            Func<IReadOnlyList<Renderer>> renderers,Func<string> name,string prefix)
         {
             if (layer) throw new InvalidOperationException("Fitting callout already initialized.");
             if (!sharedCanvas || !presentation || !fittingCard) throw new ArgumentNullException("Fitting callout references");
             canvas = sharedCanvas.rootCanvas; art = presentation; card = fittingCard;
+            targetRenderers=renderers??throw new ArgumentNullException(nameof(renderers));
+            targetName=name??throw new ArgumentNullException(nameof(name));
+            observationPrefix=prefix;
             layer = new GameObject("FittingModuleCallout",typeof(RectTransform)).GetComponent<RectTransform>();
             layer.SetParent(transform,false); layer.anchorMin = Vector2.zero; layer.anchorMax = Vector2.one;
             layer.pivot = new Vector2(.5f,.5f); layer.offsetMin = layer.offsetMax = Vector2.zero;
@@ -63,7 +74,7 @@ namespace SingedTerra.LastStand
             rect.localRotation = Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x) * Mathf.Rad2Deg);
             return true;
         }
-        bool ActiveBounds(Renderer[] meshes, out Bounds bounds)
+        bool ActiveBounds(IReadOnlyList<Renderer> meshes, out Bounds bounds)
         {
             bounds = default(Bounds); bool found = false;
             foreach (var mesh in meshes)
@@ -87,9 +98,9 @@ namespace SingedTerra.LastStand
                 !art.view || !art.view.isActiveAndEnabled || !canvas ||
                 !canvas.isActiveAndEnabled || !card || !card.gameObject.activeInHierarchy ||
                 (canvas.renderMode != RenderMode.ScreenSpaceOverlay && !canvas.worldCamera)) return;
-            var module = art.ActiveFittingModule;
-            var meshes = art.ActiveFittingRenderers;
-            if (!module || !module.activeInHierarchy || !ActiveBounds(meshes,out var bounds)) return;
+            var meshes = targetRenderers();
+            var name = targetName();
+            if (meshes==null || string.IsNullOrEmpty(name) || !ActiveBounds(meshes,out var bounds)) return;
             var camera = art.view;
             var center = camera.WorldToScreenPoint(bounds.center);
             var viewport = camera.pixelRect; var uiViewport = canvas.pixelRect;
@@ -146,7 +157,7 @@ namespace SingedTerra.LastStand
                 if (!Segment(brackets[i*2],corner,corner + new Vector2((i & 1) == 0 ? length : -length,0),thickness) ||
                     !Segment(brackets[i*2+1],corner,corner + new Vector2(0,(i & 2) == 0 ? length : -length),thickness)) return;
             }
-            AnchorWorld = bounds.center; EndpointScreen = end; TargetName = module.name;
+            AnchorWorld = bounds.center; EndpointScreen = end; TargetName = name;
             layer.gameObject.SetActive(true);
         }
         [Serializable] sealed class Observation
@@ -165,7 +176,7 @@ namespace SingedTerra.LastStand
             if(!changed && (!Visible || Time.unscaledTime<nextObservation))return;
             observedVisible=Visible;observedTarget=TargetName;observedWidth=Screen.width;observedHeight=Screen.height;
             nextObservation=Time.unscaledTime+.5f;
-            Debug.Log("ST_LS_FITTING_CALLOUT "+JsonUtility.ToJson(new Observation {
+            Debug.Log(observationPrefix+" "+JsonUtility.ToJson(new Observation {
                 visible=Visible,target=TargetName,width=Screen.width,height=Screen.height,pixelRatio=PixelRatio,
                 anchorWorld=AnchorWorld,projectedAnchor=Visible?art.view.WorldToScreenPoint(AnchorWorld):Vector3.zero,
                 endpointScreen=Visible?RectTransformUtility.WorldToScreenPoint(UiCamera,endpoint.position):Vector2.zero }));

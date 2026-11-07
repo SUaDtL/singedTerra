@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {lastStandDeploymentControl} from '../../e2e/helpers/lastStandJourney.mjs';
+import {lastStandDeploymentControl,assertIdleWaveSave} from '../../e2e/helpers/lastStandJourney.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertWaveBinding,assertWaveLifecycle,requireWaveChecks,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_CONTRACT} from './lastStandWaveQualification.mjs';
 
@@ -53,7 +53,7 @@ export function assertLastStandWaveMatrix(reports,expected){
       assert.equal(report.campaign_entry?.length,partition.entryViewports.length);
       const cancel=report.lifecycle?.filter(row=>row.kind==='new-run-cancel');assert.equal(cancel?.length,1);
       assert.equal(cancel[0].layout?.selection,'ConfirmCancel');assert.equal(cancel[0].cancelled?.paused,true);
-      const saved=JSON.parse(cancel[0].saved);assert.equal(saved.version,4);assert.ok(saved.checkpoint);
+      const saved=JSON.parse(cancel[0].saved);assertIdleWaveSave(saved);assert.ok(saved.checkpoint);
       assert.equal(cancel[0].confirmation.runId,saved.checkpoint.runId);assert.equal(cancel[0].cancelled.runId,saved.checkpoint.runId);
     }
     const profiles=section==='entry'?partition.entryViewports:section==='recovery'?partition.phaseViewports:partition.viewports;

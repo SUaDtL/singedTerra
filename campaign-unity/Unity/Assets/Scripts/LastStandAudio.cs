@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using SingedTerra.Encounter;
 
@@ -9,7 +10,8 @@ namespace SingedTerra.LastStand
     {
         const int Voices = 4;
         readonly AudioSource[] sources = new AudioSource[Voices];
-        AudioClip cannon, impact, destruction, defeat, purchase, scattergun;
+        AudioClip cannon, impact, destruction, defeat, purchase, scattergun, mortar, railgun;
+        readonly bool[] mortarPlayed=new bool[EncounterModel.Capacity],mortarKilled=new bool[EncounterModel.Capacity];
         LastStandMusic music;
         int cursor;
         bool initialized, unlocked, suspended, musicSuspended;
@@ -40,6 +42,8 @@ namespace SingedTerra.LastStand
             defeat = Tone("Defeat", 190,.54f,.25f,4);
             purchase = Tone("Purchase", 520,.22f,.26f,1);
             scattergun = Tone("Scattergun", 175,.17f,.30f,7);
+            mortar = Tone("Mortar", 88,.36f,.32f,6);
+            railgun = Tone("Railgun", 780,.19f,.28f,2);
             for (int i=0;i<Voices;i++)
             {
                 sources[i]=gameObject.AddComponent<AudioSource>();
@@ -132,6 +136,28 @@ namespace SingedTerra.LastStand
             if(!initialized || !focused || applicationPaused || musicSuspended)return;
             UnlockFromGesture("effects-preview"); Play(cannon,"preview",true);
         }
+        // One admitted simulation step, with no queued playback. A blast has
+        // several authoritative hit events but only one firing/impact pair.
+        public void PlayEvents(IReadOnlyList<EncounterEvent> events)
+        {
+            if(events==null)throw new ArgumentNullException(nameof(events));
+            Array.Clear(mortarPlayed,0,mortarPlayed.Length);Array.Clear(mortarKilled,0,mortarKilled.Length);
+            foreach(var evt in events)if(evt.Kind==EncounterEventKind.Mortar)
+            {
+                if(evt.AimSlot<0||evt.AimSlot>=mortarKilled.Length)throw new ArgumentException("Invalid blast aim slot.",nameof(events));
+                mortarKilled[evt.AimSlot]|=evt.Killed;
+            }
+            foreach(var evt in events)
+            {
+                if(evt.Kind==EncounterEventKind.Mortar)
+                {
+                    if(mortarPlayed[evt.AimSlot])continue;
+                    mortarPlayed[evt.AimSlot]=true;
+                    PlayEvent(evt.Kind,evt.Amount,!mortarKilled[evt.AimSlot]);
+                }
+                else PlayEvent(evt.Kind,evt.Amount,!evt.Killed);
+            }
+        }
         public void PlayEvent(EncounterEventKind kind, int amount, bool targetAlive)
         {
             switch(kind)
@@ -139,6 +165,8 @@ namespace SingedTerra.LastStand
                 case EncounterEventKind.Cannon: Play(cannon,"cannon"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Launcher: Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Scattergun: Play(scattergun,"scattergun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
+                case EncounterEventKind.Mortar: Play(mortar,"mortar"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
+                case EncounterEventKind.Railgun: Play(railgun,"railgun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.CloseHit:
                 case EncounterEventKind.RangedHit: Play(impact,"impact"); break;
             }
@@ -154,7 +182,7 @@ namespace SingedTerra.LastStand
             Stop();
             if(music) { music.SetPlayback(false,0); Destroy(music); }
             foreach(var source in sources)if(source)Destroy(source);
-            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase,scattergun})if(clip)Destroy(clip);
+            foreach(var clip in new[]{cannon,impact,destruction,defeat,purchase,scattergun,mortar,railgun})if(clip)Destroy(clip);
         }
     }
 }

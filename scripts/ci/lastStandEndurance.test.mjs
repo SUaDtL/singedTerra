@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
 import {runInNewContext} from 'node:vm';
 import {ENDURANCE_POLICY,parseEnduranceArguments,newEnduranceLedger,accountEnduranceObservation,
   enduranceVerdict,appendBounded} from '../last-stand-wave-endurance.mjs';
@@ -25,6 +28,76 @@ const observed=(atMs,changes={})=>({atMs,timeOrigin:12345,stateAgeMs:0,tick:Math
 const complete=()=>({...newEnduranceLedger(),activeMs:ENDURANCE_POLICY.activeTargetMs,
   elapsedMs:ENDURANCE_POLICY.activeTargetMs+1000,observedSimulationMs:ENDURANCE_POLICY.activeTargetMs,samples:36001});
 const proof={completed:true,finalBindingsVerified:true,storageLatencyVerified:true};
+
+test('actual endurance report declares bounded smoke or an unfulfilled ten-hour target truthfully',()=>{
+  for(const mode of ['smoke','endurance'])for(const research of [false,true]){
+    const {report}=endurance.createEnduranceReport({options:{mode,research,smokeSeconds:180},
+      expectedSpeed:research?5:1,fixture:{qualificationPurchasePolicy:{},saveSha256:'inert-save'},
+      manifestPath:'inert',manifestBytes:Buffer.from('inert'),hash:()=> 'inert-hash',sources:{},packaged:{}});
+    assert.equal(report.mode,mode);assert.equal(report.enduranceQualified,false);
+    assert.equal(report.expectedSpeed,research?5:1);assert.equal(report.policy.activeTargetMs,36000000);
+    assert.equal(report.policy.maximumSampleGapMs,5000);
+    if(mode==='smoke'){
+      assert.match(report.scope,/180.second.*smoke/i);assert.match(report.scope,/cannot qualify endurance/i);
+      assert.doesNotMatch(report.scope,/ten real active hours/i);
+    }else assert.match(report.scope,/target of ten real active hours/i);
+  }
+});
+
+test('actual research endurance admission requires current schema and retains exact fixture/source bindings',()=>{
+  const prefix=join(tmpdir(),'st-endurance-admission-'),directory=mkdtempSync(prefix);
+  const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+  try{
+    // Inert files exercise the actual reader; they are not earned profiles or
+    // production source evidence and never enter a browser context.
+    const sourceSha256={};mkdirSync(join(directory,'sources'));
+    for(let index=0;index<20;index++){
+      const path=`sources/input-${index}.cs`,bytes=`inert source ${index}`;
+      writeFileSync(join(directory,path),bytes);sourceSha256[path]=sha(bytes);
+    }
+    const save={version:7,pendingDefeat:null,checkpoint:null,research:{completedRanks:{gameSpeed:8}}};
+    const fixture={id:'mature-5x',savePath:'mature-5x.json',requestedSpeed:5,
+      qualificationPurchasePolicy:{intervalRealSeconds:900,quantity:'Max',intentsPerInterval:1,
+        trackOrder:['cannonAttack','hullCapacity','scrapYield','cannonAttack','cannonCycle','launcherAttack','armor']}};
+    const path=join(directory,'manifest.json'),savePath=join(directory,fixture.savePath);
+    const manifest={schema:'last-stand-research-qualification-fixtures/v1',storageKey:'singedTerra.lastStand.prototype.v1',
+      sourceSha256,cases:[fixture]};
+    const write=record=>{const bytes=JSON.stringify(record);writeFileSync(savePath,bytes);fixture.saveSha256=sha(bytes);
+      writeFileSync(path,JSON.stringify(manifest));};
+    const admit=()=>endurance.admitResearchFixtures(manifest,path,directory);
+    write(save);assert.doesNotThrow(admit);
+    for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined]){
+      write({...save,version});assert.throws(admit,/Current endurance requires save version 7/);
+    }
+    write(save);writeFileSync(savePath,JSON.stringify({...save,version:8}));
+    assert.throws(admit,/Fixture bytes changed/);
+    write(save);writeFileSync(join(directory,'sources/input-0.cs'),'changed');
+    assert.throws(admit,/Fixture source changed/);
+    writeFileSync(join(directory,'sources/input-0.cs'),'inert source 0');
+    write({...save,research:{completedRanks:{gameSpeed:7}}});assert.throws(admit,/Five times speed must be earned/);
+    write(save);fixture.savePath='../mature-5x.json';assert.throws(admit,/named sibling/);
+  }finally{
+    assert.ok(resolve(directory).startsWith(resolve(prefix)));
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+test('researched 5x counts real hours and rejects missing entitlement or covert acceleration',()=>{
+  assert.equal(parseEnduranceArguments(['fixture','output','--endurance','--research']).research,true);
+  const ledger=newEnduranceLedger(5);
+  for(let seconds=0;seconds<=60;seconds++)accountEnduranceObservation(ledger,
+    observed(seconds*1000,{speed:5,tick:seconds*100}));
+  assert.equal(ledger.activeMs,60000);assert.equal(ledger.observedSimulationMs,300000);
+  assert.throws(()=>accountEnduranceObservation(ledger,observed(61000,{speed:1,tick:6100})));
+  const fast=newEnduranceLedger(5);accountEnduranceObservation(fast,observed(0,{speed:5,tick:0}));
+  assert.throws(()=>{for(let seconds=1;seconds<30;seconds++)accountEnduranceObservation(fast,
+    observed(seconds*1000,{speed:5,tick:seconds*200}));},/real elapsed|acceleration/);
+  const five={...complete(),expectedSpeed:5,observedSimulationMs:ENDURANCE_POLICY.activeTargetMs*5};
+  assert.equal(enduranceVerdict('endurance',five,proof).enduranceQualified,true);
+  five.activeMs/=5;five.elapsedMs/=5;
+  assert.equal(enduranceVerdict('endurance',five,proof).enduranceQualified,false,'Two hours at 5x is not ten real hours');
+  assert.throws(()=>newEnduranceLedger(10));
+});
 
 test('one-shot endurance admission cannot be shortened with smoke duration or ambiguous flags',()=>{
   assert.equal(parseEnduranceArguments(['fixture','output','--endurance']).mode,'endurance');
@@ -185,4 +258,183 @@ test('failed final evidence retention always closes the owned browser and keeps 
   assert.equal(closed,1);
   const source=readFileSync(new URL('../last-stand-wave-endurance.mjs',import.meta.url),'utf8');
   assert.match(source,/process\.exitCode=1;\s*await finalizeOwnedEndurance\(/,'Exit failure does not depend on successful disk retention');
+});
+
+// Run the actual orchestration with inert browser/filesystem seams. The clock
+// advances only when an awaited operation is scheduled, never inside accounting.
+function observationClock(){
+  let now=0;const pending=[];
+  const sleep=ms=>new Promise(resolve=>pending.push({at:now+ms,resolve}));
+  return {now:()=>now,sleep,pending:()=>pending.length,async finish(operation){
+    let result,error,settled=false;
+    operation.then(value=>{result=value;settled=true;},value=>{error=value;settled=true;});
+    for(let count=0;count<10000&&!settled;count++){
+      await new Promise(resolve=>setImmediate(resolve));
+      if(settled)break;
+      assert.ok(pending.length,'The actual orchestration must await owned work');
+      now=Math.min(...pending.map(item=>item.at));
+      const due=pending.filter(item=>item.at===now);
+      for(const item of due){pending.splice(pending.indexOf(item),1);item.resolve();}
+    }
+    assert.ok(settled,'Bounded deterministic orchestration');
+    if(error)throw error;return result;
+  }};
+}
+
+async function actualEnduranceOrchestration({screenshotMs=0,speed=5,transitions=false,
+  probeFailure=null,actionFailure=null,cancelAt=Infinity,retained={},
+  saved={version:7,pendingDefeat:null,checkpoint:null}}={}){
+  const clock=observationClock(),ledger=newEnduranceLedger(speed),observations=[],actions=[];
+  const report={summaries:0,screenshots:[],runsObserved:0,callback:{},audioCueTelemetry:{}};
+  const card={key:'cannonAttack',level:0,cap:100,n:0,category:'Attack',canPurchase:true};
+  const shop={open:false,mode:'Run',cards:[card],spentScrap:0};let quantity=0;
+  const layout={shopControls:[{name:'ShopQuantity',label:'[1]'}]};
+  const probe=()=>({timeOrigin:123,now:clock.now(),frames:{},audioContexts:{}});
+  const globals={...endurance,assert,performance:{now:clock.now},ledger,report,started:0,
+    options:{research:!transitions,mode:'smoke',smokeSeconds:60},expectedSpeed:speed,
+    fixture:{qualificationPurchasePolicy:{trackOrder:['cannonAttack']}},shop,layout,
+    interrupted:false,observerError:null,completed:false,previousRun:0,output:'inert',saveKey:'save',samplesPath:'inert',
+    until:async predicate=>{assert.ok(predicate(),'Inert rendered state follows its completed input');},
+    click:async name=>{const action={name,at:clock.now()};actions.push(action);
+      await clock.sleep(['Claim','Redeploy'].includes(name)?7000:1400);action.finishedAt=clock.now();
+      if(actionFailure)throw actionFailure;
+      if(name==='ShopEntry')shop.open=true;
+      if(name==='ShopTabAttack')shop.category='Attack';
+      if(name==='ShopQuantity'&&++quantity===3)layout.shopControls[0].label='[MAX]';
+      if(name==='ShopCard_cannonAttackBuy'){card.n+=29;shop.spentScrap+=2619;}
+      if(name==='ShopClose')shop.open=false;},
+    page:{waitForTimeout:clock.sleep,evaluate:async fn=>{
+      if(fn.toString().includes('localStorage'))return JSON.stringify(saved);
+      if(fn.toString().includes('__stCheckpointStorageProbe'))return {writes:{successes:1,errors:0},readbacks:{count:1,errors:0,mismatches:0,unconfirmed:0},pending:false};
+      if(probeFailure&&clock.now()>=2000)throw probeFailure;
+      return probe();},screenshot:()=>clock.sleep(screenshotMs)},
+    cdp:{send:async()=>({metrics:[]})},checkSourceBindings:()=>{},compactState:value=>({...value}),
+    sha:()=> 'inert-hash',resolve:(...parts)=>parts.join('/'),appendFileSync:()=>{},writeFileSync:()=>{},persist:()=>{},
+    Buffer,process:{memoryUsage:()=>({})},structuredClone,
+    accountEnduranceObservation:(value,next)=>{observations.push({...next});return accountEnduranceObservation(value,next);}};
+  Object.defineProperties(globals,{interrupted:{get:()=>clock.now()>=cancelAt},latestAt:{get:clock.now},latest:{get:()=>{
+    const state={saveState:'ready',checkpointBlocked:false,hasCheckpoint:false,
+      phase:'battle',paused:false,speed,tick:Math.floor(clock.now()*speed/50),runId:2};
+    if(transitions&&clock.now()>=5000){
+      const claimed=actions.find(item=>item.name==='Claim')?.finishedAt;
+      const deployed=actions.find(item=>item.name==='Redeploy')?.finishedAt;
+      if(deployed!==undefined){state.runId=3;state.tick=Math.floor((clock.now()-deployed)*speed/50);}
+      else Object.assign(state,{phase:claimed===undefined?'result':'workshop',tick:100*speed,speed:0});
+    }
+    return state;}}});
+  const operation=endurance.observeEnduranceRun(globals);
+  try{await clock.finish(operation);}finally{Object.assign(retained,{ledger,observations,actions,pending:clock.pending()});}
+  return {ledger,observations,actions,report,completed:globals.completed};
+}
+
+test('actual endurance durable readback admits current and retained checkpoint editions in current envelopes',async()=>{
+  const current={runId:2,contentVersion:'last-stand-content-v2',encounter:{rulesVersion:'last-stand-waves-v2',tier:1,fitting:1,
+    completedWave:1,mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40},
+    shop:{economyVersion:'combat-depth-economy-v4'}};
+  const retained={runId:2,contentVersion:'last-stand-content-v1',encounter:{rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,completedWave:1},
+    shop:{economyVersion:'research-farming-economy-v3'}};
+  for(const checkpoint of [null,current,retained]){
+    const result=await actualEnduranceOrchestration({saved:{version:7,pendingDefeat:null,checkpoint}});
+    assert.equal(result.completed,true);
+    assert.equal(result.report.latestSample.checkpoint.wave,checkpoint?.encounter.completedWave??null);
+  }
+  for(const version of [4,5,6,8,0,-1,6.5,'6',null,undefined])
+    await assert.rejects(actualEnduranceOrchestration({saved:{version,pendingDefeat:null,checkpoint:null}}),/Current endurance requires save version 7/);
+  for(const mutate of [cp=>cp.encounter.rulesVersion='unknown',cp=>cp.contentVersion='last-stand-content-v1',
+    cp=>cp.shop.economyVersion='research-farming-economy-v3',cp=>delete cp.encounter.mortarDamage]){
+    const checkpoint=structuredClone(current);mutate(checkpoint);
+    await assert.rejects(actualEnduranceOrchestration({saved:{version:7,pendingDefeat:null,checkpoint}}),
+      /Unknown wave rules|Mixed content edition|Mixed economy edition|Missing weapon state/);
+  }
+  await assert.rejects(actualEnduranceOrchestration({saved:{version:7,pendingDefeat:{runId:2},checkpoint:null}}),
+    /Current runs never create legacy Claim rewards/);
+});
+
+test('actual endurance observer samples through awaited work and rejects a real sampling blackout',async()=>{
+  const result=await actualEnduranceOrchestration();
+  assert.equal(result.completed,true);
+  assert.equal(result.report.periodicPurchases[0].quantity,29);
+  const opened=result.actions.find(item=>item.name==='ShopEntry').at;
+  const closed=result.actions.find(item=>item.name==='ShopClose').at+1400;
+  assert.ok(closed-opened>ENDURANCE_POLICY.maximumSampleGapMs);
+  assert.ok(result.observations.filter(item=>item.atMs>opened&&item.atMs<closed).length>=5,
+    'Fresh observations continue during the actual multi-input purchase');
+  assert.ok(result.observations.slice(1).every((item,index)=>item.atMs-result.observations[index].atMs<=5000));
+  assert.equal(result.ledger.activeMs,result.ledger.elapsedMs);
+});
+
+test('actual observer keeps sampling long screenshots and rendered Claim/Redeploy transitions at 1x and 5x',async()=>{
+  for(const speed of [1,5]){
+    const result=await actualEnduranceOrchestration({speed,screenshotMs:7500,transitions:true});
+    assert.equal(result.completed,true);
+    assert.ok(result.observations.filter(item=>item.atMs>0&&item.atMs<7500).length>=6,
+      'A screenshot cannot stop fresh observations');
+    for(const name of ['Claim','Redeploy']){
+      const action=result.actions.find(item=>item.name===name);
+      assert.ok(result.observations.filter(item=>item.atMs>action.at&&item.atMs<action.finishedAt).length>=5,
+        name+' remains observed while its rendered transition is pending');
+    }
+    assert.equal(result.report.runsObserved,2);
+    assert.ok(result.ledger.endedMs>=12000);
+    assert.ok(result.ledger.activeMs<result.ledger.elapsedMs-12000,'Result/workshop time cannot become gameplay');
+    assert.equal(result.ledger.activeMs+result.ledger.pausedMs+result.ledger.endedMs+result.ledger.unknownMs,result.ledger.elapsedMs);
+  }
+});
+
+test('owned sampler keeps the exact 5000ms boundary and refuses a true 5001ms blackout without credit',async()=>{
+  for(const speed of [1,5])for(const gap of [5000,5001]){
+    const clock=observationClock(),ledger=newEnduranceLedger(speed);
+    const sampling=endurance.startEnduranceSampling({wait:()=>clock.sleep(gap),sample:async stopped=>{
+      if(!stopped())accountEnduranceObservation(ledger,observed(clock.now(),{speed,tick:Math.floor(clock.now()*speed/50)}));}});
+    const operation=(async()=>{await sampling.ready;await clock.sleep(gap+1);await sampling.stop();sampling.check();})();
+    if(gap===5001){
+      await assert.rejects(clock.finish(operation),/Unobserved clock gap/);
+      assert.equal(ledger.activeMs,0);assert.equal(ledger.elapsedMs,0);assert.equal(ledger.samples,1);
+    }else{
+      await clock.finish(operation);assert.equal(ledger.activeMs,5000);assert.equal(ledger.samples,2);
+    }
+    assert.equal(clock.pending(),0,'Stop joins its pending wait');
+  }
+});
+
+test('actual orchestration preserves action/probe failures and cancellation while joining its sampler',async()=>{
+  for(const kind of ['actionFailure','probeFailure']){
+    const failure=new Error(kind),retained={};
+    await assert.rejects(actualEnduranceOrchestration({[kind]:failure,retained}),error=>error===failure);
+    assert.equal(retained.pending,0,'No observer wait survives failed work');
+    assert.ok(retained.ledger.samples>0);
+  }
+  const retained={},result=await actualEnduranceOrchestration({cancelAt:3500,retained});
+  assert.equal(result.completed,false);assert.equal(retained.pending,0);
+  assert.equal(result.ledger.elapsedMs,3000,'Cancellation and cleanup add no observation credit');
+});
+
+test('stop waits for its in-flight probe and forbids late accounting before browser cleanup',async()=>{
+  const clock=observationClock(),order=[],ledger=newEnduranceLedger();
+  let reading=0,maximumReaders=0;
+  const sampling=endurance.startEnduranceSampling({wait:clock.sleep,sample:async stopped=>{
+    maximumReaders=Math.max(maximumReaders,++reading);order.push('probe-start');
+    await clock.sleep(2000);reading--;order.push('probe-end');
+    if(!stopped())accountEnduranceObservation(ledger,observed(clock.now()));
+  }});
+  await clock.finish((async()=>{
+    await clock.sleep(500);order.push('stop');await sampling.stop();sampling.check();
+    await endurance.finalizeOwnedEndurance({prepareReport:()=>{},persist:()=>{},
+      closeBrowser:async()=>order.push('close'),onFailure:assert.fail});
+  })());
+  assert.deepEqual(order,['probe-start','stop','probe-end','close']);
+  assert.equal(ledger.samples,0);assert.equal(maximumReaders,1);assert.equal(clock.pending(),0);
+});
+
+test('slow fresh probes never overlap and a failed observer wait remains an owned failure',async()=>{
+  const clock=observationClock(),ledger=newEnduranceLedger();let readers=0,maximum=0;
+  const sampling=endurance.startEnduranceSampling({wait:clock.sleep,sample:async stopped=>{
+    maximum=Math.max(maximum,++readers);await clock.sleep(1200);readers--;
+    if(!stopped())accountEnduranceObservation(ledger,observed(clock.now()));
+  }});
+  await clock.finish((async()=>{await sampling.ready;await clock.sleep(7000);await sampling.stop();sampling.check();})());
+  assert.equal(maximum,1);assert.equal(readers,0);assert.ok(ledger.samples>=3);assert.equal(clock.pending(),0);
+  const failure=new Error('observer wait disconnected');
+  const failed=endurance.startEnduranceSampling({sample:async()=>{},wait:async()=>{throw failure;}});
+  await failed.ready;await failed.stop();assert.throws(()=>failed.check(),error=>error===failure);
 });

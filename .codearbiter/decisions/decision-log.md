@@ -623,3 +623,28 @@ Maintainability and availability favor the existing hosted platform without a ne
 Update the still-uncommitted proposed ADR0019 and P10 spec/plan to the actual selected execution contract. Keep starts disabled until reviewed hosted evidence and explicit rollout/enablement approval. This decision does not mark ADR lifecycle acceptance or campaign completion.
 
 ---
+
+## DECISION-0024 - ADR-0020 - Retain deployment-safe semantic battle controls
+
+**Date:** 2026-10-29
+**Status:** accepted
+**Supersedes:** DECISION-0021 (semantic lazy-loading clause only)
+**Decided by:** SUaDtL <SUaDtL@users.noreply.github.com> (explicitly selected "Retain the recovery design (Recommended)")
+**Decision category:** architecture / deployment recovery
+**Artifact-section-hash:** 15a176bfb69a276b6171671f470d8e5205d2e85520af0d6968448b94d7f03ff7
+
+### Variance summary
+- **Artifact position:** ADR-0018 requires lazy Preact and Pixi loading on battle entry.
+- **Scaffold position:** The later recovery fix loads the semantic mount at startup, mounts it only for battle, and keeps Pixi lazy.
+- **Status type:** divergent
+
+### Decision
+Retain the recovery design. Semantic battle controls stay available in the startup import graph; controls mount only when battle starts, and Pixi stays lazy. This supersedes only the semantic lazy-loading clause of ADR-0018.
+
+### SMARTS rationale
+Reliability and availability drove the presented choice: an already-open game retains its controls across a deployment removing old chunks. Maintainability retains the existing battle lifecycle and optional visual owner. Testability keeps deployment recovery, mount timing and visual-failure behavior separate; no new security authority or gameplay state owner is introduced.
+
+### Implementation implication
+Record ADR-0020 as the forward-only partial successor to ADR-0018. Preserve the existing semantic-startup, battle-only mount and lazy-Pixi implementation. The decision does not qualify release, device, audio or endurance behavior.
+
+---

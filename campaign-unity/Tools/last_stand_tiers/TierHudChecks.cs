@@ -43,12 +43,14 @@ static class TierHudChecks
         Check(LastStandTierHudText.Goal(1)=="Tier 1 / Clear every enemy to advance" &&
             LastStandTierHudText.Goal(2)=="Tier 2 / Clear every enemy to advance","wave completion explains its actual condition");
         Check(!LastStandTierHudText.GoalMet(1,299) && LastStandTierHudText.GoalMet(1,300),"exact Tier 2 wave unlock threshold");
-        Check(!LastStandTierHudText.GoalMet(2,300) && !LastStandTierHudText.GoalMet(2,int.MaxValue),"no unauthored Tier 3 promotion");
+        Check(!LastStandTierHudText.GoalMet(2,299) && LastStandTierHudText.GoalMet(2,300) &&
+            !LastStandTierHudText.GoalMet(3,299) && LastStandTierHudText.GoalMet(3,300) &&
+            !LastStandTierHudText.GoalMet(4,int.MaxValue),"each authored next tier has an exact threshold; final tier does not invent another");
         Check(LastStandTierHudText.Progress(2,1799)=="T2 / WAVE 1799","live progress labels the wave rather than elapsed seconds");
         Check(LastStandTierHudText.WaveBest(0)=="Best: no completed wave" &&
             LastStandTierHudText.WaveBest(5000)=="Best: wave 5000","wave best never invents a completion");
-        Check(LastStandTierHudText.NextMilestone(1,99)=="Next milestone: wave 100" &&
-            LastStandTierHudText.NextMilestone(1,100)=="Next milestone: wave 200" &&
+        Check(LastStandTierHudText.NextMilestone(1,99)=="Next W100: +50 Salvage\nUnlock Auxiliary Scattergun" &&
+            LastStandTierHudText.NextMilestone(1,100)=="Next W200: +100 Salvage" &&
             LastStandTierHudText.NextMilestone(2,10000)=="Keep farming repeatable wave rewards.","next milestone advances without implying a run ending");
         Check(LastStandTierHudText.WaveProgress(1,300,2)=="T1 / WAVE 300 / 2 LEFT","remaining enemies stay distinct from completed waves");
         Check(LastStandTierHudText.Best(0,0)=="Best: no saved run","do not invent history");

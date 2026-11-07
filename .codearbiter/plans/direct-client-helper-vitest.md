@@ -48,3 +48,12 @@
 - [x] Commit through `$ca-commit`, push, and open a ready PR through `$ca-pr` with `Closes #134`.
 - [ ] Require every hosted check green on the exact reviewed head, then use the standing PR-only merge authority.
 - [ ] Verify Pages exact-main provenance and live smoke, then select the next bounded sprint cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current direct coverage. Current source/oracles: `client/src/client/retry.test.ts`, `client/src/renderer/audioEdges.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `89723758fa4d` (test(client): cover retry and audio edge helpers (#244)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.
