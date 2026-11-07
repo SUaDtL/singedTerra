@@ -169,7 +169,7 @@ function ciRun(overrides = {}) {
 test('the checked-in backend manifest exactly describes the current release inputs without a circular source SHA', () => {
   const result = loadAndValidateManifest(root);
   assert.equal(result.manifest.schemaVersion, 1);
-  assert.equal(result.manifest.supabaseCliVersion, '2.105.0');
+  assert.equal(result.manifest.supabaseCliVersion, '2.121.0');
   assert.equal(result.manifest.functions.length, 22);
   assert.deepEqual(result.manifest.migrations.slice(-2).map(entry => entry.path), [
     'supabase/migrations/024_verified_challenge_rewards.sql',
