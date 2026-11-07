@@ -67,10 +67,10 @@ public static class LastStandResearchStartupChecks
     {
         var project = loop.Progression.ResearchSnapshot.slots[0].active;
         Need(project != null, "funded project before synthetic elapsed interval");
-        var clock = Field(loop, "researchClock");
+        var clock = Field(Field(loop, "research"), "clock");
         double anchor = (double)Field(clock, "anchor");
         Set(clock, "anchor", anchor - (project.durationMilliseconds - project.earnedMilliseconds) / 1000d - 1);
-        Set(loop, "nextResearchCompletionAt", 0d);
+        Set(Field(loop, "research"), "nextCompletionAt", 0d);
     }
     static void Recover(bool firstWrite)
     {
@@ -88,14 +88,14 @@ public static class LastStandResearchStartupChecks
         try
         {
             var loop = Open(store);
-            Need(loop.Progression.SaveState != "ready" && Field(loop, "researchClock") == null, "initial fault leaves research uninitialized");
+            Need(loop.Progression.SaveState != "ready" && Field(Field(loop, "research"), "clock") == null, "initial fault leaves research uninitialized");
             store.DenyRead = store.DenyWrite = false;
             loop.RetrySave();
-            Need(loop.Progression.SaveState == "ready" && Field(loop, "researchClock") != null && loop.ResearchSnapshot != null,
+            Need(loop.Progression.SaveState == "ready" && Field(Field(loop, "research"), "clock") != null && loop.ResearchSnapshot != null,
                 "successful Retry creates missing research clock");
-            var clock = Field(loop, "researchClock"); int writes = store.Writes;
+            var clock = Field(Field(loop, "research"), "clock"); int writes = store.Writes;
             loop.RefreshResearch();
-            Need(store.Writes > writes && ReferenceEquals(clock, Field(loop, "researchClock")), "recovered clock can persist and is not recreated");
+            Need(store.Writes > writes && ReferenceEquals(clock, Field(Field(loop, "research"), "clock")), "recovered clock can persist and is not recreated");
             if (!firstWrite)
             {
                 int wallet = loop.Progression.Wallet;

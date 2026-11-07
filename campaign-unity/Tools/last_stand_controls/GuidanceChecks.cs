@@ -113,6 +113,123 @@ internal static class GuidanceChecks
         Check(LastStandNavigationPolicy.RequiresAbandonConfirmation(-1), "unknown nonzero destructive state must fail safely");
     }
 
+    private static LastStandGuidanceContext Context(bool saveReady = true, bool inBattle = false,
+        bool checkpoint = false, int nextRun = 1, int bestWave = 0, bool invested = false,
+        bool researched = false, bool canInvest = false, bool idleLab = false, bool canResearch = false) =>
+        new LastStandGuidanceContext(saveReady, inBattle, checkpoint, nextRun, bestWave,
+            invested, researched, canInvest, idleLab, canResearch);
+
+    private static void ContextGuidanceFollowsConfirmedProgress()
+    {
+        var guidance = new LastStandGuidance();
+        var fresh = guidance.NextAction(Context());
+        Check(fresh != null && fresh.Id == "first-deployment" && fresh.Destination == "help",
+            "fresh profile receives a controls link, not an automatic deploy");
+        var returning = guidance.NextAction(Context(checkpoint: true, nextRun: 4, bestWave: 22));
+        Check(returning != null && returning.Id == "resume-checkpoint" && returning.TopicId == "checkpoints",
+            "saved checkpoint takes precedence over another run or purchase");
+        Check(guidance.NextAction(Context(nextRun: 4, bestWave: 22)) == null,
+            "a mature profile with no recommended action gets no first-run prompt");
+        Check(guidance.NextAction(Context(nextRun: 1, researched: true)) == null,
+            "research experience prevents reconstructed first-run guidance");
+        Check(guidance.NextAction(Context(nextRun: 1, invested: true)) == null,
+            "permanent investment prevents reconstructed first-run guidance");
+        var investment = guidance.NextAction(Context(nextRun: 3, bestWave: 4, canInvest: true));
+        Check(investment != null && investment.Id == "permanent-investment" && investment.Destination == "workshop",
+            "first affordable permanent investment opens the existing Workshop");
+        Check(guidance.NextAction(Context(nextRun: 3, bestWave: 4, invested: true, canInvest: true)) == null,
+            "the first-investment prompt stops after any permanent investment");
+        var unlock = guidance.NextAction(Context(nextRun: 3, bestWave: 25));
+        Check(unlock != null && unlock.Id == "research-unlocked" && unlock.Destination == "research",
+            "new research access has an explicit route even before funding");
+        var idle = guidance.NextAction(Context(nextRun: 7, bestWave: 100, invested: true,
+            researched: true, idleLab: true, canResearch: true));
+        Check(idle != null && idle.Id == "idle-lab" && idle.IsPurchaseSuggestion,
+            "an idle lab with an affordable action becomes a purchase suggestion");
+        Check(guidance.NextAction(Context(nextRun: 7, bestWave: 100, researched: true,
+            idleLab: true, canResearch: false)) == null, "unaffordable research is not offered as ready to start");
+        Check(guidance.NextAction(Context(nextRun: 7, bestWave: 24, researched: true,
+            idleLab: true, canResearch: true)) == null, "inconsistent caller flags cannot unlock a locked lab");
+    }
+
+    private static void ContextGuidanceOptOutsAndDismissal()
+    {
+        var guidance = new LastStandGuidance();
+        var first = Context();
+        var investment = Context(nextRun: 3, bestWave: 4, canInvest: true);
+        var idle = Context(nextRun: 7, bestWave: 100, researched: true, idleLab: true, canResearch: true);
+        guidance.Configure(false, true);
+        Check(guidance.NextAction(first) == null, "tutorial switch suppresses fresh-run guidance");
+        Check(guidance.NextAction(investment) != null && guidance.NextAction(idle) != null,
+            "purchase suggestions remain independently enabled");
+        guidance.Configure(true, false);
+        Check(guidance.NextAction(first) != null, "tutorial guidance remains independently enabled");
+        Check(guidance.NextAction(investment) == null && guidance.NextAction(idle) == null,
+            "purchase opt-out suppresses spending suggestions");
+        guidance.Configure(true, true);
+        guidance.DismissContext("first-deployment");
+        Check(guidance.NextAction(first) == null, "dismissed context does not immediately reappear on refresh");
+        guidance.Configure(false, false); guidance.Configure(true, true);
+        Check(guidance.NextAction(first) == null, "toggling preferences does not replay a dismissed context");
+        Check(guidance.NextAction(investment) != null, "dismissal is scoped to the selected context");
+        var reloaded = new LastStandGuidance(); reloaded.Configure(false, false);
+        Check(reloaded.NextAction(first) == null && reloaded.NextAction(investment) == null,
+            "reapplied saved opt-outs suppress guidance after reload");
+    }
+
+    private static void ContextGuidanceIsReadOnlyAndFailClosed()
+    {
+        var guidance = new LastStandGuidance();
+        var context = Context(nextRun: 3, bestWave: 25);
+        var before = guidance.NextAction(context);
+        Check(before != null, "newly unlocked research has a stable context action");
+        for (int repeat = 0; repeat < 10; repeat++)
+        {
+            var next = guidance.NextAction(context);
+            Check(next.Id == before.Id && next.Body == before.Body && next.Label == before.Label,
+                "repeated projection is stable and does not consume or advance progress");
+        }
+        Check(guidance.Tutorial == "" && guidance.Suggestion == "", "context projection does not invent event receipts");
+        Check(context.NextRunId == 3 && context.BestTierOneWave == 25 && !context.HasResearchExperience,
+            "the immutable input remains unchanged");
+        Check(guidance.NextAction(null) == null, "missing context does not produce advice");
+        Check(guidance.NextAction(Context(saveReady: false)) == null, "save errors own the primary message");
+        Check(guidance.NextAction(Context(inBattle: true)) == null, "context hints do not interrupt active combat");
+        Check(guidance.NextAction(Context(nextRun: 0)) == null, "unloaded profile does not look like a new game");
+        Check(guidance.NextAction(Context(bestWave: -1)) == null, "invalid progress fails closed");
+    }
+
+    private static void HelpTopicsAreOrderedAndAvailable()
+    {
+        string[] ids = { "controls", "waves", "checkpoints", "tiers", "upgrades", "research", "saves" };
+        var topics = LastStandGuidance.HelpTopics;
+        Check(topics.Count == ids.Length, "seven focused Help topics");
+        for (int i = 0; i < ids.Length; i++)
+        {
+            var topic = topics[i];
+            Check(topic.Id == ids[i] && topic.Title.Length > 0 && topic.Body.Length > 0,
+                "stable topic ordering and nonempty player content");
+            Check(Object.ReferenceEquals(topic, LastStandGuidance.HelpTopic(ids[i])), "topic lookup retains the shared owner");
+            Check(topic.Destination == "" || topic.Destination == "settings" || topic.Destination == "milestones" ||
+                topic.Destination == "workshop" || topic.Destination == "research" || topic.Destination == "data",
+                "help links only address existing feature owners");
+            Check((topic.Destination.Length == 0) == (topic.ActionLabel.Length == 0), "links have meaningful labels");
+        }
+        Check(LastStandGuidance.HelpTopic(null) == null && LastStandGuidance.HelpTopic("unknown") == null,
+            "unknown topics do not silently select another page");
+        var guidance = new LastStandGuidance(); guidance.Configure(false, false);
+        Check(LastStandGuidance.HelpTopics.Count == 7, "explicit Help remains available with all tips disabled");
+        Check(Contains(LastStandGuidance.HelpTopic("research").Body, "real time") &&
+            Contains(LastStandGuidance.HelpTopic("research").Body, "Salvage"), "research explains its clock and currency");
+        string saves = LastStandGuidance.HelpTopic("saves").Body;
+        Check(Contains(saves, "backup") && Contains(saves, "Replace save") && Contains(saves, "garage") &&
+            Contains(saves, "preferences") && Contains(saves, "does not sync"), "backup help states the replacement and portability boundary");
+        Check(Contains(LastStandGuidance.HelpTopic("checkpoints").Body, "starts paused") &&
+            Contains(LastStandGuidance.HelpTopic("checkpoints").Body, "roll back together"), "checkpoint help retains recovery semantics");
+        var list = topics as System.Collections.Generic.IList<LastStandHelpTopic>;
+        Check(list != null && list.IsReadOnly, "callers cannot reorder the shared topic catalog");
+    }
+
     public static int Main(string[] args)
     {
         try
@@ -125,6 +242,10 @@ internal static class GuidanceChecks
                 case "explicit_help_survives_opt_out": ExplicitHelpSurvivesOptOut(); break;
                 case "navigation_requires_ready_noncatchup": NavigationRequiresReadyNoncatchup(); break;
                 case "navigation_confirmation_tracks_active_run": NavigationConfirmationTracksActiveRun(); break;
+                case "context_guidance_follows_confirmed_progress": ContextGuidanceFollowsConfirmedProgress(); break;
+                case "context_guidance_opt_outs_and_dismissal": ContextGuidanceOptOutsAndDismissal(); break;
+                case "context_guidance_is_read_only_and_fail_closed": ContextGuidanceIsReadOnlyAndFailClosed(); break;
+                case "help_topics_are_ordered_and_available": HelpTopicsAreOrderedAndAvailable(); break;
                 default: throw new Exception("Unknown case " + args[0]);
             }
             Console.WriteLine("PASS " + args[0]); return 0;

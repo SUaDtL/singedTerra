@@ -358,19 +358,11 @@ Deno.test('isValidColor: rejects non-hex, unbounded, and non-string input', () =
 // withCors — request preamble shared by all Edge Functions (coverage-001)
 // ---------------------------------------------------------------------------
 //
-// enforceRateLimit()'s allow/deny (429) and RPC-error fail-open branches are
-// NOT exercised here: they require a live/mocked `supabase.rpc('bump_rate_limit', ...)`
-// call reached only via the module-private getServiceClient() singleton, which
-// has no injection seam (no constructor param, no settable factory). Forcing a
-// mock would mean monkeypatching the imported `createClient` from the pinned
-// esm.sh specifier or reaching into module-internal state — both fragile and
-// disallowed by the "don't force a fragile mock" instruction. What IS covered
-// below is (a) the pure decision function `checkRateLimit` (already covered
-// above: inclusive boundary + over-limit denial) and (b) that when `rateLimit`
-// is set and the service-role env is missing, enforceRateLimit's call into
-// getServiceClient() correctly surfaces MissingEnvError through to withCors's
-// 500 mapping (proving the rate-limit gate is actually wired into the request
-// path, not skipped).
+// The limiter dependency below exercises the production request path without
+// changing the service-client singleton: exact bucket selection, 429 denial,
+// and fail-open handling of a thrown transport error. The pure checkRateLimit
+// tests above cover the inclusive boundary; the missing-env test also verifies
+// that default client resolution reaches withCors's 500 mapping.
 
 function jsonReq(body: unknown, method = 'POST'): Request {
   return new Request('https://example.test', {

@@ -123,3 +123,12 @@ run the governed commit gate, and use `Refs #134` rather than an auto-closing fo
 
 Open a ready PR referencing #134, resolve any PR-level coverage findings, push only reviewed fixes,
 and watch all available checks to green. Do not merge or deploy.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current direct coverage. Current source/oracles: `client/src/input/InputHandler.ts`, `client/src/input/InputHandler.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `e0a584250d91` (test(input): cover InputHandler behavior (#163)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

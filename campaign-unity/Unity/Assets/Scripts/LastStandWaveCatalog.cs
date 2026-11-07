@@ -16,6 +16,16 @@ namespace SingedTerra.LastStand
         public const int MaximumEnemyCount=20, MaximumCombatValue=1000000000;
         public static LastStandWaveDefinition ForWave(int tier,int wave)=>ForWave(LastStandTierCatalog.Get(tier),wave);
         public static LastStandWaveDefinition ForWave(LastStandTierDefinition tier,int wave)
+            =>ForWave(tier,wave,LastStandRunEdition.Current);
+        public static LastStandWaveDefinition ForWave(LastStandTierDefinition tier,int wave,LastStandRunEdition edition)
+        {
+            if(edition==null)throw new ArgumentNullException(nameof(edition));
+            return edition.IsLegacy?LegacyWave(tier,wave):CurrentWave(tier,wave);
+        }
+        // The new edition starts at the captured baseline. Subsequent authored
+        // mechanics extend CurrentWave without reinterpreting retained runs.
+        static LastStandWaveDefinition CurrentWave(LastStandTierDefinition tier,int wave)=>LegacyWave(tier,wave);
+        static LastStandWaveDefinition LegacyWave(LastStandTierDefinition tier,int wave)
         {
             if(tier==null)throw new ArgumentNullException(nameof(tier));
             if(wave<1)throw new ArgumentOutOfRangeException(nameof(wave));
@@ -30,7 +40,11 @@ namespace SingedTerra.LastStand
                 (int)Math.Min(MaximumCombatValue,damage*multiplier),wave<100?28:36);
         }
         public static int Lane(int wave,int ordinal)=> (int)(((long)wave*3+ordinal*5)%8);
+        public static int Lane(int wave,int ordinal,LastStandRunEdition edition)=>Lane(wave,ordinal);
         public static bool IsRanged(int wave,int ordinal)=>((long)wave+ordinal)%3==0;
+        public static bool IsRanged(int wave,int ordinal,LastStandRunEdition edition)=>IsRanged(wave,ordinal);
+        public static int Intermission(LastStandRunEdition edition)=>IntermissionTicks;
+        public static int TotalEnemiesThroughWave(int completedWave,LastStandRunEdition edition)=>TotalEnemiesThroughWave(completedWave);
         public static int TotalEnemiesThroughWave(int completedWave)
         {
             if(completedWave<0)throw new ArgumentOutOfRangeException(nameof(completedWave));

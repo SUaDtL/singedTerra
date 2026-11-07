@@ -120,3 +120,12 @@
 - [ ] **Step 7: Review, land, and deploy**
 
   Run one adversarial subagent over the exact package, correct every Critical/High/Medium/merge blocker, pass the codeArbiter commit and PR gates, wait for all exact-head hosted checks, merge only under the separately logged standing merge authority, and verify exact deployment provenance plus live smoke.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Later Armory and catalog owners. Current source/oracles: `client/src/ui/storeCatalog.ts`, `client/src/ui/HUD.arsenal.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `56cd67b22127` (feat(store): organize the armory catalog (#255)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

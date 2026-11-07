@@ -48,7 +48,7 @@ test('truncated or mismatched clipping evidence fails', () => {
   const s = sample(); s.layout.graphicsTruncated = true;
   assert.throws(s.run, /Complete graphics/);
   s.layout.graphicsTruncated = false; s.graphics[1].clip = { ...s.graphics[1].clip, height: 160 };
-  assert.throws(s.run, /actual shop viewport/);
+  assert.throws(s.run, /Control must use its actual scroll viewport/);
 });
 test('small targets and overlapping visible targets still fail', () => {
   const s = sample(); s.buy.height = 30; s.graphics[1].height = 30;
@@ -108,7 +108,7 @@ test('settings clipping requires matching real viewport, control and content evi
   const truncated = settingsSample(); truncated.layout.graphicsTruncated = true;
   assert.throws(truncated.run, /Complete graphics/);
   const wrongMask = settingsSample(); wrongMask.graphics[1].clip = { ...wrongMask.clip, height: 200 };
-  assert.throws(wrongMask.run, /actual settings viewport/);
+  assert.throws(wrongMask.run, /Control must use its actual scroll viewport/);
   const wrongParent = settingsSample(); wrongParent.graphics[1].path = 'Unrelated/SettingsBack';
   assert.throws(wrongParent.run, /Clipped control belongs to its actual scroll content/);
   const wrongRect = settingsSample(); wrongRect.graphics[1].width -= 10;

@@ -6,9 +6,12 @@ static class PeriodicBulkMeasurements
 {
     static void Measure(LastStandFitting fitting,int realSeconds,LastStandBulkQuantity quantity)
     {
-        var levels=new int[LastStandUpgradeCatalog.Tracks.Count];
-        foreach(var row in LastStandUpgradeCatalog.Tracks)levels[(int)row.Id]=Math.Min(500,row.PermanentCap);
-        var shop=new LastStandShopState(1,fitting,levels);
+        // This retained v3 calibration is a historical benchmark, not a claim
+        // about the newly authored campaign edition.
+        var rules=LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.RetainedEconomyVersion);
+        var levels=new int[rules.Tracks.Count];
+        foreach(var row in rules.Tracks)levels[(int)row.Id]=Math.Min(500,row.PermanentCap);
+        var shop=new LastStandShopState(1,fitting,levels,rules.Version);
         var model=EncounterModel.CreatePlayable(fitting,1,shop);
         var auxiliary=fitting==LastStandFitting.Launcher?LastStandUpgradeTrackId.LauncherAttack:
             fitting==LastStandFitting.Repair?LastStandUpgradeTrackId.FieldRepair:LastStandUpgradeTrackId.ScattergunAttack;
@@ -29,7 +32,7 @@ static class PeriodicBulkMeasurements
                 }
             }
             if(model.AwaitingWaveCommit) {
-                var reward=LastStandRewardCatalog.At(LastStandTierCatalog.Get(1),model.CompletedWave);long payout;int nextCarry;
+                var reward=LastStandRewardCatalog.At(shop.Edition.Tier(1),model.CompletedWave,shop.Edition);long payout;int nextCarry;
                 if(!LastStandResearchCatalog.TryMultiplyReward(reward.RepeatableSalvage,25,carry,out payout,out nextCarry))throw new Exception("Reward projection failed.");
                 rewards+=payout;carry=nextCarry;
                 if(model.Status==EncounterStatus.Running && model.CompletedWave<5000)model.ContinueAfterCheckpoint();

@@ -56,7 +56,8 @@ namespace SingedTerra.LastStand
         public double EffectiveSpeed => Paused ? 0 : LastPositiveSpeed;
         public bool ManualPaused { get; private set; }
         public bool MenuPaused { get; private set; }
-        public bool Paused => ManualPaused || MenuPaused;
+        public bool HostSuspended { get; private set; }
+        public bool Paused => ManualPaused || MenuPaused || HostSuspended;
         public bool Failed { get; private set; }
         public bool Stopped { get; private set; }
         public bool AtHorizon => admittedTicks >= horizonTicks;
@@ -88,6 +89,13 @@ namespace SingedTerra.LastStand
             if (!ValidTimestamp(timestamp) || timestamp < anchor) return Fail();
             double previous = anchor, elapsed = timestamp - anchor;
             anchor = timestamp;
+            if (HostSuspended)
+            {
+                // Native suspension retains admitted debt but excludes time
+                // spent suspended, including terminal settling timestamps.
+                admittedThroughTimestamp += elapsed;
+                LastStepTimestamp += elapsed;
+            }
             if (!Paused && !Stopped)
             {
                 double remaining = (horizonTicks - admittedTicks) * StepSeconds - PendingSeconds;
@@ -155,6 +163,13 @@ namespace SingedTerra.LastStand
         {
             if (!Observe(timestamp) || CatchingUp) return false;
             MenuPaused = paused;
+            return true;
+        }
+
+        public bool SetHostSuspended(double timestamp, bool suspended)
+        {
+            if (!Observe(timestamp)) return false;
+            HostSuspended = suspended;
             return true;
         }
 

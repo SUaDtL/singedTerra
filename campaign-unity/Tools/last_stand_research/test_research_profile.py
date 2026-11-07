@@ -4,15 +4,16 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 
 PROJECT = Path(__file__).resolve().parents[2]
 REPO = PROJECT.parent
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
+sys.path.insert(0, str(PROJECT / "Tools"))
+from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
 BASELINE = "a17e2ff5cbe5d0bc765f57a55edb4f9404000150"
 BASE_SOURCES = ["MechanicsShopModel.cs", "LastStandUpgradeCatalog.cs", "LastStandTierCatalog.cs",
                 "LastStandProgression.cs", "LastStandStore.cs", "LastStandRunClock.cs", "LastStandSpeedPolicy.cs",
@@ -57,15 +58,14 @@ class ResearchProfileTests(unittest.TestCase):
                 (legacy / name).write_bytes(result.stdout)
             legacy_exe = folder / "LegacyV4.exe"
             cls.compile(legacy_exe, [legacy / name for name in BASE_SOURCES], "ResearchLegacyV4Fixture.cs")
-            result = subprocess.run([str(MONO), str(legacy_exe), str(cls.legacy_raw), str(cls.legacy_snapshot)],
-                                    capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+            result = run_csharp(legacy_exe, [cls.legacy_raw, cls.legacy_snapshot], timeout_seconds=60)
             if result.returncode:
                 raise AssertionError("Old owner failed to produce valid checkpoint:\n" + result.stdout + result.stderr)
             for name, digest in manifest["files_sha256"].items():
                 if hashlib.sha256((folder / name).read_bytes()).hexdigest() != digest:
                     raise AssertionError("Regenerated old-owner fixture changed")
         cls.exe = folder / "ResearchProfileChecks.exe"
-        cls.compile(cls.exe, [SCRIPTS / name for name in BASE_SOURCES + NEW_SOURCES], "ResearchProfileChecks.cs")
+        cls.compile(cls.exe, complete_sources(SCRIPTS, [SCRIPTS / name for name in BASE_SOURCES + NEW_SOURCES]), "ResearchProfileChecks.cs")
         cls.evidence = PROJECT / "Evidence/research-engine/profile"
         cls.evidence.mkdir(parents=True, exist_ok=True)
         (cls.evidence / "legacy-v4.json").write_bytes(cls.legacy_raw.read_bytes())
@@ -73,18 +73,15 @@ class ResearchProfileTests(unittest.TestCase):
 
     @classmethod
     def compile(cls, target, sources, harness):
-        args = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{target}"]
-        result = subprocess.run(args + [str(s) for s in sources] + [str(Path(__file__).with_name(harness))],
-                                capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        if result.returncode:
-            raise AssertionError("Compilation failed, not behavioral RED:\n" + result.stdout + result.stderr)
+        # No closure expansion here: the legacy regeneration caller supplies
+        # its exact historical sources, without dependencies from today's tree.
+        compile_csharp(target, list(sources) + [Path(__file__).with_name(harness)])
 
     @classmethod
     def tearDownClass(cls): cls.output.cleanup()
 
     def check(self, case):
-        command = [str(MONO), str(self.exe), case, str(self.legacy_raw), str(self.legacy_snapshot)]
-        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8-sig", timeout=90)
+        result = run_csharp(self.exe, [case, self.legacy_raw, self.legacy_snapshot], timeout_seconds=90)
         record = {"case": case, "legacy_source_commit": BASELINE, "exit_code": result.returncode,
                   "stdout": result.stdout, "stderr": result.stderr}
         (self.evidence / (case + (".green.json" if result.returncode == 0 else ".red.json"))).write_text(json.dumps(record, indent=2))

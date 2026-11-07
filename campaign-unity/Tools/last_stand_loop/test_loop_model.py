@@ -3,11 +3,11 @@
 Run: C:/Python314/python.exe -m unittest discover -s campaign-unity/Tools/last_stand_loop -p test_loop_model.py -v
 """
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
 from last_stand_source_closure import complete_sources
 
 sys.dont_write_bytecode = True
@@ -21,9 +21,6 @@ if cache_dir.is_dir():
         pass
 
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 MODEL = PROJECT / "Unity/Assets/Scripts/LastStandProgression.cs"
 STORE = PROJECT / "Unity/Assets/Scripts/LastStandStore.cs"
 CATALOG = PROJECT / "Unity/Assets/Scripts/LastStandUpgradeCatalog.cs"
@@ -40,11 +37,7 @@ class LastStandModelTests(unittest.TestCase):
     def setUpClass(cls):
         cls.output = tempfile.TemporaryDirectory(prefix="st-loop-model-")
         cls.executable = Path(cls.output.name) / "LastStandModelTests.exe"
-        build = subprocess.run(
-            [str(MONO), str(CSC), "-nologo", f"-out:{cls.executable}",
-             *map(str, complete_sources(MODEL.parent, [MODEL, STORE, CATALOG, TRACK, DRIVER]))],
-            capture_output=True, text=True, encoding="utf-8-sig", timeout=60,
-        )
+        build = compile_csharp(cls.executable, complete_sources(MODEL.parent, [MODEL, STORE, CATALOG, TRACK, DRIVER]), warnings_as_errors=False, timeout_seconds=60)
         if build.returncode:
             cls.output.cleanup()
             raise AssertionError(f"Pinned C# compilation failed:\n{build.stdout}{build.stderr}")
@@ -54,8 +47,7 @@ class LastStandModelTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        run = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                             text=True, encoding="utf-8-sig", timeout=30)
+        run = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         return run.stdout.strip()
 

@@ -58,3 +58,12 @@
 - [ ] Leave #47, #69, #104, #110, #111, #125, and #129 open and unchanged.
 - [ ] Re-query the open list and verify 12 retained issues, zero accidental closures, and exact title/comment mutations.
 - [ ] Continue immediately to the next highest-value sprint cell.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Historical external inventory superseded. Current source/oracles: `.codearbiter/reports/2026-08-01-open-issue-hygiene.md`, `.codearbiter/open-tasks.md`.
+
+The latest change to this historical plan reachable from `origin/main` is `f8137c71e22b` (docs: audit open issue relevance (#235)). The 16-issue starting and 12-issue expected lists are historical, not the current backlog. The parent audit reports four current open issues (#47, #67, #69, #110); #69/#110 still contain owner decisions. This note performs no GitHub mutation and does not assert that each old external action occurred.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

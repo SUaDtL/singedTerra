@@ -20,7 +20,7 @@ function fixture() {
   }
   for (const name of ['Unity/Assets/model.cs', 'Unity/ProjectSettings/settings.asset',
     'Unity/Packages/manifest.json', 'Unity/Packages/com.unity.render-pipelines.universal/package.json',
-    'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader', 'Tools/build_web.py','Tools/unity_shader_log.py','Tools/make_web_entry.py','Tools/web-index-template.html']) {
+    'Unity/Packages/com.unity.render-pipelines.universal/Shader.shader', 'Tools/build_web.py','Tools/unity_shader_log.py','Tools/unity_build_resources.py','Tools/make_web_entry.py','Tools/web-index-template.html']) {
     const path = join(repo, 'campaign-unity', name); mkdirSync(join(path, '..'), { recursive: true });
     writeFileSync(path, name.endsWith('package.json') ? '{"version":"17.3.0"}' : 'source\n');
   }
@@ -34,10 +34,10 @@ function fixture() {
   }
   inventory(join(repo,'campaign-unity'));
   const ordered = Object.fromEntries(Object.entries(sourceFiles).sort(([a],[b])=>a<b?-1:1));
-  const closure = {roots:['Unity/Assets','Unity/ProjectSettings','Unity/Packages'],explicitFiles:['Tools/build_web.py','Tools/unity_shader_log.py'],files:Object.fromEntries(Object.entries(ordered).filter(([name])=>!['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name))),sha256:sha(JSON.stringify(ordered))};
+  const closure = {roots:['Unity/Assets','Unity/ProjectSettings','Unity/Packages'],explicitFiles:['Tools/build_web.py','Tools/unity_shader_log.py','Tools/unity_build_resources.py'],files:Object.fromEntries(Object.entries(ordered).filter(([name])=>!['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name))),sha256:sha(JSON.stringify(ordered))};
   closure.sha256=sha(JSON.stringify(closure.files));
   const wrapperFiles=Object.fromEntries(Object.entries(ordered).filter(([name])=>['Tools/make_web_entry.py','Tools/web-index-template.html'].includes(name)));
-  const toolchain={editorVersion:'6000.3.24f1',urpVersion:'17.3.0',files:{'Unity.exe':{mode:'raw',sha256:sha('editor')}}};
+  const toolchain={editorVersion:'6000.3.27f2',urpVersion:'17.3.0',files:{'Unity.exe':{mode:'raw',sha256:sha('editor')}}};
   toolchain.sha256=sha(JSON.stringify(toolchain.files));
   const receipt={schema:'singedterra-last-stand-export/v2',status:'pass',complete:true,build:'Web-fixture',
     scene:'Assets/Scenes/LastStandPrototype.unity',sourceBeforeSha256:closure.sha256,sourceAfterSha256:closure.sha256,

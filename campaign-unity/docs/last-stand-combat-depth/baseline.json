@@ -1,0 +1,469 @@
+{
+  "schema": "singedterra-combat-depth-baseline/v1",
+  "observedDate": "2026-10-28",
+  "sourceCommit": "c6b32cdef661743a455f5373bd72144c437b2209",
+  "qualification": "foundation hosted browser integration base qualified at1893bbd9; native device and endurance qualification remain open",
+  "frozenBaselineTests": {
+    "passed": 2,
+    "failed": 0,
+    "seconds": 4.058,
+    "log": "campaign-unity/Evidence/combat-depth-planning-20261028/frozen-baseline.log"
+  },
+  "measurements": [
+    {
+      "file": "upgrade-economy-baseline.json",
+      "sha256": "c3d222b9ecb7e8df0ee1700393de53dcbb2da9f8d291457a4110e3988e4e2cc2",
+      "rows": 129,
+      "sources": 17,
+      "measurementsUnchanged": true
+    },
+    {
+      "file": "periodic-bulk-baseline.json",
+      "sha256": "85fe426ea3942039ccfd7f7641c5f3778813b3fd15ffa08cfbce5e79d22a7a9c",
+      "rows": 15,
+      "sources": 16,
+      "measurementsUnchanged": true
+    }
+  ],
+  "limits": [
+    "Production-model projections only; existing mature fixture rows are gifted profiles.",
+    "The earned trajectory rows begin from zero budgets but do not model a complete research funding calendar.",
+    "No actual device, renderer performance, physical audio or real-duration endurance proof."
+  ],
+  "architectureTests": {
+    "passed": 38,
+    "failed": 0,
+    "seconds": 18.595,
+    "log": "campaign-unity/Evidence/combat-depth-planning-20261028/architecture-baseline.log"
+  },
+  "additionalModelChecks20261028": {
+    "sourceCommit": "c9c921255b8464afaa8922b8133c83d548ee601e",
+    "checks": [
+      {
+        "suite": "test_wave_model.py",
+        "passed": 10,
+        "seconds": 8.257,
+        "log": "campaign-unity/Evidence/combat-depth-planning-20261028/wave-model-baseline.log",
+        "logSha256": "07cea50847764551e9a0564e5e9d4ea5f39df6abe7439710b9bad5f1f835335c",
+        "planRevision": 13
+      },
+      {
+        "suite": "test_upgrade_balance.py",
+        "passed": 3,
+        "seconds": 51.55,
+        "log": "campaign-unity/Evidence/combat-depth-planning-20261028/upgrade-balance-baseline.log",
+        "logSha256": "54e85a2260783a02ccd6acfead9ec227e386f8270b09a7c4448ccde0f536a81a",
+        "planRevision": 14
+      }
+    ],
+    "foundationQualified": false
+  },
+  "browser5xBaseline": {
+    "status": "smoke-pass",
+    "enduranceQualified": false,
+    "result": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke-observer-fixed/result.json",
+    "resultSha256": "1e7401bc00d31bba70c4a53192a73c1f14a0dab934c5e6067fb470e70afb2d68",
+    "samplesSha256": "48fbb92d483a75b83b6c74ae1aa8ab01d4770ac3f25e1b76a175f5b7a01b08e2",
+    "driverInputsRawSha256": {
+      "scripts/last-stand-wave-endurance.mjs": "af032d6c57e63e58486ea4755f8cc094731244c4e6b6b69b5e56f48b5b99e252",
+      "scripts/last-stand-wave-milestones.mjs": "170e99058c2a6405aa4fe672d8442aa2d8685f219146c5bf0cc973226ee8f0d6",
+      "e2e/helpers/lastStandJourney.mjs": "938a270c5961177ea70ce6532b03156d183d3a540dbcdfe32d70f29661535ede",
+      "e2e/helpers/lastStandTierJourney.mjs": "9de9a1691ad3679b98a7ee77e09584ee335c933ef58e12dfcfc022e6e87c6ad4",
+      "e2e/helpers/lastStandWaveJourney.mjs": "49f515be4420277301e1fcb4e6a8e8d24d6ace5abbffbb4e62ea49958d20cc0d",
+      "e2e/helpers/lastStandWaveOracle.mjs": "ac5ffb8b1d668a3fe72fd1245f0929d67e2ab9a7e83380e0c839a30ff16baaba",
+      "scripts/assets/verify-last-stand-source.mjs": "0ad31dc46b351b1364a57a7fb0cac41b7b68f689cd5669f768845bb577b229a1",
+      "scripts/assets/verify-last-stand.mjs": "7f993461c53f29318cd9a8bff8cd3e0c1d37f2b20dd7f232b5199b5a71b8584d"
+    },
+    "playerSourceCommit": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+    "build": "Web-20261028T205905Z-90afa9",
+    "activeMs": 180767.4932,
+    "observedSimulationMs": 903800,
+    "purchases": [
+      {
+        "atActiveMs": 39492.77129999999,
+        "key": "cannonAttack",
+        "quantity": 29,
+        "cost": 2619,
+        "runId": 2,
+        "tick": 4577
+      }
+    ],
+    "framesBetweenSummaries": {
+      "count": 2462,
+      "totalMs": 181726.1,
+      "meanMs": 73.81238830219334,
+      "histogramDelta": [
+        0,
+        0,
+        0,
+        2458,
+        4,
+        0,
+        0
+      ]
+    },
+    "rendererJavaScriptHeapUsedBytes": {
+      "first": 10335796,
+      "last": 10748308,
+      "sampledMaximum": 11165320
+    },
+    "callback": {
+      "count": 5903,
+      "maximumSteps": 11,
+      "maximumElapsedSeconds": 0.1269999999999989,
+      "maximumPendingSeconds": 0.5755000000000392
+    },
+    "storageWrites": {
+      "count": 96,
+      "successes": 96,
+      "errors": 0,
+      "totalMs": 1.6000000834465027,
+      "maximumMs": 0.10000002384185791
+    },
+    "storageReadbacks": {
+      "count": 96,
+      "errors": 0,
+      "mismatches": 0,
+      "totalMs": 2.5000001192092896,
+      "maximumMs": 0.19999998807907104,
+      "unconfirmed": 0
+    },
+    "limits": [
+      "One seeded, headless Chromium document on Windows; user profile untouched.",
+      "Frames cover the first-to-final summary interval; active ledger excludes final reporting and cleanup.",
+      "Frame histogram p95 upper bound100ms;73.812ms mean is a diagnostic headless baseline, not target-device performance acceptance.",
+      "Renderer JS heap excludes WebAssembly linear memory. Callback elapsed is scheduling time, not CPU step cost.",
+      "Wallet boundary review corrections follow this run; its exact driver inputs remain historical.",
+      "No ten-hour, hardware-audio, thermal or physical-device qualification."
+    ],
+    "finalSummaryState": {
+      "phase": "battle",
+      "saveState": "ready",
+      "runId": 2,
+      "activeTier": 1,
+      "wave": 83,
+      "completedWave": 82,
+      "checkpointWave": 82,
+      "hasCheckpoint": true,
+      "checkpointBlocked": false,
+      "tick": 18806,
+      "hull": 128652,
+      "kills": 627,
+      "wallet": 1879624,
+      "paused": false,
+      "speed": 5,
+      "fittingId": "launcher"
+    },
+    "latestObservedState": {
+      "phase": "battle",
+      "saveState": "ready",
+      "runId": 2,
+      "activeTier": 1,
+      "wave": 84,
+      "completedWave": 83,
+      "checkpointWave": 83,
+      "hasCheckpoint": true,
+      "checkpointBlocked": false,
+      "tick": 18924,
+      "hull": 128652,
+      "kills": 631,
+      "wallet": 1879625,
+      "paused": false,
+      "speed": 5,
+      "fittingId": "launcher"
+    },
+    "finalSummaryElapsedMs": 182017.6518,
+    "realObservationMs": 183187.6148,
+    "callbackWindow": "Cumulative from page telemetry startup through final cleanup; final result count5903 differs from final summary count5867.",
+    "storageWindow": "Cumulative page-start to final summary:96writes/readbacks. First summary already contains5; first-to-final summary delta91. These are passive storage call/readback counts, not a claim of96wave commits during the active ledger.",
+    "storageIntervalDelta": {
+      "writes": 91,
+      "readbacks": 91
+    },
+    "ledgerSamples": 176,
+    "summaryRecords": 5
+  },
+  "candidateComparisonBudgets": {
+    "scope": "Before/after matched180s headless runs, same host,1366x768,5x,declared mature Launcher fixture and same rendered purchase cadence; retain load separately. These provisional regression budgets do not certify a release target.",
+    "frameMeanMsMaximum": 85,
+    "frameP95HistogramUpperBoundMsMaximum": 100,
+    "rendererJavaScriptHeapUsedBytesMaximum": 14680064,
+    "rendererJavaScriptHeapGrowthBytesMaximum": 2097152,
+    "stateBound": {
+      "maximumEnemies": 20,
+      "modelCapacity": 32,
+      "documents": 1
+    },
+    "clockAndSave": "Existing observer admission remains unchanged: exact5000ms gap bound, no acceleration/stall/foreign document, ready saves and matching confirmed readbacks.",
+    "missing": [
+      "CPU cost per simulation step",
+      "WebAssembly/native total memory",
+      "Windows/Android device frame time and thermal/endurance budgets"
+    ],
+    "policy": "An exceeded diagnostic budget requires investigation or a matched repeat with documented host variance, not silent relaxation. Qualify actual target budgets on recorded devices before release."
+  },
+  "visualBaseline": {
+    "playerSourceCommit": "9ec44f0546e1082a90ec5b566addcf5b296e8af3",
+    "build": "Web-20261028T205905Z-90afa9",
+    "images": [
+      {
+        "file": "baseline-combat.png",
+        "source": "campaign-unity/Evidence/combat-depth-planning-20261028/foundation-5x-smoke-observer-fixed/sample-0004.png",
+        "sha256": "f040561bb9fbb4571e8581eb65bc3263a82e986aced603dd5d9b23ae47d603ec",
+        "description": "1366x768 actual5x combat final summary; seeded mature profile"
+      },
+      {
+        "file": "baseline-shop-portrait.png",
+        "source": "campaign-unity/Evidence/combat-depth-planning-20261028/first-hit-research-browser/second-tab-bulk-portrait.png",
+        "sha256": "6636c795e433ff81d234cf8680c70194ac90e96db572fe8e7807a97e76adccf8",
+        "description": "390x844 actual permanent shop after rendered bulk purchase"
+      }
+    ],
+    "knownFinding": "Confirmed390px portrait level/cap clipping: LastStandShopHud supplies full text, but LastStandHudLayout.ShopCard reserves94x26px and shared text wraps then truncates. T-PRESENT includes actual-font regression and shared-layout repair; no catalog or global font rewrite."
+  },
+  "integrationBase": {
+    "schema": "last-stand-foundation-ci-observation/v1",
+    "observedAt": "2026-10-28T22:23:48.738Z",
+    "repository": "SUaDtL/singedTerra",
+    "pr": 546,
+    "headSha": "1893bbd92135555eeb021656b38f532eb9a0cbcb",
+    "baseSha": "07dc13c0ea0b31af973b24402ea9bdedfb8cc815",
+    "state": "open",
+    "draft": true,
+    "runs": [
+      {
+        "id": 40775828731,
+        "name": "CodeQL",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1339,
+        "jobs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828731/jobs",
+        "logs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828731/logs",
+        "workflow_id": 299824705
+      },
+      {
+        "id": 40775828783,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 1320,
+        "jobs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828783/jobs",
+        "logs_url": "https://api.github.com/repos/SUaDtL/singedTerra/actions/runs/40775828783/logs",
+        "workflow_id": 299824706
+      }
+    ],
+    "jobs": [
+      {
+        "id": 123124745259,
+        "name": "classify changes and verify CI policy",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124961715,
+        "name": "engine, database, client and build",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124961760,
+        "name": "Edge runtime tests",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962105,
+        "name": "browser (core-3)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962114,
+        "name": "browser (last-stand-tier)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962144,
+        "name": "browser (last-stand-5)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962163,
+        "name": "browser (last-stand-3)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962165,
+        "name": "browser (core-2)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962173,
+        "name": "browser (last-stand-6)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962189,
+        "name": "browser (last-stand-2)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962199,
+        "name": "browser (last-stand-10)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962216,
+        "name": "browser (last-stand-7)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962259,
+        "name": "browser (last-stand-9)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962270,
+        "name": "browser (core-1)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962292,
+        "name": "browser (core-4)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962294,
+        "name": "browser (last-stand-12)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962318,
+        "name": "browser (last-stand-4)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962333,
+        "name": "browser (last-stand-8)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962348,
+        "name": "browser (last-stand-1)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962352,
+        "name": "browser (last-stand-11)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123124962366,
+        "name": "browser (product)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123125267525,
+        "name": "edge function tests (deno)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123128049923,
+        "name": "typecheck \u00c2\u00b7 harnesses \u00c2\u00b7 build",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 123136622229,
+        "name": "e2e \u00c2\u00b7 rendering guardrails",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "aggregate": {
+      "id": 123136622229,
+      "name": "e2e \u00c2\u00b7 rendering guardrails",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40775828783,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Validate required result",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Download all Campaigns viewport observations",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Verify complete source-bound Campaigns matrix",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    },
+    "limits": [
+      "Caller-recorded connector readback; not a merge, release, deployment, physical-device or endurance receipt."
+    ]
+  }
+}

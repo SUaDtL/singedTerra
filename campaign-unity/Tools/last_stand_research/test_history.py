@@ -3,22 +3,20 @@
 This proves checkpoint arithmetic and bounded summaries, not rendered UI or storage integration.
 """
 from pathlib import Path
-import subprocess
+import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_test_runtime import compile_csharp, run_csharp
+
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 SOURCE = PROJECT / "Unity/Assets/Scripts/LastStandRunHistory.cs"
 CHECKS = Path(__file__).with_name("HistoryChecks.cs")
 
 
 def compile_checks(executable, source=SOURCE):
-    return subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+",
-                           f"-out:{executable}", str(source), str(CHECKS)],
-                          capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+    return compile_csharp(executable, [source, CHECKS], warnings_as_errors=True, timeout_seconds=60)
 
 
 class HistoryTests(unittest.TestCase):
@@ -36,8 +34,7 @@ class HistoryTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
@@ -58,7 +55,6 @@ class HistoryTests(unittest.TestCase):
             executable = Path(folder) / "HistoryFault.exe"
             result = compile_checks(executable, source)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            result = subprocess.run([str(MONO), str(executable), "terminal_time"], capture_output=True,
-                                    text=True, encoding="utf-8-sig", timeout=30)
+            result = run_csharp(executable, ['terminal_time'], timeout_seconds=30)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("milestone excluded", result.stderr)

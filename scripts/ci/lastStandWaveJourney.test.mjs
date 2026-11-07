@@ -1,12 +1,25 @@
+import {findLastStandSettingsViewport} from '../../e2e/helpers/lastStandControlReveal.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
 import {tierJourneyControlGeometry} from '../../e2e/helpers/lastStandTierJourney.mjs';
-import { validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
+import { validateWaveMilestoneText, validateWaveResume, validateWaveCommit, validateWaveAbandon } from '../../e2e/helpers/lastStandWaveJourney.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
 
 // Invented observations exercise the acceptance reader, never qualify a player.
 const clone=value=>structuredClone(value);
+test('wave milestone assertions admit current displayed labels and reject missing disclosures',()=>{
+  const validate=(_assert,text)=>validateWaveMilestoneText(text);
+  // Relevant text transcribed from PR547 job123226012352's rendered-menu failure.
+  // This tests reader admission; it is not a replacement browser qualification.
+  const text='Every completed wave pays repeatable Salvage. Bonuses below are earned once per tier. '+
+    'Base rewards exclude Salvage Recovery research. Unlocking a tier never ends or moves your run.\n\n'+
+    'WAVE 100 / UPCOMING\nOne-time bonus: +50 Salvage / Unlock Auxiliary Scattergun\nBase wave reward: +2 Salvage\n\n'+
+    'WAVE 300 / UPCOMING\nOne-time bonus: +150 Salvage / Unlock Tier 2\nBase wave reward: +4 Salvage\n';
+  assert.doesNotThrow(()=>validate(assert,text));
+  for(const label of ['UPCOMING','One-time bonus','repeatable Salvage','Base wave reward',
+    'WAVE 100 /','Unlock Auxiliary Scattergun','WAVE 300 /','Unlock Tier 2'])
+    assert.throws(()=>validate(assert,text.replaceAll(label,'missing')),label);
+});
 function fixture(){
   const levels={cannonAttack:0,launcherAttack:0,hullCapacity:0,armor:0,cannonCycle:0,fieldRepair:0,scattergunAttack:0,scrapYield:0};
   const encounter={rulesVersion:'last-stand-waves-v1',tier:1,fitting:1,wave:1,completedWave:1,tick:201,hull:114,kills:6,committedCannonDamage:20};
@@ -86,14 +99,8 @@ test('clipped control geometry refuses unrelated or ambiguous surfaces, changed 
   }
 });
 
-for(const [script,count] of [['last-stand-controls.mjs',1],['last-stand-controls-touch.mjs',2]])
-test(script+' locates the actual chrome viewport for every scroll input path',()=>{
-  const source=readFileSync(new URL('../'+script,import.meta.url),'utf8');
-  const predicates=[...source.matchAll(/raw\(\)\.graphics\.find\((g=>[^\n]+?)\);/g)].map(match=>match[1]).filter(predicate=>predicate.includes('/SettingsViewport'));
-  assert.equal(predicates.length,count,'Exercise every actual mouse/touch viewport reader');
-  for(const predicate of predicates){
-    // Execute the maintained selector in isolation; no browser or synthetic player receipt.
-    const select=new Function('graphics','return graphics.find('+predicate+');');
+test('shared mouse and touch reader locates the actual chrome viewport',()=>{
+    const select=findLastStandSettingsViewport;
     for(const kind of ['Image','LastStandConsoleSurface']){
       const actual={active:true,path:'SettingsModal/SettingsPanel/SettingsViewport',kind};
       const distractors=[{...actual,active:false},{...actual,path:actual.path+'/Child'},
@@ -101,5 +108,4 @@ test(script+' locates the actual chrome viewport for every scroll input path',()
       assert.equal(select(distractors),undefined,'Decorations and inactive/descendant nodes are not the scroll viewport');
       assert.equal(select([...distractors,actual]),actual,'Mouse and touch locate the exact active chrome surface');
     }
-  }
 });

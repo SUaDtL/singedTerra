@@ -5,15 +5,15 @@ it never changes the production source or launches the Unity editor.
 """
 from pathlib import Path
 import os
-import subprocess
+import sys
 import tempfile
 import unittest
 
 PROJECT = Path(__file__).resolve().parents[2]
 SCRIPTS = PROJECT / "Unity/Assets/Scripts"
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
+sys.path.insert(0, str(PROJECT / "Tools"))
+from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
 
 
 class ResearchEngineTests(unittest.TestCase):
@@ -41,18 +41,18 @@ class ResearchEngineTests(unittest.TestCase):
             replacement = Path(cls.output.name) / name
             replacement.write_text(source.replace(before, after), encoding="utf-8")
             sources[sources.index(original)] = replacement
-        args = [str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.exe}"]
-        result = subprocess.run(args + [str(p) for p in sources] + [str(Path(__file__).with_name("ResearchEngineChecks.cs"))], capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
-        if result.returncode:
+        try:
+            compile_csharp(cls.exe, complete_sources(SCRIPTS, sources) + [Path(__file__).with_name("ResearchEngineChecks.cs")])
+        except Exception:
             cls.output.cleanup()
-            raise AssertionError("Compilation failed, not behavioral RED:\n" + result.stdout + result.stderr)
+            raise
 
     @classmethod
     def tearDownClass(cls):
         cls.output.cleanup()
 
     def check(self, case):
-        result = subprocess.run([str(MONO), str(self.exe), case], capture_output=True, text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.exe, [case], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + case)
 

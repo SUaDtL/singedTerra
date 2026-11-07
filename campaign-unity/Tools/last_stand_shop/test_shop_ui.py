@@ -17,7 +17,7 @@ import uuid
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = ROOT / "campaign-unity/Unity"
-UNITY = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1\Editor\Unity.exe")
+UNITY = Path(r"C:\Program Files\Unity 6000.3.27f2\Editor\Unity.exe")
 
 
 def source_hashes():
@@ -71,7 +71,7 @@ class ShopUiTests(unittest.TestCase):
         log = evidence / "unity-editor.log"
         argv = [str(UNITY), "-batchmode", "-nographics", "-quit", "-projectPath", str(PROJECT),
                 "-executeMethod", "LastStandShopChecks." + method, "-logFile", str(log)]
-        if method in ("RunInput", "RunRenderFollowup", "RunCompactScroll", "RunCompactReading"):
+        if method in ("RunInput", "RunRenderFollowup", "RunCompactScroll", "RunCompactReading", "RunFirstSessionClarity"):
             argv.remove("-nographics")  # Real rendered raycast/mask input fixture.
         startup = None
         if os.name == "nt":
@@ -150,6 +150,18 @@ class ShopUiTests(unittest.TestCase):
 
     def test_settle_pause_focus_close_and_stale_input(self):
         self.settle_case()
+
+    def test_permanent_notification_reentry_is_one_purchase(self):
+        code, log = self.run_checks("RunPermanentNotificationReentry")
+        self.assertEqual(code, 0, log[-10000:])
+        self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log)
+
+    def test_research_heartbeat_refreshes_displayed_shop_revision(self):
+        code, log = self.run_checks("RunResearchHeartbeat")
+        self.assertEqual(code, 0, log[-10000:])
+        for name in (self._testMethodName, "test_research_heartbeat_failed_save_disables_displayed_purchase",
+                     "test_research_heartbeat_preserves_run_shop"):
+            self.assertIn("ST_LS_SHOP_PASS " + name, log)
 
     def test_battle_shop_tabs_live_cards_and_refusal_feedback(self):
         self.exit_code, self.log = self.run_checks("RunBattleShop")
@@ -332,6 +344,13 @@ console.log(JSON.stringify({report:reportPath,reportSha256:sha(reportPath),build
         self.assertIn("ST_LS_SHOP_PASS " + self._testMethodName, log, log[-14000:])
         self.assertNotIn("ST_LS_SHOP_FAIL ", log)
         self.assertEqual(code, 0, log[-10000:])
+
+    def test_shop_header_level_capacity(self):
+        code, log = self.run_checks("RunShopHeader")
+        detail = "\n".join(line for line in log.splitlines() if line.startswith("ST_LS_SHOP_"))[-10000:]
+        self.assertTrue("ST_LS_SHOP_PASS " + self._testMethodName in log, detail)
+        self.assertFalse("ST_LS_SHOP_FAIL " in log, detail)
+        self.assertEqual(code, 0, detail)
 
     def test_wave_information_surface(self):
         code, log = self.run_checks("RunResearchSprint")

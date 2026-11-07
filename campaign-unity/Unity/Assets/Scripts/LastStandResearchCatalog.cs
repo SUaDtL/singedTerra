@@ -5,90 +5,82 @@ namespace SingedTerra.LastStand
 {
     public enum LastStandResearchTrackId { GameSpeed, SalvageRecovery, ResearchSpeed, ScrapLogistics }
 
-    // Original calibration seeds. Costs compete with Workshop spending from the
-    // profile's single Salvage balance; this catalog does not own a wallet.
     public static class LastStandResearchCatalog
     {
-        public const string Version = "research-v1";
-        public const int TrackCount = 4, SlotCount = 2, MultiplierDenominator = 100;
-        public static IReadOnlyList<LastStandResearchDefinition> Tracks { get; } = Array.AsReadOnly(new[]
+        public const string LegacyVersion = "research-v1";
+        public const string Version = LegacyVersion;
+        public const int SlotCount = 2, MultiplierDenominator = 100;
+        public static LastStandResearchDefinitions Definitions { get; } = new LastStandResearchDefinitions(Version,new[]
         {
-            new LastStandResearchDefinition(LastStandResearchTrackId.GameSpeed, "gameSpeed", "Game Speed", 8),
-            new LastStandResearchDefinition(LastStandResearchTrackId.SalvageRecovery, "salvageRecovery", "Salvage Recovery", 100),
-            new LastStandResearchDefinition(LastStandResearchTrackId.ResearchSpeed, "researchSpeed", "Research Speed", 100),
-            new LastStandResearchDefinition(LastStandResearchTrackId.ScrapLogistics, "scrapLogistics", "Scrap Logistics", 100)
+            new LastStandResearchDefinition(LastStandResearchTrackId.GameSpeed,"gameSpeed","Game Speed",8,0,
+                LastStandResearchCurve.Table(20,60,180,500,1500,4500,12000,30000),
+                LastStandResearchCurve.Table(10,60,360,1440,4320,10080,14400,20160),LastStandResearchEffect.GameSpeed,50,true),
+            new LastStandResearchDefinition(LastStandResearchTrackId.SalvageRecovery,"salvageRecovery","Salvage Recovery",100,1,
+                LastStandResearchCurve.Polynomial(25,2,10),LastStandResearchCurve.Polynomial(15,3,20),LastStandResearchEffect.Salvage,2,true),
+            new LastStandResearchDefinition(LastStandResearchTrackId.ResearchSpeed,"researchSpeed","Research Speed",100,2,
+                LastStandResearchCurve.Polynomial(15,2,12),LastStandResearchCurve.Polynomial(20,4,15),LastStandResearchEffect.ResearchSpeed,2,false),
+            new LastStandResearchDefinition(LastStandResearchTrackId.ScrapLogistics,"scrapLogistics","Scrap Logistics",100,3,
+                LastStandResearchCurve.Polynomial(20,1,20),LastStandResearchCurve.Polynomial(10,2,25),LastStandResearchEffect.Scrap,2,true)
         });
-        public static bool IsTrack(LastStandResearchTrackId id) => (int)id >= 0 && (int)id < TrackCount;
-        public static LastStandResearchDefinition Get(LastStandResearchTrackId id)
+        public static int TrackCount => Definitions.Count;
+        public static IReadOnlyList<LastStandResearchDefinition> Tracks => Definitions.Tracks;
+        public static bool IsTrack(LastStandResearchTrackId id)=>Definitions.Contains(id);
+        public static LastStandResearchDefinition Get(LastStandResearchTrackId id)=>Definitions.Get(id);
+        public static bool TryGet(string key,out LastStandResearchDefinition definition)=>Definitions.TryGet(key,out definition);
+        public static int UnlockedSlots(int bestTierOneWave)=>bestTierOneWave>=100?2:bestTierOneWave>=25?1:0;
+        public static bool TryMultiplyReward(long amount,int rank,int priorCarry,out long payout,out int nextCarry)
         {
-            if (!IsTrack(id)) throw new ArgumentOutOfRangeException(nameof(id));
-            return Tracks[(int)id];
-        }
-        public static bool TryGet(string key, out LastStandResearchDefinition definition)
-        {
-            foreach (var candidate in Tracks)
-                if (String.Equals(candidate.Key, key, StringComparison.Ordinal)) { definition = candidate; return true; }
-            definition = null; return false;
-        }
-        public static int UnlockedSlots(int bestTierOneWave) => bestTierOneWave >= 100 ? 2 : bestTierOneWave >= 25 ? 1 : 0;
-
-        // Fractional carry is owned by the caller's profile or wave checkpoint.
-        // On overflow or malformed input neither payout nor carry is exposed.
-        public static bool TryMultiplyReward(long amount, int rank, int priorCarry, out long payout, out int nextCarry)
-        {
-            payout = 0; nextCarry = priorCarry;
-            if (amount < 0 || rank < 0 || rank > 100 || priorCarry < 0 || priorCarry >= MultiplierDenominator) return false;
-            try
-            {
-                long scaled = checked(amount * (100L + 2L * rank) + priorCarry);
-                payout = scaled / MultiplierDenominator; nextCarry = (int)(scaled % MultiplierDenominator); return true;
-            }
-            catch (OverflowException) { return false; }
+            payout=0;nextCarry=priorCarry;
+            if(amount<0||rank<0||rank>100||priorCarry<0||priorCarry>=MultiplierDenominator)return false;
+            try { long scaled=checked(amount*(100L+2L*rank)+priorCarry);payout=scaled/MultiplierDenominator;nextCarry=(int)(scaled%MultiplierDenominator);return true; }
+            catch(OverflowException){return false;}
         }
     }
 
     public sealed class LastStandResearchDefinition
     {
-        static readonly long[] SpeedCosts = { 20, 60, 180, 500, 1500, 4500, 12000, 30000 };
-        static readonly long[] SpeedMinutes = { 10, 60, 360, 1440, 4320, 10080, 14400, 20160 };
+        readonly LastStandResearchCurve cost,durationMinutes;
+        readonly int effectPerRank;
+        readonly bool accelerated;
         public LastStandResearchTrackId Id { get; }
         public string Key { get; }
         public string Name { get; }
         public int MaximumRank { get; }
-        internal LastStandResearchDefinition(LastStandResearchTrackId id, string key, string name, int maximumRank)
-        { Id = id; Key = key; Name = name; MaximumRank = maximumRank; }
-        void ValidateRank(int rank)
-        { if (rank < 1 || rank > MaximumRank) throw new ArgumentOutOfRangeException(nameof(rank)); }
-        public long Cost(int rank)
+        public int StorageSlot { get; }
+        public LastStandResearchEffect Effect { get; }
+        public string Category => Effect==LastStandResearchEffect.GameSpeed?"Combat":Effect==LastStandResearchEffect.ResearchSpeed?"Research":"Economy";
+        public LastStandResearchDefinition(LastStandResearchTrackId id,string key,string name,int maximumRank,int storageSlot,
+            LastStandResearchCurve cost,LastStandResearchCurve durationMinutes,LastStandResearchEffect effect,int effectPerRank,bool accelerated)
         {
-            ValidateRank(rank); long r = rank;
-            if (Id == LastStandResearchTrackId.GameSpeed) return SpeedCosts[rank - 1];
-            if (Id == LastStandResearchTrackId.SalvageRecovery) return checked(25 * r + 2 * r * r + r * r * r / 10);
-            if (Id == LastStandResearchTrackId.ScrapLogistics) return checked(20 * r + r * r + r * r * r / 20);
-            return checked(15 * r + 2 * r * r + r * r * r / 12);
+            if((int)id<0||String.IsNullOrWhiteSpace(key)||key.Length>80||String.IsNullOrWhiteSpace(name)||name.Length>80||maximumRank<1||maximumRank>10000||storageSlot<0||
+                cost==null||durationMinutes==null||!Enum.IsDefined(typeof(LastStandResearchEffect),effect)||effectPerRank<1||effectPerRank>10000)
+                throw new ArgumentException("Invalid research definition.");
+            for(int i=0;i<key.Length;i++)
+            {
+                char ch=key[i];bool letter=ch>='a'&&ch<='z'||ch>='A'&&ch<='Z';
+                if(!letter&&(i==0||!(ch>='0'&&ch<='9'||ch=='-'||ch=='_')))
+                    throw new ArgumentException("Research keys must be stable ASCII identifiers.");
+            }
+            checked { var lastCost=cost.At(maximumRank);var lastDuration=durationMinutes.At(maximumRank)*60000;var lastEffect=100+effectPerRank*maximumRank;
+                if(lastCost<1||lastDuration<1||lastEffect<100)throw new ArgumentException("Invalid research bounds."); }
+            Id=id;Key=key;Name=name;MaximumRank=maximumRank;StorageSlot=storageSlot;Effect=effect;
+            this.cost=cost;this.durationMinutes=durationMinutes;this.effectPerRank=effectPerRank;this.accelerated=accelerated;
         }
-        public long BaseDurationMilliseconds(int rank)
+        void ValidateRank(int rank){if(rank<1||rank>MaximumRank)throw new ArgumentOutOfRangeException(nameof(rank));}
+        public long Cost(int rank){ValidateRank(rank);return cost.At(rank);}
+        public long BaseDurationMilliseconds(int rank){ValidateRank(rank);return checked(durationMinutes.At(rank)*60000);}
+        public long DurationMilliseconds(int rank,int researchSpeedRank)
         {
-            ValidateRank(rank); long r = rank;
-            if (Id == LastStandResearchTrackId.GameSpeed) return checked(SpeedMinutes[rank - 1] * 60000);
-            // Three independent ladders, with later stages crossing hours/days.
-            long minutes = Id == LastStandResearchTrackId.SalvageRecovery ? 15 * r + 3 * r * r + r * r * r / 20 :
-                Id == LastStandResearchTrackId.ScrapLogistics ? 10 * r + 2 * r * r + r * r * r / 25 :
-                20 * r + 4 * r * r + r * r * r / 15;
-            return checked(minutes * 60000);
+            if(researchSpeedRank<0||researchSpeedRank>100)throw new ArgumentOutOfRangeException(nameof(researchSpeedRank));
+            return DurationAtSpeedNumerator(rank,100+2*researchSpeedRank);
         }
-        public long DurationMilliseconds(int rank, int researchSpeedRank)
+        public long DurationAtSpeedNumerator(int rank,int speedNumerator)
         {
-            if (researchSpeedRank < 0 || researchSpeedRank > 100) throw new ArgumentOutOfRangeException(nameof(researchSpeedRank));
-            long duration = BaseDurationMilliseconds(rank);
-            if (Id == LastStandResearchTrackId.ResearchSpeed) return duration;
-            long denominator = 100 + 2L * researchSpeedRank;
-            return checked((duration * 100 + denominator - 1) / denominator);
+            if(speedNumerator<100)throw new ArgumentOutOfRangeException(nameof(speedNumerator));
+            long duration=BaseDurationMilliseconds(rank);
+            return accelerated?checked((duration*100+speedNumerator-1)/speedNumerator):duration;
         }
         public int EffectNumerator(int rank)
-        {
-            if (rank < 0 || rank > MaximumRank) throw new ArgumentOutOfRangeException(nameof(rank));
-            return Id == LastStandResearchTrackId.GameSpeed ? 100 + 50 * rank : 100 + 2 * rank;
-        }
+        {if(rank<0||rank>MaximumRank)throw new ArgumentOutOfRangeException(nameof(rank));return checked(100+effectPerRank*rank);}
     }
 }

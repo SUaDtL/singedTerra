@@ -28,3 +28,12 @@
 - [x] Clear one adversarial review with every Critical/High/Medium/merge blocker corrected.
 - [ ] Commit, PR, exact-head CI, logged merge authority, fresh final-head CI, squash merge, Pages provenance, and live smoke.
 - [ ] Immediately select the next highest-value safe cell under the standing goal.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Historical screenshot delivery. Current source/oracles: `README.md`, `docs/assets/current-battle-hud.jpg`.
+
+The latest change to this historical plan reachable from `origin/main` is `5e371f2231b0` (docs(readme): refresh live gameplay capture (#254)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

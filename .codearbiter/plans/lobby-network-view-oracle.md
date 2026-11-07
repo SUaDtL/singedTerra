@@ -51,3 +51,12 @@
 - [x] Commit through `$ca-commit`, open a ready PR referencing but not closing #129, and obtain exact-head hosted CI.
 - [ ] Use the standing PR-only merge authority only after the reviewed final head is green; verify Pages exact-main provenance and live smoke.
 - [ ] Select the first bounded Lobby view extraction under the completed oracle.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current direct coverage. Current source/oracles: `client/src/ui/Lobby.network.test.ts`, `client/src/ui/Lobby.rejoin.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `65f5c6c15cb7` (test(e2e): cover Lobby network views (#246)). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

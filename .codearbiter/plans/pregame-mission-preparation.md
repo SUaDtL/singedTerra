@@ -211,3 +211,12 @@ Stage only the spec, plan, preparation-section source/test, route sources/tests,
 - Spec coverage: Tasks 1 through 4 cover shared frame ownership, both primary setup routes, accessible section hierarchy, callback preservation, desktop/compact visual containment, and causal geometry. Task 5 carries every delivery gate.
 - Placeholder scan: no deferred implementation text or unspecified test work remains.
 - Type consistency: Task 1 defines the only new helper consumed by Tasks 2 and 3; Task 4 consumes its stable class names without moving Lobby state.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Current preparation owners. Current source/oracles: `client/src/ui/LobbyPreparationSection.ts`, `client/src/ui/LobbyPreparationSection.test.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `48627940dc97` (feat(lobby): organize mission preparation). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

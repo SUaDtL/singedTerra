@@ -374,6 +374,41 @@ static class ShopLayoutChecks
         }
     }
 
+    static void MeasuredHeader()
+    {
+        var inputType=typeof(LastStandHudLayout).GetNestedType("ShopPanelInput");
+        var ctor=inputType.GetConstructor(new[]{typeof(bool),typeof(string[]),typeof(float),typeof(float[]),
+            typeof(float[]),typeof(float[]),typeof(float),typeof(float),typeof(float),typeof(float[])});
+        Require(ctor!=null,"Shared cards consume imported-font header measurements.");
+        var method=typeof(LastStandHudLayout).GetMethod("Project",new[]{typeof(float),typeof(float),typeof(string),typeof(string[]),inputType});
+        foreach(var profile in new[]{new[]{1366,664},new[]{390,688},new[]{568,196},new[]{720,516}})
+        {
+            var heights=new[]{78f,26f};
+            var input=ctor.Invoke(new object[]{true,new[]{"cannonAttack","launcherAttack"},0f,
+                new[]{40f,40f},new[]{100f,44f},new[]{20f,20f},40f,20f,20f,heights});
+            heights[0]=0;
+            Require(Property<System.Collections.ObjectModel.ReadOnlyCollection<float>>(input,"HeaderHeights")[0]==78,
+                "Header metrics are copied, not retained from mutable caller arrays.");
+            var projection=(LastStandHudLayout.Projection)method.Invoke(null,new object[]{(float)profile[0],(float)profile[1],"battle",ClosedBattleControls,input});
+            Fit(projection,profile[0],profile[1]);
+            var title=Find(projection,"ShopCard_cannonAttackTitle").Bounds;
+            var level=Find(projection,"ShopCard_cannonAttackLevels").Bounds;
+            var effect=Find(projection,"ShopCard_cannonAttackCurrentEffect").Bounds;
+            Require(title.Height==78&&level.Height==78&&!Intersects(title,level),"Both separated header fields retain the measured tallest text.");
+            Require(effect.Y>=Bottom(title)+20-Tolerance,"Wrapped headers push the following contribution/effect rows down.");
+            var first=Find(projection,"ShopCard_cannonAttack").Bounds;
+            var second=Find(projection,"ShopCard_launcherAttack").Bounds;
+            Require(second.Y>=Bottom(first)+LastStandHudLayout.Gap-Tolerance,"Growing a header moves later cards and the scroll extent.");
+        }
+        foreach(var invalid in new[]{new[]{float.NaN},new[]{float.PositiveInfinity},new[]{-1f},new float[0]})
+        {
+            bool refused=false;
+            try{ctor.Invoke(new object[]{true,new[]{"cannonAttack"},0f,new[]{20f},new[]{20f},new[]{20f},40f,20f,20f,invalid});}
+            catch(TargetInvocationException error){refused=error.InnerException is ArgumentException;}
+            Require(refused,"Malformed header metrics are refused.");
+        }
+    }
+
     static void ShortLandscapeClosedRecovery()
     {
         // The maintained browser journey's 568x320 page leaves 568x196 after
@@ -416,6 +451,7 @@ static class ShopLayoutChecks
                 case "shop_text_contrast_targets_and_refusal_bounds": TextTargetsRefusals(); break;
                 case "shop_compact_meaningful_summary": CompactSummary(); break;
                 case "shop_measured_long_notice": MeasuredLongNotice(); break;
+                case "shop_measured_header": MeasuredHeader(); break;
                 case "shop_short_landscape_closed_recovery": ShortLandscapeClosedRecovery(); break;
                 default: throw new ArgumentException("Unknown check.");
             }

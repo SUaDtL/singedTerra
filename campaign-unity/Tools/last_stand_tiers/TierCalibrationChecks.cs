@@ -6,21 +6,23 @@ using SingedTerra.LastStand;
 // stop at the advancement milestone, never spin on a pending checkpoint.
 internal static class TierCalibrationChecks
 {
+    static int Effect(LastStandUpgradeTrackId id,int level)
+    {var d=LastStandUpgradeCatalog.Get(id);return d.EffectAt(Math.Min(level,d.TotalCap),1);}
+
     static int Main(string[] args)
     {
         foreach(var fitting in new[]{LastStandFitting.Repair,LastStandFitting.Launcher,LastStandFitting.Scattergun})
         foreach(int level in new[]{0,3,8,LastStandUpgradeCatalog.TotalCap})
         {
-            int Effect(LastStandUpgradeTrackId id) {var d=LastStandUpgradeCatalog.Get(id);return d.EffectAt(Math.Min(level,d.TotalCap),1);}
             var model=new EncounterModel(fitting,EncounterProfile.ForTier(int.Parse(args[0])));
-            model.TryApplyPlayableAttackProjection(Effect(LastStandUpgradeTrackId.CannonAttack),
-                fitting==LastStandFitting.Launcher?Effect(LastStandUpgradeTrackId.LauncherAttack):EncounterModel.LauncherDamage);
-            if(!model.TryApplyPlayableDefenseProjection(Effect(LastStandUpgradeTrackId.HullCapacity),raw=>raw))
+            model.TryApplyPlayableAttackProjection(Effect(LastStandUpgradeTrackId.CannonAttack,level),
+                fitting==LastStandFitting.Launcher?Effect(LastStandUpgradeTrackId.LauncherAttack,level):EncounterModel.LauncherDamage);
+            if(!model.TryApplyPlayableDefenseProjection(Effect(LastStandUpgradeTrackId.HullCapacity,level),raw=>raw))
                 throw new Exception("Declared hull projection was not applied.");
             model.TryApplyPlayableArmorProjection(Math.Min(level,LastStandUpgradeCatalog.Get(LastStandUpgradeTrackId.Armor).TotalCap));
-            model.TryApplyPlayableCannonPeriodProjection(Effect(LastStandUpgradeTrackId.CannonCycle));
-            if(fitting==LastStandFitting.Repair)model.TryApplyPlayableRepairProjection(Effect(LastStandUpgradeTrackId.FieldRepair));
-            if(fitting==LastStandFitting.Scattergun)model.TryApplyPlayableScattergunProjection(Effect(LastStandUpgradeTrackId.ScattergunAttack));
+            model.TryApplyPlayableCannonPeriodProjection(Effect(LastStandUpgradeTrackId.CannonCycle,level));
+            if(fitting==LastStandFitting.Repair)model.TryApplyPlayableRepairProjection(Effect(LastStandUpgradeTrackId.FieldRepair,level));
+            if(fitting==LastStandFitting.Scattergun)model.TryApplyPlayableScattergunProjection(Effect(LastStandUpgradeTrackId.ScattergunAttack,level));
             while(model.Status==EncounterStatus.Running && model.CompletedWave<300)
             {
                 model.Step();

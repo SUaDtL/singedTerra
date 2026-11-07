@@ -8,6 +8,7 @@ using UnityEngine;
 using SingedTerra.Art;
 using SingedTerra.Encounter;
 using SingedTerra.VisualReview;
+using SingedTerra.LastStand;
 
 // Actual imported presentation objects and model events. These checks neither
 // initialize player storage nor claim browser input or rendered visual approval.
@@ -20,7 +21,7 @@ public static class LastStandCombatFeedbackChecks
         public readonly EncounterView View;
         public readonly BattlefieldReview Review;
         readonly GameObject host;
-        public Fixture(bool launcher = false)
+        public Fixture(bool launcher = false,string fitting=null)
         {
             EditorSceneManager.OpenScene("Assets/Scenes/LastStandPrototype.unity", OpenSceneMode.Single);
             Art = UnityEngine.Object.FindFirstObjectByType<TankPresentation>();
@@ -28,6 +29,7 @@ public static class LastStandCombatFeedbackChecks
             Require(Review && Review.flashMaterial && Review.scorchMaterial, "saved review assets exist");
             Invoke(Art, "Start");
             if (Art.showingLauncher != launcher) Art.ToggleAttachment();
+            if(fitting!=null)Require(Art.TrySelectFitting(fitting),"actual selected attachment: "+fitting);
             host = new GameObject("Combat feedback check");
             View = host.AddComponent<EncounterView>(); View.Initialize(Art);
             Require(Art.BeginEncounter(), "actual presentation starts");
@@ -36,7 +38,8 @@ public static class LastStandCombatFeedbackChecks
             .Where(r => r.name.StartsWith("Review feedback ")).ToArray();
         public Renderer[] VehiclePaint => host.GetComponentsInChildren<Renderer>()
             .Where(r => !r.name.StartsWith("Review feedback ") && !(r is LineRenderer)).ToArray();
-        public LineRenderer[] Trails => host.GetComponentsInChildren<LineRenderer>(true);
+        public LineRenderer[] Trails => host.GetComponentsInChildren<LineRenderer>(true).Where(r=>r.name.StartsWith("EncounterTracer_")).ToArray();
+        public Transform Pool => host.transform.Find("Review combat visuals");
         public void ShotFrame(float elapsed) { Invoke(Art, "AdvanceShot", elapsed); View.Advance(elapsed); }
         public void Dispose()
         {
@@ -187,6 +190,109 @@ public static class LastStandCombatFeedbackChecks
         }
     }
 
+    static void SetField(object target,string name,object value)
+    { target.GetType().GetField(name,Private).SetValue(target,value); }
+    static void SetFoe(EncounterFoe foe,int id,FoeKind kind,int lane,int distance)
+    {
+        foreach(var pair in new (string,object)[]{("Id",id),("Kind",kind),("Lane",lane),("Distance",distance),("Hull",1000),("MaximumHull",1000),("Damage",1)})
+            typeof(EncounterFoe).GetProperty(pair.Item1).SetValue(foe,pair.Item2);
+    }
+    static EncounterModel BoundModel(LastStandFitting fitting)
+    {
+        var model=new EncounterModel(fitting,EncounterProfile.ForTier(2));
+        SetField(model,"nextSpawn",10000);SetField(model,"nextCannon",10000);SetField(model,"nextRepair",10000);
+        return model;
+    }
+    static void CurrentGeometryAndRetainedPosition()
+    {
+        using(var f=new Fixture())
+        {
+            var legacy=new EncounterModel(false,EncounterProfile.VisualReview);
+            SetFoe(legacy.Foes[0],3,FoeKind.Close,2,17000);f.View.Render(legacy);
+            float angle=2*Mathf.PI/4+(1.5f-2)*.42f;
+            var old=f.Art.tank.position+new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle))*17+Vector3.up*.85f;
+            Require(Vector3.Distance(old,f.View.Position(legacy.Foes[0]))<.00001f,"legacy authored coordinates are unchanged");
+            var current=BoundModel(LastStandFitting.Repair);
+            for(int lane=0;lane<8;lane++)for(int id=1;id<=4;id++)
+            {
+                SetFoe(current.Foes[0],id,FoeKind.Close,lane,17001);
+                // Actual session order presents each step before the next render.
+                f.View.Present(current);
+                var point=EncounterGeometry.Position(lane,id,17001);
+                var expected=f.Art.tank.position+new Vector3(point.X*.001f,.85f,point.Z*.001f);
+                Require(Vector3.Distance(expected,f.View.Position(current.Foes[0]))<.00001f,"current presentation uses exact model blast coordinates before Render");
+                f.View.Render(current);Require(Vector3.Distance(expected,f.View.Position(current.Foes[0]))<.00001f,"render and impact positions agree");
+            }
+            f.View.Render(legacy);Require(Vector3.Distance(old,f.View.Position(legacy.Foes[0]))<.00001f,"legacy run after current restores original coordinates");
+        }
+    }
+    static void CampaignWeaponFeedback()
+    {
+        foreach(string id in new[]{"mortar","railgun"})foreach(bool reduced in new[]{false,true})
+        using(var f=new Fixture(false,id))
+        {
+            var fitting=LastStandFittingCatalog.Parse(id);var model=BoundModel(fitting);
+            SetFoe(model.Foes[0],5,FoeKind.ArmoredBrute,0,18500);
+            SetFoe(model.Foes[1],1,FoeKind.ArmoredBrute,0,18000);
+            model.Step();var actions=model.Events.Where(e=>e.Kind.ToString().ToLowerInvariant()==id).ToArray();
+            Require(actions.Length==(id=="mortar"?2:1)&&actions.All(e=>e.AimSlot==1),"actual model selects later slot as one shot centre");
+            string before=model.Snapshot();var module=f.Art.ActiveFittingModule;
+            var assembly=module.transform.Find(id=="mortar"?"Mortar recoil assembly":"Railgun recoil assembly");
+            Require(assembly,"actual mechanical recoil assembly");var home=assembly.localPosition;var mount=module.transform.localRotation;
+            if(reduced)f.View.ToggleEffects();
+            f.View.Present(model);var firingOrigin=f.Art.FittingMuzzle(fitting);f.ShotFrame(.04f);
+            var target=f.View.Position(model.Foes[1]);var direction=Vector3.ProjectOnPlane(target-module.transform.position,Vector3.up);
+            Require(Vector3.Angle(direction,module.transform.forward)<.1f&&Vector3.Distance(home,assembly.localPosition)>.00001f,"actual auxiliary aim and recoil remain visible");
+            var trails=f.Trails.Where(t=>t.enabled).ToArray();
+            Require(trails.Length==(reduced?0:1),"one firing visual per shot, independent of blast victim count");
+            if(!reduced)
+            {
+                Require(Vector3.Distance(trails[0].GetPosition(0),firingOrigin)<.00001f,"shot starts at actual mounted muzzle before recoil");
+                Require(Vector3.Distance(trails[0].GetPosition(trails[0].positionCount-1),target)<.00001f,"shot visual ends at actual AimSlot centre");
+                Require((trails[0].positionCount>2)==(id=="mortar"),"mortar arc differs from railgun straight beam");
+            }
+            Require(f.Feedback.Length>=actions.Length&&!f.Feedback.Any(r=>Vector3.Distance(r.transform.position,f.Art.tank.position+Vector3.up)<.01f),"outgoing armament cannot masquerade as incoming tank damage");
+            Require(model.Snapshot()==before,"weapon feedback cannot mutate combat");
+            f.Art.ClearEncounterFeedback();Require(assembly.localPosition==home,"clear cancels auxiliary recoil");
+            f.Art.EndEncounter();Require(module.transform.localRotation==mount,"return restores owned mounting pose");
+        }
+    }
+    static void RoleSilhouettesAndPersistentWarning()
+    {
+        using(var f=new Fixture())
+        {
+            var model=BoundModel(LastStandFitting.Repair);
+            for(int slot=0;slot<5;slot++)SetFoe(model.Foes[slot],slot+1,(FoeKind)slot,slot,18000);
+            typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],30);
+            string before=model.Snapshot();f.View.Render(model);f.ShotFrame(0);
+            var silhouettes=new HashSet<Vector3Int>();
+            for(int slot=0;slot<5;slot++)
+            {
+                var root=f.Pool.Find("Review foe "+slot);
+                var vertices=root.GetComponentsInChildren<MeshFilter>().SelectMany(m=>m.sharedMesh.vertices.Select(v=>root.InverseTransformPoint(m.transform.TransformPoint(v)))).ToArray();
+                Require(vertices.Length>0,"role has real rendered mesh geometry");var bounds=new Bounds(vertices[0],Vector3.zero);
+                foreach(var point in vertices)bounds.Encapsulate(point);
+                silhouettes.Add(new Vector3Int(Mathf.RoundToInt(bounds.size.x*1000),Mathf.RoundToInt(bounds.size.y*1000),Mathf.RoundToInt(bounds.size.z*1000)));
+            }
+            Require(silhouettes.Count==5,"all five roles have distinguishable geometric silhouettes");
+            var warning=f.Pool.Find("Review foe 4/Elite attack warning");
+            Require(model.TelegraphRemainingTicks(model.Foes[4])==30&&warning&&warning.gameObject.activeInHierarchy,"model telegraph has persistent visible warning geometry");
+            f.Art.SetEncounterPaused(true);f.View.ToggleEffects();f.ShotFrame(0);
+            Require(warning.gameObject.activeInHierarchy&&warning.GetComponent<LineRenderer>().enabled,"paused reduced mode retains non-color warning shape");
+            f.View.ToggleEffects();Require(warning.gameObject.activeInHierarchy,"full effects toggle does not replay or remove warning");
+            Require(model.Snapshot()==before,"role and warning projection cannot mutate combat");
+            typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],31);f.View.Render(model);
+            Require(!warning.gameObject.activeInHierarchy,"warning cannot start before the model telegraph window");
+            typeof(EncounterFoe).GetField("NextAttack",Private).SetValue(model.Foes[4],30);f.View.Render(model);
+            Require(warning.gameObject.activeInHierarchy,"a later admitted telegraph returns the warning");
+            typeof(EncounterFoe).GetProperty("Hull").SetValue(model.Foes[4],0);f.View.Render(model);
+            Require(!warning.gameObject.activeInHierarchy,"death cancels warning immediately");
+            SetFoe(model.Foes[4],41,FoeKind.Close,1,18000);f.View.Render(model);
+            Require(!warning.gameObject.activeInHierarchy,"slot reuse cannot inherit elite warning");
+            f.View.Clear();Require(!f.Pool.gameObject.GetComponentsInChildren<Renderer>().Any(),"clear hides warning and every role");
+        }
+    }
+
     public static void Run()
     {
         bool failed = false;
@@ -198,7 +304,10 @@ public static class LastStandCombatFeedbackChecks
                 ("test_reduced_informative_feedback", ReducedInformativeFeedback),
                 ("test_toggle_clears_paused_flashes", ToggleClearsPausedFlashes),
                 ("test_reduced_aim_recoil_and_restore", ReducedAimRecoilAndRestore),
-                ("test_model_and_pool_preservation", ModelAndPoolPreservation) })
+                ("test_model_and_pool_preservation", ModelAndPoolPreservation),
+                ("test_current_geometry_and_retained_position",CurrentGeometryAndRetainedPosition),
+                ("test_campaign_weapon_feedback",CampaignWeaponFeedback),
+                ("test_role_silhouettes_and_persistent_warning",RoleSilhouettesAndPersistentWarning) })
             {
                 try { test.Item2(); Debug.Log("ST_LS_COMBAT_PASS " + test.Item1); }
                 catch (Exception error) { failed = true; Debug.LogError("ST_LS_COMBAT_FAIL " + test.Item1 + " " + error); }

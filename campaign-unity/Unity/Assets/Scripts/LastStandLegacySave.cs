@@ -70,7 +70,7 @@ namespace SingedTerra.LastStand
             }
             int version = Value(match, "version"), nextRun = Value(match, "nextRunId");
             int finalized = Value(match, "lastFinalizedRunId"), selectedTier = Value(match, "selectedTier");
-            if (version != 3 || nextRun < 1 || finalized >= nextRun || !LastStandTierCatalog.IsValid(selectedTier))
+            if (version != 3 || nextRun < 1 || finalized >= nextRun || selectedTier<1 || selectedTier>2)
                 return false;
             int[] levels;
             if (!TryParseLevels(match.Groups["levels"].Value, out levels)) return false;
@@ -95,7 +95,7 @@ namespace SingedTerra.LastStand
                 }
                 else
                 {
-                    if (!LastStandTierCatalog.IsValid(tier) || profile != LastStandTierCatalog.LegacyProfileVersion ||
+                    if (tier<1 || tier>2 || profile != LastStandTierCatalog.LegacyProfileVersion ||
                         selectedTier != tier || tier == 2 && !unlocked || elapsed > LastStandTierCatalog.LegacyHorizonTicks ||
                         reward != (limit ? 0 : 1) || limit && elapsed != LastStandTierCatalog.LegacyHorizonTicks) return false;
                     int index = tier - 1;
@@ -126,7 +126,7 @@ namespace SingedTerra.LastStand
             {
                 LastStandUpgradeDefinition definition;
                 int level;
-                if (!LastStandUpgradeCatalog.TryGet(track.Groups["key"].Value, out definition) ||
+                if (!LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion).TryGet(track.Groups["key"].Value, out definition) ||
                     (int)definition.Id >= 6 || seen[(int)definition.Id] || !TryInteger(track.Groups["level"].Value, out level) || level > MaximumLevel)
                     return false;
                 seen[(int)definition.Id] = true;
@@ -173,7 +173,7 @@ namespace SingedTerra.LastStand
                 {
                     LastStandUpgradeDefinition definition;
                     int level;
-                    if (!LastStandUpgradeCatalog.TryGet(track.Groups["key"].Value, out definition) ||
+                    if (!LastStandUpgradeCatalog.ForEconomy(LastStandUpgradeCatalog.LegacyEconomyVersion).TryGet(track.Groups["key"].Value, out definition) ||
                         (int)definition.Id >= 6 || seen[(int)definition.Id] || !TryInteger(track.Groups["level"].Value, out level) || level > MaximumLevel)
                         return false;
                     seen[(int)definition.Id] = true;

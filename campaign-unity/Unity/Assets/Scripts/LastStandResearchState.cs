@@ -23,6 +23,10 @@ namespace SingedTerra.LastStand
         public int[] completedRanks = new int[LastStandResearchCatalog.TrackCount];
         public LastStandResearchSlotSnapshot[] slots = { new LastStandResearchSlotSnapshot(), new LastStandResearchSlotSnapshot() };
         public LastStandResearchProjectSnapshot[] partials = new LastStandResearchProjectSnapshot[LastStandResearchCatalog.TrackCount];
+        public int Rank(LastStandResearchTrackId track,LastStandResearchDefinitions definitions=null)
+            => completedRanks[(definitions??LastStandResearchCatalog.Definitions).Slot(track)];
+        public LastStandResearchProjectSnapshot Partial(LastStandResearchTrackId track,LastStandResearchDefinitions definitions=null)
+            => partials[(definitions??LastStandResearchCatalog.Definitions).Slot(track)];
         public LastStandResearchSnapshot Clone()
         {
             var result = (LastStandResearchSnapshot)MemberwiseClone();
@@ -64,23 +68,33 @@ namespace SingedTerra.LastStand
     {
         const long MaximumIdentity = 9007199254740991L;
         readonly LastStandResearchSnapshot value;
-        LastStandResearchState(LastStandResearchSnapshot snapshot) { value = snapshot; }
+        readonly LastStandResearchDefinitions definitions;
+        LastStandResearchState(LastStandResearchSnapshot snapshot,LastStandResearchDefinitions definitions)
+        { value=snapshot;this.definitions=definitions; }
+        public LastStandResearchDefinitions Definitions => definitions;
         public long Revision => value.revision;
         public long LastObservedUtcMilliseconds => value.lastObservedUtcMilliseconds;
-        public double MaximumGameSpeed => 1 + .5 * Rank(LastStandResearchTrackId.GameSpeed);
-        public int Rank(LastStandResearchTrackId track) => value.completedRanks[(int)LastStandResearchCatalog.Get(track).Id];
+        public double MaximumGameSpeed => EffectNumerator(LastStandResearchEffect.GameSpeed)/100.0;
+        public int EffectNumerator(LastStandResearchEffect effect)=>definitions.EffectNumerator(value.completedRanks,effect);
+        public int Rank(LastStandResearchTrackId track) => value.completedRanks[definitions.Slot(track)];
         public LastStandResearchSnapshot Snapshot() => value.Clone();
-        public LastStandResearchState Clone() => new LastStandResearchState(value.Clone());
-        public static LastStandResearchState Create(long utcMilliseconds)
+        public LastStandResearchState Clone() => new LastStandResearchState(value.Clone(),definitions);
+        public static LastStandResearchState Create(long utcMilliseconds,LastStandResearchDefinitions definitions=null)
         {
             if (!LastStandResearchClock.ValidUtc(utcMilliseconds)) throw new ArgumentOutOfRangeException(nameof(utcMilliseconds));
-            return new LastStandResearchState(new LastStandResearchSnapshot { lastObservedUtcMilliseconds = utcMilliseconds });
+            definitions=definitions??LastStandResearchCatalog.Definitions;
+            return new LastStandResearchState(new LastStandResearchSnapshot { lastObservedUtcMilliseconds=utcMilliseconds,
+                catalogVersion=definitions.Version,completedRanks=new int[definitions.Count],
+                partials=new LastStandResearchProjectSnapshot[definitions.Count] },definitions);
         }
         public static bool TryRestore(LastStandResearchSnapshot snapshot, out LastStandResearchState state)
+            => TryRestore(snapshot,LastStandResearchCatalog.Definitions,out state);
+        public static bool TryRestore(LastStandResearchSnapshot snapshot,LastStandResearchDefinitions definitions,out LastStandResearchState state)
         {
-            state = null;
-            if (!Valid(snapshot)) return false;
-            state = new LastStandResearchState(snapshot.Clone()); return true;
+            state=null;definitions=definitions??LastStandResearchCatalog.Definitions;
+            var candidate=new LastStandResearchState(snapshot,definitions);
+            if(!candidate.Valid(snapshot))return false;
+            state=new LastStandResearchState(snapshot.Clone(),definitions);return true;
         }
         public bool IsAvailableFor(int bestTierOneWave)
         {
@@ -90,60 +104,61 @@ namespace SingedTerra.LastStand
                 if (value.slots[i].active != null || value.slots[i].queued != null) return false;
             return true;
         }
-        static bool Valid(LastStandResearchSnapshot s)
+        bool Valid(LastStandResearchSnapshot s)
         {
-            if (s == null || s.version != 1 || s.catalogVersion != LastStandResearchCatalog.Version ||
+            if (s == null || s.version != 1 || s.catalogVersion != definitions.Version ||
                 s.revision < 0 || s.revision > MaximumIdentity || s.nextProjectIdentity < 1 || s.nextProjectIdentity > MaximumIdentity ||
-                !LastStandResearchClock.ValidUtc(s.lastObservedUtcMilliseconds) || s.completedRanks == null || s.completedRanks.Length != 4 ||
-                s.slots == null || s.slots.Length != 2 || s.partials == null || s.partials.Length != 4) return false;
+                !LastStandResearchClock.ValidUtc(s.lastObservedUtcMilliseconds) || s.completedRanks == null || s.completedRanks.Length != definitions.Count ||
+                s.slots == null || s.slots.Length != LastStandResearchCatalog.SlotCount || s.partials == null || s.partials.Length != definitions.Count) return false;
             int complete = 0;
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < definitions.Count; i++)
             {
-                if (s.completedRanks[i] < 0 || s.completedRanks[i] > LastStandResearchCatalog.Get((LastStandResearchTrackId)i).MaximumRank) return false;
+                if (s.completedRanks[i] < 0 || s.completedRanks[i] > definitions.AtSlot(i).MaximumRank) return false;
                 complete += s.completedRanks[i];
             }
             if (s.completionSequence != complete || s.nextProjectIdentity <= complete) return false;
             var identities = new HashSet<long>();
-            var fundedSlots = new int[] { -1, -1, -1, -1 };
-            for (int slot = 0; slot < 2; slot++)
+            var fundedSlots = new int[definitions.Count];
+            for(int i=0;i<fundedSlots.Length;i++)fundedSlots[i]=-1;
+            for (int slot = 0; slot < LastStandResearchCatalog.SlotCount; slot++)
             {
                 var item = s.slots[slot]; if (item == null || (item.active == null && item.queued != null)) return false;
                 if (!ValidProject(s, item.active, false, identities) || !ValidProject(s, item.queued, true, identities)) return false;
-                if (item.active != null && item.active.rank != s.completedRanks[(int)item.active.track] + 1) return false;
+                if (item.active != null && item.active.rank != s.completedRanks[definitions.Slot(item.active.track)] + 1) return false;
                 if (item.queued != null)
                 {
-                    int expected = s.completedRanks[(int)item.queued.track] + 1;
+                    int expected = s.completedRanks[definitions.Slot(item.queued.track)] + 1;
                     if (item.active.track == item.queued.track) expected++;
                     if (item.queued.rank != expected || (item.queued.track == item.active.track && item.queued.durationMilliseconds != 0)) return false;
                 }
                 foreach (var project in new[] { item.active, item.queued })
                 {
                     if (project == null) continue;
-                    int track = (int)project.track;
+                    int track = definitions.Slot(project.track);
                     if (fundedSlots[track] != -1 && fundedSlots[track] != slot) return false;
                     fundedSlots[track] = slot;
                 }
             }
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < definitions.Count; i++)
             {
                 var partial = s.partials[i];
                 if (!ValidProject(s, partial, false, identities)) return false;
-                if (partial != null && ((int)partial.track != i || partial.rank != s.completedRanks[i] + 1 || fundedSlots[i] != -1)) return false;
+                if (partial != null && (definitions.Slot(partial.track) != i || partial.rank != s.completedRanks[i] + 1 || fundedSlots[i] != -1)) return false;
             }
             return true;
         }
-        static bool ValidProject(LastStandResearchSnapshot s, LastStandResearchProjectSnapshot p, bool queued, HashSet<long> ids)
+        bool ValidProject(LastStandResearchSnapshot s, LastStandResearchProjectSnapshot p, bool queued, HashSet<long> ids)
         {
             if (p == null) return true;
-            if (!LastStandResearchCatalog.IsTrack(p.track) || p.identity < 1 || p.identity >= s.nextProjectIdentity || !ids.Add(p.identity)) return false;
-            var definition = LastStandResearchCatalog.Get(p.track);
+            if (!definitions.Contains(p.track) || p.identity < 1 || p.identity >= s.nextProjectIdentity || !ids.Add(p.identity)) return false;
+            var definition = definitions.Get(p.track);
             if (p.rank < 1 || p.rank > definition.MaximumRank || p.chargedCost != definition.Cost(p.rank)) return false;
             if (queued && p.durationMilliseconds == 0) return p.earnedMilliseconds == 0;
             if (p.earnedMilliseconds < 0 || p.earnedMilliseconds >= p.durationMilliseconds) return false;
             // A locked timer may reflect an earlier, weaker earned bonus, but
             // never an arbitrary duration or a rank the profile has not earned.
-            for (int bonus = 0; bonus <= s.completedRanks[(int)LastStandResearchTrackId.ResearchSpeed]; bonus++)
-                if (p.durationMilliseconds == definition.DurationMilliseconds(p.rank, bonus)) return true;
+            for (int bonus = 0; bonus <= s.completedRanks[definitions.Slot(LastStandResearchTrackId.ResearchSpeed)]; bonus++)
+                if (p.durationMilliseconds == definition.DurationAtSpeedNumerator(p.rank,definitions.Get(LastStandResearchTrackId.ResearchSpeed).EffectNumerator(bonus))) return true;
             return false;
         }
 
@@ -161,7 +176,7 @@ namespace SingedTerra.LastStand
             var next = value.Clone();
             var completions = new List<LastStandResearchCompletion>();
             long remaining = elapsedMilliseconds;
-            for (int pass = 0; pass < 4; pass++)
+            for (int pass = 0; pass < LastStandResearchCatalog.SlotCount*2; pass++)
             {
                 long until = long.MaxValue;
                 foreach (var slot in next.slots)
@@ -177,7 +192,7 @@ namespace SingedTerra.LastStand
                 {
                     var p = slot.active;
                     if (p == null || p.earnedMilliseconds < p.durationMilliseconds) continue;
-                    next.completedRanks[(int)p.track] = p.rank;
+                    next.completedRanks[definitions.Slot(p.track)] = p.rank;
                     next.completionSequence++;
                     completions.Add(new LastStandResearchCompletion { Sequence = next.completionSequence, ProjectIdentity = p.identity, Track = p.track, Rank = p.rank });
                     slot.active = null;
@@ -187,7 +202,7 @@ namespace SingedTerra.LastStand
             }
             next.lastObservedUtcMilliseconds = observedUtcMilliseconds;
             if (elapsedMilliseconds != 0 || observedUtcMilliseconds != value.lastObservedUtcMilliseconds || completions.Count != 0) next.revision++;
-            transition = new LastStandResearchTransition { State = new LastStandResearchState(next), WalletDelta = 0,
+            transition = new LastStandResearchTransition { State = new LastStandResearchState(next,definitions), WalletDelta = 0,
                 Completions = completions.AsReadOnly(), ClockAnomaly = clockAnomaly || observedUtcMilliseconds < value.lastObservedUtcMilliseconds };
             return true;
         }
@@ -229,18 +244,18 @@ namespace SingedTerra.LastStand
                 }
                 if (wallet < 0 || wallet > MaximumIdentity || !Valid(next)) return false;
                 next.revision++;
-                transition = new LastStandResearchTransition { State = new LastStandResearchState(next), WalletDelta = checked(wallet - salvageBalance),
+                transition = new LastStandResearchTransition { State = new LastStandResearchState(next,definitions), WalletDelta = checked(wallet - salvageBalance),
                     Completions = Array.AsReadOnly(new LastStandResearchCompletion[0]) };
                 return true;
             }
             catch (OverflowException) { return false; }
         }
-        static bool Fund(LastStandResearchSnapshot next, LastStandResearchIntent intent, bool queued, ref long wallet, out LastStandResearchProjectSnapshot project)
+        bool Fund(LastStandResearchSnapshot next, LastStandResearchIntent intent, bool queued, ref long wallet, out LastStandResearchProjectSnapshot project)
         {
             project = null;
-            if (!LastStandResearchCatalog.IsTrack(intent.Track)) return false;
-            var definition = LastStandResearchCatalog.Get(intent.Track);
-            int wanted = next.completedRanks[(int)intent.Track] + 1;
+            if (!definitions.Contains(intent.Track)) return false;
+            var definition = definitions.Get(intent.Track);
+            int wanted = next.completedRanks[definitions.Slot(intent.Track)] + 1;
             var slot = next.slots[intent.Slot];
             if (queued && slot.active != null && slot.active.track == intent.Track) wanted++;
             if (intent.Rank != wanted || wanted > definition.MaximumRank) return false;
@@ -250,30 +265,30 @@ namespace SingedTerra.LastStand
                 if (other.queued != null && other.queued.track == intent.Track) return false;
                 if (other.active != null && other.active.track == intent.Track && (!queued || i != intent.Slot)) return false;
             }
-            var partial = next.partials[(int)intent.Track];
+            var partial = next.partials[definitions.Slot(intent.Track)];
             long cost = partial?.chargedCost ?? definition.Cost(wanted);
             if (wallet < cost || (partial != null && partial.rank != wanted) || next.nextProjectIdentity == MaximumIdentity) return false;
-            if (partial != null) { project = partial; next.partials[(int)intent.Track] = null; }
+            if (partial != null) { project = partial; next.partials[definitions.Slot(intent.Track)] = null; }
             else project = new LastStandResearchProjectSnapshot { identity = next.nextProjectIdentity++, track = intent.Track, rank = wanted, chargedCost = cost };
             wallet -= cost; return true;
         }
-        static void Start(LastStandResearchSnapshot state, LastStandResearchProjectSnapshot project)
+        void Start(LastStandResearchSnapshot state, LastStandResearchProjectSnapshot project)
         {
             if (project.durationMilliseconds == 0)
-                project.durationMilliseconds = LastStandResearchCatalog.Get(project.track).DurationMilliseconds(project.rank, state.completedRanks[(int)LastStandResearchTrackId.ResearchSpeed]);
+                project.durationMilliseconds = definitions.Get(project.track).DurationAtSpeedNumerator(project.rank,definitions.EffectNumerator(state.completedRanks,LastStandResearchEffect.ResearchSpeed));
         }
-        static void Promote(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot)
+        void Promote(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot)
         { slot.active = slot.queued; slot.queued = null; Start(state, slot.active); }
-        static void Refund(LastStandResearchSnapshot state, LastStandResearchProjectSnapshot project, ref long wallet)
+        void Refund(LastStandResearchSnapshot state, LastStandResearchProjectSnapshot project, ref long wallet)
         {
             wallet = checked(wallet + project.chargedCost);
-            if (project.durationMilliseconds > 0) state.partials[(int)project.track] = project;
+            if (project.durationMilliseconds > 0) state.partials[definitions.Slot(project.track)] = project;
         }
-        static void Suspend(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot, ref long wallet)
+        void Suspend(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot, ref long wallet)
         { Refund(state, slot.active, ref wallet); slot.active = null; }
-        static void DropInvalidQueue(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot, ref long wallet)
+        void DropInvalidQueue(LastStandResearchSnapshot state, LastStandResearchSlotSnapshot slot, ref long wallet)
         {
-            if (slot.queued == null || slot.queued.rank == state.completedRanks[(int)slot.queued.track] + 1) return;
+            if (slot.queued == null || slot.queued.rank == state.completedRanks[definitions.Slot(slot.queued.track)] + 1) return;
             Refund(state, slot.queued, ref wallet); slot.queued = null;
         }
     }

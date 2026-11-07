@@ -48,3 +48,12 @@
 - [ ] Run full client tests, `npm run check`, `npm run build`, `npm run audit:deps`, secret scan, and `git diff --check`.
 - [ ] Give one adversarial reviewer the spec, plan, H-05 exception, test evidence, and exact final diff; resolve every Critical, High, and merge-blocking finding, then re-review the final diff.
 - [ ] Commit only the reviewed files and the task-board transition, push a PR, require green hosted CI on the exact final head, merge with an expected-head guard, and verify Pages deployment plus public deploy metadata.
+
+
+## Maintenance reconciliation — 2026-10-29
+
+**Current disposition:** Superseded shell composition. Current source/oracles: `client/src/ui/commandCenter/CommandCenterShell.ts`, `e2e/pregame-command-center.spec.ts`.
+
+The latest change to this historical plan reachable from `origin/main` is `61428894b647` (feat(lobby): unify pre-game command experience). The original unchecked RED, review, exact-head CI, deployment and acceptance entries remain historical evidence gaps unless a specific later receipt says otherwise. Current source or merge containment alone does not prove those executions. Do not rerun this old feature plan merely to manufacture a historical RED.
+
+See [the project maintenance report](../reports/project-maintenance-2026-10-29.md#historical-plan-dispositions) for the bounded disposition and remaining obligation. This dated note preserves the original execution ledger.

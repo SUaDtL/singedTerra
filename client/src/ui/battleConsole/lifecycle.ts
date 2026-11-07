@@ -15,25 +15,6 @@ import type {
   BattleConsolePresentationState,
 } from './types';
 
-class GenerationGuard {
-  #generation = 0;
-  #active: number | null = null;
-
-  start(): number {
-    this.#generation += 1;
-    this.#active = this.#generation;
-    return this.#generation;
-  }
-
-  invalidate(): void {
-    this.#active = null;
-  }
-
-  isCurrent(generation: number): boolean {
-    return this.#active === generation;
-  }
-}
-
 export type BattleConsoleLifecycleEnterRequest = Omit<BattleConsoleMountRequest, 'generationToken'>;
 
 export interface BattleConsoleLifecycleEntryResult {

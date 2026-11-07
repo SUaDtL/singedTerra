@@ -4,14 +4,16 @@ Run: C:/Python314/python.exe -B -m unittest discover -s campaign-unity/Tools/las
 Uses narrow host doubles; real browser permission and rendering remain separate.
 """
 from pathlib import Path
+import sys
 import subprocess
 import tempfile
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from last_stand_source_closure import complete_sources
+from last_stand_test_runtime import compile_csharp, run_csharp
+
 PROJECT = Path(__file__).resolve().parents[2]
-EDITOR = Path(r"C:\Users\brenn\singedTerra-engine-lab\tools\unity-6000.3.24f1")
-MONO = EDITOR / "Editor/Data/MonoBleedingEdge/bin/mono.exe"
-CSC = EDITOR / "Editor/Data/MonoBleedingEdge/lib/mono/msbuild/Current/bin/Roslyn/csc.exe"
 
 
 class FullscreenBridgeTests(unittest.TestCase):
@@ -19,9 +21,12 @@ class FullscreenBridgeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.output = tempfile.TemporaryDirectory(prefix="st-fullscreen-")
         cls.executable = Path(cls.output.name) / "FullscreenBridgeChecks.exe"
-        sources = [PROJECT / "Unity/Assets/Scripts/LastStandBrowserBridge.cs", Path(__file__).with_name("FullscreenBridgeChecks.cs")]
-        result = subprocess.run([str(MONO), str(CSC), "-nologo", "-warnaserror+", f"-out:{cls.executable}"] + [str(p) for p in sources],
-                                capture_output=True, text=True, encoding="utf-8-sig", timeout=60)
+        sources = [PROJECT / "Unity/Assets/Scripts/LastStandBrowserBridge.cs",
+                   PROJECT / "Unity/Assets/Scripts/Platform/LastStandPlatform.cs",
+                   PROJECT / "Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs",
+                   Path(__file__).with_name("FullscreenBridgeChecks.cs")]
+        sources = complete_sources(PROJECT / "Unity/Assets/Scripts", sources)
+        result = compile_csharp(cls.executable, sources, warnings_as_errors=True, timeout_seconds=60)
         if result.returncode:
             cls.output.cleanup()
             raise AssertionError("Actual-source compilation failed (not behavioral RED):\n" + result.stdout + result.stderr)
@@ -31,8 +36,7 @@ class FullscreenBridgeTests(unittest.TestCase):
         cls.output.cleanup()
 
     def case(self, name):
-        result = subprocess.run([str(MONO), str(self.executable), name], capture_output=True,
-                                text=True, encoding="utf-8-sig", timeout=30)
+        result = run_csharp(self.executable, [name], timeout_seconds=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.stdout.strip(), "PASS " + name)
 
