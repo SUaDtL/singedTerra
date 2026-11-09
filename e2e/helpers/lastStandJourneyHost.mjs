@@ -22,11 +22,12 @@ export function runTool(tool, args, options = {}) {
 }
 
 
-export function powershell(script) {
+export function powershell(script, {quietStderr=false} = {}) {
   const boundedScript="$ProgressPreference='SilentlyContinue';$ErrorActionPreference='Stop';\n"+script;
   const command='[Console]::InputEncoding=[Text.UTF8Encoding]::new($false);& ([ScriptBlock]::Create([Console]::In.ReadToEnd()))';
   return execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],
-    {input:Buffer.from(boundedScript,'utf8'),encoding:'utf8',timeout:10_000,maxBuffer:4*1024*1024,windowsHide:true});
+    {input:Buffer.from(boundedScript,'utf8'),encoding:'utf8',timeout:10_000,maxBuffer:4*1024*1024,windowsHide:true,
+      ...(quietStderr?{stdio:['pipe','pipe','pipe']}:{})});
 }
 
 
