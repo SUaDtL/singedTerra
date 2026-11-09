@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
@@ -21,11 +21,26 @@ import {
   revalidateRequiredCiRun,
   selectRequiredCiRun,
 } from './backendRelease.mjs';
+import { prepareProposal } from './reviewedConfigDiff.mjs';
 
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
 const root = join(import.meta.dirname, '..', '..');
 const workflow = readFileSync(join(root, '.github', 'workflows', 'deploy-backend.yml'), 'utf8');
+
+test('CLI 3 configuration and database operations select the intended targets', () => {
+  const config = readFileSync(join(root, 'supabase', 'config.toml'), 'utf8');
+  const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts;
+  assert.match(config, /^\[local_smtp\]$/m);
+  assert.doesNotMatch(config, /^\[inbucket\]$/m);
+  assert.equal(scripts['deploy:backend:migrations'], 'node scripts/ci/reviewedConfigDiff.mjs migrations');
+  assert.equal(scripts['deploy:backend:config'], 'node scripts/ci/reviewedConfigDiff.mjs config');
+  assert.match(workflow, /supabase migration list --output json --remote/);
+  assert.match(workflow, /supabase db push --dry-run --output json --remote/);
+  assert.doesNotMatch(workflow, /supabase (?:migration list|db push) --linked/);
+  assert.match(workflow, /node scripts\/ci\/reviewedConfigDiff\.mjs preflight/);
+  assert.ok(workflow.indexOf('reviewedConfigDiff.mjs preflight') < workflow.indexOf('npm run deploy:backend:migrations'));
+});
 
 function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
@@ -110,7 +125,7 @@ async function writeReleaseFixture(directory, newline) {
 
   const manifest = {
     schemaVersion: 1,
-    supabaseCliVersion: '2.105.0',
+    supabaseCliVersion: '3.0.0',
     config: { path: 'supabase/config.toml', sha256: sha256(lfBytes(sources.config)) },
     functionShared: { path: 'supabase/functions/_shared', sha256: fixtureTreeDigest(sources.functionShared) },
     verifiedReplayShared: { path: 'shared/src', sha256: fixtureTreeDigest(sources.verifiedReplayShared) },
@@ -132,16 +147,16 @@ async function writeReleaseFixture(directory, newline) {
     },
   };
   const scripts = {
-    'deploy:backend:migrations': 'supabase db push --linked --yes',
-    'deploy:backend:config': 'supabase config push --yes',
-    'deploy:backend:functions': 'supabase functions deploy release_probe --use-api --yes',
+    'deploy:backend:migrations': 'node scripts/ci/reviewedConfigDiff.mjs migrations',
+    'deploy:backend:config': 'node scripts/ci/reviewedConfigDiff.mjs config',
+    'deploy:backend:functions': 'node scripts/ci/reviewedConfigDiff.mjs functions',
     'deploy:backend': 'npm run backend:release:check && npm run deploy:backend:migrations && npm run deploy:backend:config && npm run deploy:backend:functions',
   };
-  await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, scripts, devDependencies: { supabase: '2.105.0' } }), 'utf8');
+  await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, scripts, devDependencies: { supabase: '3.0.0' } }), 'utf8');
   await writeFile(join(directory, 'package-lock.json'), JSON.stringify({
     packages: {
-      '': { devDependencies: { supabase: '2.105.0' } },
-      'node_modules/supabase': { version: '2.105.0' },
+      '': { devDependencies: { supabase: '3.0.0' } },
+      'node_modules/supabase': { version: '3.0.0' },
     },
   }), 'utf8');
   await writeFile(
@@ -169,7 +184,7 @@ function ciRun(overrides = {}) {
 test('the checked-in backend manifest exactly describes the current release inputs without a circular source SHA', () => {
   const result = loadAndValidateManifest(root);
   assert.equal(result.manifest.schemaVersion, 1);
-  assert.equal(result.manifest.supabaseCliVersion, '2.121.0');
+  assert.equal(result.manifest.supabaseCliVersion, '3.0.0');
   assert.equal(result.manifest.functions.length, 22);
   assert.deepEqual(result.manifest.migrations.slice(-2).map(entry => entry.path), [
     'supabase/migrations/024_verified_challenge_rewards.sql',
@@ -457,26 +472,34 @@ test('package release scripts reject partial or implicit function deployment', (
   }, functionNames), /complete release policy/i);
 });
 
-test('the actual config release script passes noninteractive confirmation to an isolated CLI seam', async (t) => {
+test('the actual config release script requires a reviewed proposal before its explicit target mutation', async (t) => {
   const fixture = await mkdtemp(join(tmpdir(), 'singedterra-config-command-'));
   t.after(() => rm(fixture, { recursive: true, force: true }));
   const output = join(fixture, 'arguments.json');
-  const probe = join(fixture, 'probe.cjs');
-  const bin = join(fixture, 'node_modules', '.bin');
-  await mkdir(bin, { recursive: true });
-  await writeFile(probe, "require('node:fs').writeFileSync(process.env.PROBE_OUTPUT, JSON.stringify(process.argv.slice(2)))\n");
-  if (process.platform === 'win32') {
-    await writeFile(join(bin, 'supabase.cmd'), `@echo off\r\n"${process.execPath}" "%FAKE_SUPABASE_PROBE%" %*\r\n`);
-  } else {
-    const executable = join(bin, 'supabase');
-    await writeFile(executable, `#!/bin/sh\nexec "${process.execPath}" "$FAKE_SUPABASE_PROBE" "$@"\n`);
-    await chmod(executable, 0o755);
-  }
-  const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-  await writeFile(join(fixture, 'package.json'), JSON.stringify({
-    private: true,
-    scripts: { 'probe-config': packageJson.scripts['deploy:backend:config'] },
-  }));
+  const ref='abcdefghijklmnopqrst';
+  const proposal={schema_version:1,config_schema:'fixture',target:{kind:'linked',project_ref:ref,environment:'production',local_scope:'base'},scope:{present:['api','auth','database','pooler','realtime','storage'],missing:[]},changes:[],masked:[],unmanaged:[],counts:{update:0,local_only:0,remote_only:0,total:0},message:'No config differences found.'};
+  await writeReleaseFixture(fixture,'\n');
+  await mkdir(join(fixture,'node_modules','supabase','dist'),{recursive:true});
+  await mkdir(join(fixture,'scripts','ci'),{recursive:true});
+  await cp(join(root,'node_modules','typescript'),join(fixture,'node_modules','typescript'),{recursive:true});
+  await mkdir(join(fixture,'node_modules','@typescript'),{recursive:true});
+  await cp(join(root,'node_modules','@typescript','old'),join(fixture,'node_modules','@typescript','old'),{recursive:true});
+  await copyFile(join(root,'scripts','ci','backendRelease.mjs'),join(fixture,'scripts','ci','backendRelease.mjs'));
+  await copyFile(join(root,'scripts','ci','reviewedConfigDiff.mjs'),join(fixture,'scripts','ci','reviewedConfigDiff.mjs'));
+  await writeFile(join(fixture,'node_modules','supabase','dist','supabase.js'),"const fs=require('node:fs'); const args=process.argv.slice(2); if(args[0]==='--version') {if(process.env.SUPABASE_CLI_BINARY_OVERRIDE || process.env.REVIEWED_CONFIG_PROPOSAL)fs.writeFileSync(process.env.VERSION_LEAK_MARKER,'leaked'); console.log('3.0.0');} else if(args[0]==='config'&&args[1]==='diff') {if(process.env.FAKE_FAIL){process.stderr.write('private-probe-sentinel');process.exit(1);}if(process.env.FAKE_ADD_CONFIG)fs.writeFileSync('supabase/config.json','{}');if(process.env.FAKE_ADD_MIGRATION)fs.writeFileSync('supabase/migrations/002_unreviewed.sql','select 2;');console.log(process.env.FAKE_PROPOSAL);} else fs.writeFileSync(process.env.PROBE_OUTPUT,JSON.stringify({args,workdir:process.env.SUPABASE_WORKDIR??null,project:process.env.SUPABASE_PROJECT_ID??null,reviewed:process.env.REVIEWED_CONFIG_PROPOSAL??null}));\n");
+  const manifest=readFileSync(join(fixture,'supabase','backend-release-manifest.json'));
+  const config=readFileSync(join(fixture,'supabase','config.toml'));
+  const packageJson = JSON.parse(readFileSync(join(fixture, 'package.json'), 'utf8'));
+  packageJson.scripts['probe-config']=packageJson.scripts['deploy:backend:config'];
+  packageJson.scripts['probe-migrations']=packageJson.scripts['deploy:backend:migrations'];
+  packageJson.scripts['probe-functions']=packageJson.scripts['deploy:backend:functions'];
+  await writeFile(join(fixture, 'package.json'), JSON.stringify(packageJson));
+  execFileSync('git',['init','--quiet'],{cwd:fixture});
+  execFileSync('git',['add','package.json','package-lock.json','scripts/ci/reviewedConfigDiff.mjs','scripts/ci/backendRelease.mjs','supabase','shared'],{cwd:fixture});
+  execFileSync('git',['-c','user.name=Test','-c','user.email=test@example.invalid','commit','--quiet','-m','fixture'],{cwd:fixture});
+  const sourceSha=execFileSync('git',['rev-parse','HEAD'],{cwd:fixture,encoding:'utf8'}).trim();
+  const binding={sourceSha,manifestSha256:sha256(manifest),configSha256:sha256(config),cliVersion:'3.0.0',projectRef:ref};
+  const reviewedProposal=prepareProposal(proposal,binding);
   const npmCli = [
     process.env.npm_execpath,
     join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
@@ -486,10 +509,85 @@ test('the actual config release script passes noninteractive confirmation to an 
     cwd: fixture,
     encoding: 'utf8',
     shell: false,
-    env: { ...process.env, FAKE_SUPABASE_PROBE: probe, PROBE_OUTPUT: output },
+    env: { ...process.env, SUPABASE_PROJECT_REF:ref, SUPABASE_WORKDIR:'untrusted', SUPABASE_CLI_BINARY_OVERRIDE:'untrusted', VERSION_LEAK_MARKER:join(fixture,'version-leak'), REVIEWED_CONFIG_PROPOSAL:reviewedProposal, FAKE_PROPOSAL:JSON.stringify(proposal), PROBE_OUTPUT: output },
   });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(readFileSync(output, 'utf8')), ['config', 'push', '--yes']);
+  assert.equal(existsSync(join(fixture,'version-leak')),false,'version check must not inherit CLI overrides or the private review');
+  assert.deepEqual(JSON.parse(readFileSync(output, 'utf8')), {args:['config','push','--yes',`--remote=${ref}`,'--workdir',fixture],workdir:null,project:null,reviewed:null});
+  await writeFile(output,'no-mutation');
+  const refused=spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-config'],{
+    cwd:fixture,encoding:'utf8',shell:false,
+    env:{...process.env,SUPABASE_PROJECT_REF:ref,REVIEWED_CONFIG_PROPOSAL:'{}',FAKE_PROPOSAL:JSON.stringify(proposal),PROBE_OUTPUT:output},
+  });
+  assert.notEqual(refused.status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  const failed=spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-config'],{
+    cwd:fixture,encoding:'utf8',shell:false,
+    env:{...process.env,SUPABASE_PROJECT_REF:ref,REVIEWED_CONFIG_PROPOSAL:reviewedProposal,FAKE_FAIL:'1',PROBE_OUTPUT:output},
+  });
+  assert.notEqual(failed.status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  assert.ok(!`${failed.stdout}${failed.stderr}`.includes('private-probe-sentinel'));
+  const fixtureEnv={...process.env,SUPABASE_PROJECT_REF:ref,SUPABASE_PROJECT_ID:'z'.repeat(20),SUPABASE_WORKDIR:'foreign',REVIEWED_CONFIG_PROPOSAL:reviewedProposal,FAKE_PROPOSAL:JSON.stringify(proposal),PROBE_OUTPUT:output};
+  const runProbe=name=>spawnSync(process.execPath,[npmCli,'--ignore-scripts','run',name],{cwd:fixture,encoding:'utf8',shell:false,env:fixtureEnv});
+  const functionsEnv={...fixtureEnv};delete functionsEnv.REVIEWED_CONFIG_PROPOSAL;
+  assert.equal(spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-functions'],{cwd:fixture,encoding:'utf8',shell:false,env:functionsEnv}).status,0);
+  assert.deepEqual(JSON.parse(readFileSync(output,'utf8')),{args:['functions','deploy','release_probe','--use-api','--yes',`--remote=${ref}`,'--workdir',fixture],workdir:null,project:null,reviewed:null});
+  await writeFile(output,'no-mutation');
+  const migration=join(fixture,'supabase','migrations','001_init.sql');
+  const originalMigration=readFileSync(migration);
+  await writeFile(migration,'select 9;\n');
+  assert.notEqual(runProbe('probe-migrations').status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await writeFile(migration,originalMigration);
+  const extra=join(fixture,'supabase','migrations','002_unreviewed.sql');
+  await writeFile(extra,'select 2;\n');
+  assert.notEqual(runProbe('probe-migrations').status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await rm(extra);
+  const alternate=join(fixture,'supabase','config.json');
+  await writeFile(alternate,'{}');
+  assert.notEqual(runProbe('probe-config').status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await rm(alternate);
+  const afterDiffConfig=spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-config'],{
+    cwd:fixture,encoding:'utf8',shell:false,env:{...fixtureEnv,FAKE_ADD_CONFIG:'1'},
+  });
+  assert.notEqual(afterDiffConfig.status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await rm(alternate);
+  const afterDiffMigration=spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-migrations'],{
+    cwd:fixture,encoding:'utf8',shell:false,env:{...fixtureEnv,FAKE_ADD_MIGRATION:'1'},
+  });
+  assert.notEqual(afterDiffMigration.status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await rm(extra);
+  const dotenv=join(fixture,'.env.local');
+  await writeFile(dotenv,'SUPABASE_PROJECT_ID=foreign\n');
+  assert.notEqual(runProbe('probe-config').status,0);
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
+  await rm(dotenv);
+  const diffHelper=join(fixture,'untrusted-diff.sh');
+  const gitLeak=join(fixture,'git-leak');
+  const shellMarker=gitLeak.replaceAll('\\','/').replaceAll("'","'\\''");
+  await writeFile(diffHelper,`#!/bin/sh\nprintf invoked > '${shellMarker}'\nexit 0\n`);
+  await chmod(diffHelper,0o755);
+  const releaseScript=join(fixture,'scripts','ci','reviewedConfigDiff.mjs');
+  await writeFile(releaseScript,`${readFileSync(releaseScript,'utf8')}\n// unreviewed change\n`);
+  execFileSync('git',['config','diff.external',`sh "${diffHelper.replaceAll('\\','/')}"`],{cwd:fixture});
+  execFileSync('git',['config','diff.trustExitCode','true'],{cwd:fixture});
+  const positive=spawnSync('git',['diff','--quiet','HEAD','--','scripts/ci/reviewedConfigDiff.mjs'],{
+    cwd:fixture,encoding:'utf8',shell:false,
+  });
+  assert.equal(positive.status,0,'the adversarial helper must be able to conceal the change without the guard');
+  assert.equal(existsSync(gitLeak),true,'the positive control must execute the helper');
+  await rm(gitLeak);
+  const forged=spawnSync(process.execPath,[npmCli,'--ignore-scripts','run','probe-config'],{
+    cwd:fixture,encoding:'utf8',shell:false,env:fixtureEnv,
+  });
+  assert.notEqual(forged.status,0,'a modified bound input must be rejected');
+  assert.equal(existsSync(gitLeak),false,'git must not execute inherited external diff helpers');
+  assert.equal(readFileSync(output,'utf8'),'no-mutation');
 });
 
 const workflowRejections = [
@@ -509,7 +607,9 @@ const workflowRejections = [
   ['detached deploy dependency', workflow.replace('    needs: gate', '    needs: []'), /depend only on the gate/i],
   ['credential step before revalidation', workflow.replace('      - name: Revalidate source, manifest, CLI and exact CI attempt after approval', '      - name: Premature production credential\n        run: echo unsafe\n        env:\n          EARLY_SECRET: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n      - name: Revalidate source, manifest, CLI and exact CI attempt after approval'), /after approval-time revalidation/i],
   ['masked preflight pipeline failure', workflow.replace(' > "$RUNNER_TEMP/migrations-before.json"', ' | tee "$RUNNER_TEMP/migrations-before.json"'), /preflight is not fail-closed/i],
-  ['migration-list success suffix', workflow.replace('supabase migration list --linked --output json >', 'supabase migration list --linked --output json || true >'), /closed reviewed execution contract/i],
+  ['migration-list success suffix', workflow.replace('supabase migration list --output json --remote >', 'supabase migration list --output json --remote || true >'), /closed reviewed execution contract/i],
+  ['missing reviewed config preflight', workflow.replace('node scripts/ci/reviewedConfigDiff.mjs preflight', 'echo bypassed'), /closed reviewed execution contract/i],
+  ['masked reviewed config failure', workflow.replace('node scripts/ci/reviewedConfigDiff.mjs preflight', 'node scripts/ci/reviewedConfigDiff.mjs preflight || true'), /closed reviewed execution contract/i],
   ['extra credentialed mutation before preflight', workflow.replace('      - name: Read config metadata before mutation', '      - name: Premature migration mutation\n        id: premature_migrations\n        run: npm run deploy:backend:migrations\n        env:\n          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}\n      - name: Read config metadata before mutation'), /closed reviewed execution contract/i],
   ['missing protected environment', workflow.replace('name: production-backend', 'name: production'), /protected environment/i],
   ['missing administrator-bypass evidence', workflow.replaceAll('admins_can_bypass', 'omitted_admin_policy'), /protected environment/i],
@@ -620,6 +720,7 @@ test('the real gate entrypoint fails closed before network access for a non-manu
       GITHUB_WORKFLOW_REF: 'SUaDtL/singedTerra/.github/workflows/deploy-backend.yml@refs/heads/main',
       CANDIDATE_SHA: SHA_A,
       CANDIDATE_MANIFEST_SHA256: release.manifestSha256,
+      REVIEWED_CONFIG_PROPOSAL: 'private-review-sentinel',
     },
   });
   assert.notEqual(result.status, 0);
@@ -687,6 +788,8 @@ test('release receipts bind the source and phase evidence while redacting creden
     GITHUB_RUN_ATTEMPT: '2',
     GITHUB_ACTOR: 'verified-maintainer',
     CANDIDATE_MANIFEST_SHA256: 'c'.repeat(64),
+    REVIEWED_CONFIG_PROPOSAL: 'private-review-sentinel',
+    CONFIG_PREFLIGHT_OUTCOME: 'failure',
     REQUIRED_CI_RUN_ID: '20',
     REQUIRED_CI_RUN_ATTEMPT: '1',
     MIGRATION_SET_SHA256: 'd'.repeat(64),
@@ -700,6 +803,8 @@ test('release receipts bind the source and phase evidence while redacting creden
     MIGRATION_DRY_RUN_OUTCOME: 'success',
   });
   assert.equal(receipt.sourceSha, SHA_A);
+  assert.ok(!JSON.stringify(receipt).includes('private-review-sentinel'),'The private review proposal must not appear in the receipt');
+  assert.equal(receipt.phaseOutcomes.configPreflight,'failure');
   assert.equal(receipt.phaseOutcomes.functions, 'success');
   assert.equal(receipt.phaseOutcomes.migrationDryRun, 'success');
   assert.equal(receipt.observations.functionsBefore.value[0].access_token, '[redacted]');
