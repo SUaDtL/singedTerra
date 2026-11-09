@@ -785,72 +785,72 @@ SOFTWARE.
   },
   {
     "path": "node_modules/@supabase/auth-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.118.0.tgz",
-    "integrity": "sha512-xWfPXyhS2KDSfAneMtI6p/tBnbdiz/5vaRKXEqUfzfC9WCniKr2Ds5o5G7RIGig0bom4z6wUY9zaV07WDVTfnQ==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.119.0.tgz",
+    "integrity": "sha512-WI7KqJRxqZjm77PlRO/VfKretL4SG8g8stWfBmpyx9To+fFapZlSbXA8QkduoMvr72rRpIF24ZLrjktBrp+ZFA==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-darwin-arm64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-darwin-arm64/-/cli-darwin-arm64-2.121.0.tgz",
-    "integrity": "sha512-ZvXKj3wW4Kq5/MrG2xdgZeOWETxmUC9jl16X/i/np7u5A/WLuC/L0+KKY5i0eCrTnNwWFpZdlWKzu/J9QgkPgg==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-darwin-arm64/-/cli-darwin-arm64-3.0.0.tgz",
+    "integrity": "sha512-6N/clanDjhKWcPsHBqXcSt7HCZ0bBTjkGGrHgM4834zFu/PBIVBS6u9YJVXxOdQnbwyw/rTwumSYvgwwJgoIug==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-darwin-x64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-darwin-x64/-/cli-darwin-x64-2.121.0.tgz",
-    "integrity": "sha512-s+bnLljdI5MYlt92rJnsIuVcTYtmJyydUB/FUsKm5KCyD+HpwnY1hL6m/+bKZQCwIHsql1dlmJRZ0HNZOZzuTQ==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-darwin-x64/-/cli-darwin-x64-3.0.0.tgz",
+    "integrity": "sha512-e2DKOLIqK82XRp/GSmm0oMXx2CLBSTWJGobro1POPhmn3o+NWRQPI1QvjLFYIeI/9ZfSuo5PUJN4KI9OSjzAng==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-linux-arm64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-arm64/-/cli-linux-arm64-2.121.0.tgz",
-    "integrity": "sha512-JKvffWRuzS1+cVzgv1gWi2nWaCGvS22mMMwEBnSkRFD0BSdN1QHZ7yteI7uRg1HV9R0s+HCwg1rtjrHnAEE55Q==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-arm64/-/cli-linux-arm64-3.0.0.tgz",
+    "integrity": "sha512-sjdzBJGa+zfXSxUczRkqAJpuVgE2PFWXJazYxOnrqYWVPiS9Q0e2m06JdUXwZz/GqxKuLuDQN1OyLFu8DLfQDA==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-linux-arm64-musl",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.121.0.tgz",
-    "integrity": "sha512-8fGnWhnnbf3zdV7mQvEHb4qa1LMTq/JpSdO109O/Lxy246Dwar8o5XrDgy7bBK8QLzvp0XH+p1ky+wxRGVFzpw==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-arm64-musl/-/cli-linux-arm64-musl-3.0.0.tgz",
+    "integrity": "sha512-Bxe2bggo4dLW6tvlA6Qmjzth3VPGNEzjEaxYZohalP+q4jynov6OE6ibeLEdBtalykDMRbUXQ9j7r1p10RI/hQ==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-linux-x64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64/-/cli-linux-x64-2.121.0.tgz",
-    "integrity": "sha512-87EhtLctkNtC51CPhyeLoSdoGGzCZ3iNbSdczdcSklbvg0RsJbU+mTDaF3v53EWuPhyM0VRYqZJZNnjI5ABLcg==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64/-/cli-linux-x64-3.0.0.tgz",
+    "integrity": "sha512-cR4S5e3nygMaBShbbt6FOiMumtrFJjwdKMXMimC1y7FpxITlwLv36BveaifQZ8aY+v1u+w8oYANU2H72Y4ibWA==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-linux-x64-musl",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64-musl/-/cli-linux-x64-musl-2.121.0.tgz",
-    "integrity": "sha512-diDbFsC/KRmnOGUYYBxmUqn6ccqB+jliesMfp821grDIVkq9ucqg/aUjCOsCyRbcs5uhgbbWgh9YWTuxfVpZog==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64-musl/-/cli-linux-x64-musl-3.0.0.tgz",
+    "integrity": "sha512-ANyJ6h2X4HgM8f3PAFLGNH1XzYNho2M4kev/z5Ryq6on3ArI9FA+4KrrUqs1SFGji8E5WGyx/H+CHxmcXf5rTg==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-windows-arm64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-windows-arm64/-/cli-windows-arm64-2.121.0.tgz",
-    "integrity": "sha512-cHpGQTLXUm4Uk9NzIdv8oUvmsNq7mlAN/CmVqNYzMUJyqmFofOPETwYPShDV9apA+5k84oKU93tn3N4wv7B3yg==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-windows-arm64/-/cli-windows-arm64-3.0.0.tgz",
+    "integrity": "sha512-Xox3X7BXpe+/X9XpAgo5/Qrv5qtJaItc3gLlAwJ2d2AcGrBnfh4/b0MvbNbyO7I2Fj1c7yrPmMI4lEicVvIGGw==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/cli-windows-x64",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/@supabase/cli-windows-x64/-/cli-windows-x64-2.121.0.tgz",
-    "integrity": "sha512-uvWiQ3cGKrZhtkctXHJJY0r0L6D2s/Dbc8/CxOVDxlXIH5mG3f8ZbqwMs9eRbPDqifyYFlwl+BX+tY3aJosIxQ==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/@supabase/cli-windows-x64/-/cli-windows-x64-3.0.0.tgz",
+    "integrity": "sha512-nBfd1Rz8MwstIJXHo5fyIQgjmYgLxDbBIuCmuttYAQwTafc7jUOofIAAUUARkhalHu0kBOEyRuEqe2rfKr/l5w==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/functions-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.118.0.tgz",
-    "integrity": "sha512-4ofletPa/noKAU6KHeqsd3FztGzRPUEJRey1MKY0o+PIHaVePqRPShIXtl37gcVyIWaFM+zNg6r9zh0uUSFOSA==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.119.0.tgz",
+    "integrity": "sha512-0aOdF/Y4lA+62K02nwZClfAthXmFEml0od42q3yy/9t3bBitomAOYEatTFSnxT/5UeeIDNn2DOnXTdAP0sqGNQ==",
     "license": "MIT"
   },
   {
@@ -862,30 +862,30 @@ SOFTWARE.
   },
   {
     "path": "node_modules/@supabase/postgrest-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.118.0.tgz",
-    "integrity": "sha512-JXy+37KPApHsyotaQACovv/Jy9E22rfiWLRuT+2UjoEAcAIelDFIrsF/FY47Dy19mO7lI0Tq+zDCX8oJ2Ozfiw==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.119.0.tgz",
+    "integrity": "sha512-qBmcjEFO7Ptyf5qvOXYJa1s4bfA4zsMIFf2i+h2zd6RRTDLwquX8z1mnS9djNOJjbiO1OGFh5Y2Lc2k2pA8TMw==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/realtime-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.118.0.tgz",
-    "integrity": "sha512-pzCIEWjqD5/xqEZQerpt+q9rsgYkcrkgCJgf0W2ULqC4fYUeB/p9CFa3t9vn+IVh6dMN9r4ZCE262lZvUC+Bfw==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.119.0.tgz",
+    "integrity": "sha512-fPzxt+SAYweqsZUCSZma2dvN+HT6lVjwWj8BbkVwapW6wNf1odUi+ATYN7svX4Zm9vt0kz0l0VzINAUAA38FEg==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/storage-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.118.0.tgz",
-    "integrity": "sha512-5MNkKt2Moy7Jud/sPX7/28BwdDxZMCVHGJT00b8op3KRa9LKSjOAYU5IcfGWIstaasAqY8GkbA6oI3IRDgB1YQ==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.119.0.tgz",
+    "integrity": "sha512-htx1dSCnSJVPlx2BNSgLSUDvLMxuGbYa6pUPl5xoCs4as4cIhBVwuxj78zbggCyPHxLnEXjsV/qvlDsVjpodKw==",
     "license": "MIT"
   },
   {
     "path": "node_modules/@supabase/supabase-js",
-    "version": "2.118.0",
-    "resolved": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.118.0.tgz",
-    "integrity": "sha512-FxI8UXMVC2UG7IkeiI8fuQZqq2oI3JeSuN8MPIC2RLVaoEAxKS0nqE6kii9Ewpq8f9gNPM6git1Y8f0vN/QLFw==",
+    "version": "2.119.0",
+    "resolved": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.119.0.tgz",
+    "integrity": "sha512-MKP49G6bJbPhvsZDegZ/IXS/ITApPgplDCF5+F65KZ5kIArS5Y90WFxwvWYALx2bsxdrSuHvkCiXHYr3dU8+sw==",
     "license": "MIT"
   },
   {
@@ -1590,9 +1590,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/pixelmatch",
-    "version": "7.2.0",
-    "resolved": "https://registry.npmjs.org/pixelmatch/-/pixelmatch-7.2.0.tgz",
-    "integrity": "sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg==",
+    "version": "8.0.0",
+    "resolved": "https://registry.npmjs.org/pixelmatch/-/pixelmatch-8.0.0.tgz",
+    "integrity": "sha512-cIqOLfh5k52us715qf3B3+kTOxZv+WDv77HN7xokLScYQGYQHi4m/ynoDIPpvF2LvCyUJGyvzY64i0QCXtzu1g==",
     "license": "ISC"
   },
   {
@@ -1632,9 +1632,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/preact",
-    "version": "10.29.8",
-    "resolved": "https://registry.npmjs.org/preact/-/preact-10.29.8.tgz",
-    "integrity": "sha512-ej2aVZ+vZ8WO7tvlQWRM9N63A0KzF9q4mWJfDUHgYaIofWY9hu74QdnQrjoPMmZi2/nZ5gN0bJCQF49xQqx09Q==",
+    "version": "11.1.1",
+    "resolved": "https://registry.npmjs.org/preact/-/preact-11.1.1.tgz",
+    "integrity": "sha512-vpFVfai437pbuLri7XVeslCPfrEZX6Z1S2gV+MOFrA/kji+NKUXvH7y01EnVjA1guLigfkVp77Sqipd4SIllCg==",
     "license": "MIT"
   },
   {
@@ -1751,9 +1751,9 @@ SOFTWARE.
   },
   {
     "path": "node_modules/supabase",
-    "version": "2.121.0",
-    "resolved": "https://registry.npmjs.org/supabase/-/supabase-2.121.0.tgz",
-    "integrity": "sha512-xffhOgD9rXsXLK+DQ+3Gq8b2KmavMjPHGuJr7lfVlD8vKK1HHFggYlmzdRECqPmOL8g3Yd5PN3URcUR8xWZcWw==",
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/supabase/-/supabase-3.0.0.tgz",
+    "integrity": "sha512-FB+V+RzXYTmCzbchaN3CUdxLPpcKzJd4RSOc/dAE6cAtI7TZE8J5OLJYXjJae9C/fbi2xxzZJLL/Y2N1zbzf9A==",
     "license": "MIT"
   },
   {
