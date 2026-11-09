@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [~] Integrate Dependabot PRs 553-556  (from github-pr-batch#553-556)  (started 2026-11-09)
+  - Work origin: github-pr-batch#553-556
+  - Desc: Combine and qualify Supabase CLI 3, Supabase JS 2.119, Preact 11 and Pixelmatch 8, preserving backend release and gameplay compatibility
+  - Work type: feature
+  - Work ID: WORK-4EF950741BDBBB4806FAC1B63883E8C6
+  - Work operation ID: dependabot-553-556-20261109
 - [x] Bound exact-candidate Pages journeys with the shared CI matrix  (from https://github.com/SUaDtL/singedTerra/actions/runs/42377836547)  (done 2026-11-07)
   - Work origin: https://github.com/SUaDtL/singedTerra/actions/runs/42377836547
   - Desc: Pages run 42377836547 exhausted 3600000 ms in its unpartitioned Campaigns journey. Target regression is red for the absent shared matrix. Reuse all maintained partitions and require complete source-bound evidence before publication while retaining immutable candidate checks.
