@@ -2,11 +2,11 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "browser_ci_repair_committed_hosted_pending",
+  "status": "runtime_ci_followup_committed_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087"
+    "sha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3"
   },
   "initialStructuralValidation": {
     "parsed": true,
@@ -1777,17 +1777,17 @@
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 83,
-    "anchorCount": 73,
+    "linkCount": 92,
+    "anchorCount": 82,
     "imageCount": 10,
     "allImageAltTextPresent": true,
     "linkCountIncludesImageSources": true,
     "browserRenderedReviewHtml": true,
     "imageDimensionsVerified": true,
-    "renderBoundary": "Exact current delivery HTML rendered at 1280x900 and 390x844; all 10 images decoded without horizontal overflow. Root visually inspected the desktop repair table and portrait header."
+    "renderBoundary": "Current HTML rendered at1280x900 and390x844;10 images decoded and no horizontal overflow."
   },
   "reviewDocumentRenders": {
-    "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+    "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
     "views": [
       {
         "name": "desktop",
@@ -1795,16 +1795,16 @@
         "height": 900,
         "metrics": {
           "documentWidth": 1280,
-          "documentHeight": 13080,
+          "documentHeight": 13674,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop.png",
-          "sha256": "4e6bae8e80c349230a098c59321bf1d8b10ee3e1956a67b22ce37ed64976c52d"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop.png",
+          "sha256": "04e5021daaf8f2936efc014c83af9ceac78765781cb836f8dd7e4e29f8bc4331"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop-top.png",
-          "sha256": "230c9c1a058e37864845ae26b95d97c5c81d816364b3419b7111e87ccc90dc7e"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop-top.png",
+          "sha256": "742d6e98f758a68c4504527a77bc14f0c38bc17ab1770c4ef838661652ad2cf6"
         }
       },
       {
@@ -1813,29 +1813,29 @@
         "height": 844,
         "metrics": {
           "documentWidth": 390,
-          "documentHeight": 20733,
+          "documentHeight": 21867,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait.png",
-          "sha256": "bf24b5c9f49ff28a7ef4542bafc6301385588da8840dc6a307d0c8b9acc7b0e9"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait.png",
+          "sha256": "b5c80771fed1781db1abd6b68a128d8ae2d11b6945fac70096838b746a750984"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait-top.png",
-          "sha256": "5ffc089da58ef8f01fee564a8ace93a9590488f421c90aa7f60b901f6a349011"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait-top.png",
+          "sha256": "2cc4373dac806049eb03c39f7c07ceb893b5ab0bf3e54056b3b0ebbf158c3fc6"
         }
       }
     ],
     "status": "pass"
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T14:53:50.657Z",
-    "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+    "observedUtc": "2026-11-12T15:47:49.744Z",
+    "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
     "views": [
-      "desktop-browser-ci-repair",
-      "portrait-top"
+      "portrait-top",
+      "desktop-provenance"
     ],
-    "result": "Same verified responsive layout; approval and committed repair replace the pending gate. Current rendered widths and image decoding pass."
+    "result": "Inspected current rendered images: readable current status and runtime proof, correctly retained historical native provenance, ten decoded images and no horizontal overflow at both widths."
   },
   "browserCiRepair": {
     "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
@@ -2208,5 +2208,185 @@
         "status": "pass"
       }
     }
+  },
+  "runtimeCiFollowup": {
+    "workId": "WORK-034C12946EE855D073360E8C5C1995E2",
+    "status": "local_complete_replacement_hosted_ci_pending",
+    "sourceCommit": "2ba8e3ad2d844b21ebb918ce44588140598762df",
+    "failedHead": "58cd6da99cb079e49241e9d78176f5ffe72fcfd2",
+    "failedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43242487483",
+    "causesAndCorrections": [
+      "Select the first eligible cannon hit from the deployment slice after bounded acquisition; preserve exact oracle, callback and duplicate checks.",
+      "Require current v9 checkpoint state after the existing complete save validator; reject old, future, incomplete and forged states.",
+      "Accept a coherent pair emitted during this request, exclude observations later than the sampled page clock, retain one-second freshness for pre-request data and reject at either original eight-second deadline.",
+      "Temporarily clear HDR debug references from every authored UniversalRendererData during Web export, restoring native references and exact saved bytes in the outer finally."
+    ],
+    "focusedVerification": {
+      "policyTests": 529,
+      "qualificationCases": 96,
+      "guardMutantsRejected": 3,
+      "policyLog": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-runtime-policy-final.log",
+        "sha256": "5310f511cfa41cca6c4ff622c8cb8c10b1cc062b8aba79e18f9535542ddaf6a0"
+      },
+      "observationReport": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-runtime-followup-fix.json",
+        "sha256": "15a9b1b19e7e65275e3507a88b3ee055cc12a047d5c9e550e7229bb660134616"
+      },
+      "rendererImportedRed": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-web-renderer-red.log",
+        "sha256": "55a39471ff9b993b47fc81564fc1cca1b07e6e57225746f4ae72991b27295a29"
+      },
+      "rendererImportedGreen": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-web-renderer-green-reviewed.log",
+        "sha256": "19300525fe1bb0d523ce7f240a54bf6ab977f1b705ea63eff714e4fca98d12a8"
+      }
+    },
+    "actualRendererProof": {
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "old": {
+        "loads": 3,
+        "hdrDebugErrors": true,
+        "report": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-web-shader-red.json",
+          "sha256": "fe7b5973decafbd0f55de332283ec8007e33d7ba8533f00d84e1ec27c3648c3b"
+        }
+      },
+      "current": {
+        "loads": 3,
+        "consoleErrors": 0,
+        "pageErrors": 0,
+        "servedLeavesVerifiedBeforeAndAfter": 18,
+        "report": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-web-shader-green.json",
+          "sha256": "1b48e1c404bada9ce752369d7600f316270efd57d8cb8beeeb9283d5f810cda3"
+        }
+      },
+      "boundary": "Actual fresh Chromium Menu-to-Armory loads with software rendering. This focused probe does not claim a new full Skills journey or Windows build."
+    },
+    "build": {
+      "receipt": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261112T152213Z-94202e/result.json",
+      "status": "pass",
+      "sourceBeforeEqualsAfter": true,
+      "source": {
+        "build": "Web-20261112T152213Z-94202e",
+        "receipt": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
+        "receiptSha256": "f7da5dcedc46ade037d4a677d0ce79c7aba4fc7488e4a477b13f459a89c3cc9a",
+        "sourceLockSha256": "d75f33f0643c9f1f09c9ef3ad63295221102cce7f72b36fdf338178470e08ea2",
+        "sourceHead": "58cd6da99cb079e49241e9d78176f5ffe72fcfd2",
+        "sourceInventorySha256": "2c275c86c477b9f6749204ea54e57641f2ea75508b570575196ee5bafb1ab91e",
+        "originalIndexSha256": "36f1f1563d91236a955c08db5f14ccb320376593a440195314262af6b6cc907a"
+      }
+    },
+    "independentReview": {
+      "verdict": "PASS with scope limits: bounded renderer and observer source changes plus retained focused runtime proof. Replacement hosted CI remains pending.",
+      "report": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-runtime-renderer-independent-review.json",
+        "sha256": "4eca1660b5f69d730c6a3df371d1dca562be2fd2fc94eab8b5009093f4ccc70a"
+      }
+    },
+    "sourceCommitContainment": {
+      "path": "campaign-unity/Evidence/last-stand-skills/ci-runtime-commit-containment.json",
+      "sha256": "749414f8f58fa2784de0c24bcc9ececbedab204fd1e560b4ed9757f878842542"
+    },
+    "priorHostedTierJourney": {
+      "head": "58cd6da99cb079e49241e9d78176f5ffe72fcfd2",
+      "job": 131266703834,
+      "result": "pass",
+      "boundary": "Historical result on the failed run; the replacement head requires its own complete CI."
+    },
+    "nativeFollowup": {
+      "result": "one_pass_one_fail",
+      "failure": "The broader background test selection reached the unchanged Windows foreground driver and timed out after ten seconds waiting for a visible focused page.",
+      "log": "campaign-unity/Evidence/last-stand-skills/ci-runtime-followup-background-green.log",
+      "boundary": "Filename reflects intended GREEN, not the actual exit. This is retained as a failed extra native check, not a native qualification pass."
+    },
+    "binaryReviewException": {
+      "recorded": true,
+      "committedWith": "2ba8e3ad2d844b21ebb918ce44588140598762df",
+      "authority": "The user's explicit yes to recording the disclosed binary text-review limitation applies to the same ongoing CI repair.",
+      "boundary": "The sanctioned exception records the binary text-review limitation. It does not represent a security review PASS."
+    },
+    "localHistoryLimitation": {
+      "diagnostic": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-browser-sprint-audit-encoding-block.json",
+        "sha256": "76e9614a85588c37fd49995ff645104d8cd0400706b0534da27435e34af2ba7b"
+      },
+      "boundary": "The existing immutable sprint history has invalid UTF-8 at byte459111. Its three local appended rows remain uncommitted; historical bytes were not rewritten."
+    },
+    "previousDocumentValidation": {
+      "status": "browser_ci_repair_committed_hosted_pending",
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 83,
+        "anchorCount": 73,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "linkCountIncludesImageSources": true,
+        "browserRenderedReviewHtml": true,
+        "imageDimensionsVerified": true,
+        "renderBoundary": "Exact current delivery HTML rendered at 1280x900 and 390x844; all 10 images decoded without horizontal overflow. Root visually inspected the desktop repair table and portrait header."
+      },
+      "reviewDocumentRenders": {
+        "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 13080,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop.png",
+              "sha256": "4e6bae8e80c349230a098c59321bf1d8b10ee3e1956a67b22ce37ed64976c52d"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop-top.png",
+              "sha256": "230c9c1a058e37864845ae26b95d97c5c81d816364b3419b7111e87ccc90dc7e"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 20733,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait.png",
+              "sha256": "bf24b5c9f49ff28a7ef4542bafc6301385588da8840dc6a307d0c8b9acc7b0e9"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait-top.png",
+              "sha256": "5ffc089da58ef8f01fee564a8ace93a9590488f421c90aa7f60b901f6a349011"
+            }
+          }
+        ],
+        "status": "pass"
+      },
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T14:53:50.657Z",
+        "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+        "views": [
+          "desktop-browser-ci-repair",
+          "portrait-top"
+        ],
+        "result": "Same verified responsive layout; approval and committed repair replace the pending gate. Current rendered widths and image decoding pass."
+      }
+    },
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
   }
 }

@@ -217,7 +217,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-c7c5591ce84a3181f900118c8b51b74adf21b733
   - Spec ID: ST-LS-SKILLS-SPEC
   - Plan ID: ST-LS-SKILLS-PLAN
-- [~] Repair browser runtime observation and renderer admission  (from github:SUaDtL/singedTerra/actions/runs/43242487483/browser)  (started 2026-11-12)
+- [x] Repair browser runtime observation and renderer admission  (from github:SUaDtL/singedTerra/actions/runs/43242487483/browser)  (done 2026-11-12)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/43242487483/browser
   - Desc: Hosted run 43242487483 reaches full runtime checks and exposes batched first-hit selection plus the concept renderer retaining an unsupported HDR debug shader. Preserve exact earliest-event validation, strip the unsupported reference from every shipped renderer only during Web build, restore native resources, and qualify the rebuilt full browser matrix.
   - Work type: fix
