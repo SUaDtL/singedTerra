@@ -37,6 +37,7 @@ namespace SingedTerra.LastStand
         public readonly LastStandAppearanceHud Appearance;
         public readonly LastStandArmoryHud Armory;
         public readonly LastStandSkillsHud Skills;
+        public float LayoutDensity { get; private set; } = 1;
         public bool HidesBackground=>activePage?.HidesBackground==true;
         public readonly Button Menu;
         public readonly Button[] Buttons;
@@ -96,7 +97,7 @@ namespace SingedTerra.LastStand
         {
             // Match the bay's type scale on large displays while keeping
             // compact windows at their existing usable target sizes.
-            float density=Mathf.Max(1,Mathf.Min(w/1600,h/900));
+            float density=LayoutDensity=Mathf.Max(1,Mathf.Min(w/1600,h/900));
             activePage?.Layout(w/density,h/density,sx*density,sy*density);
         }
         public void Reveal(Button button)=>activePage?.Reveal(button);

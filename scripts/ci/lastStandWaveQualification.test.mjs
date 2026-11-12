@@ -12,7 +12,7 @@ import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs'
 import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
-import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
+import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,currentWaveExpected,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
   WAVE_LIFECYCLE_CHECKS,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_ERROR_CHECK} from './lastStandWaveQualification.mjs';
 
 // Inert contract fixtures only. They are never browser reports or acceptance.
@@ -22,6 +22,47 @@ const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',impor
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+
+test('current wave reader admits the complete packaged inventory and rejects missing, extra or changed served leaves',()=>{
+  const expected={...expectedFixture(),...currentWaveExpected()},report=baseReport(expected);
+  const check=value=>assertWaveBinding(value,expected,'linux','linux-functional','viewport-section-pass');
+  assert.doesNotThrow(()=>check(report));
+  for(const key of ['served','served_after'])for(const fault of ['missing','extra','changed']){
+    const broken=clone(report),files=broken.binding[key],path=Object.keys(files)[0];
+    if(fault==='missing')delete files[path];
+    else if(fault==='extra')files['TemplateData/unexpected.png']={sha256:hash,bytes:1};
+    else files[path]={...files[path],sha256:'0'.repeat(64)};
+    assert.throws(()=>check(broken),undefined,key+':'+fault);
+  }
+});
+
+test('journey preflight admits only the complete genuine export instead of a historical file count',()=>{
+  const statement=source.match(/^    check\(.+,'complete .* public runtime inventory'\);$/m)?.[0];
+  assert.ok(statement,'Actual journey inventory assertion is present');
+  const check=(condition,message)=>assert.ok(condition,message);
+  const admit=new Function('manifest','receipt','check','assert',statement);
+  const manifest=JSON.parse(readFileSync('client/public/last-stand/asset-manifest.json','utf8'));
+  const receipt=JSON.parse(readFileSync(manifest.source.receipt,'utf8'));
+  assert.doesNotThrow(()=>admit(manifest,receipt,check,assert));
+  for(const fault of ['missing','extra','changed']){
+    const broken=clone(manifest),path=Object.keys(broken.files)[0];
+    if(fault==='missing')delete broken.files[path];
+    else if(fault==='extra')broken.files['TemplateData/unexpected.png']=hash;
+    else broken.files[path]='0'.repeat(64);
+    assert.throws(()=>admit(broken,receipt,check,assert),undefined,fault);
+  }
+});
+
+test('journey cleanup checks drift for every admitted current runtime leaf',()=>{
+  const statement=source.match(/        if\(Object.keys\(report.binding.served\).length===[\s\S]+?else report.served_recheck_scope=[^\n]+/)?.[0];
+  assert.ok(statement,'Actual final served-byte comparison is present');
+  const verify=new Function('report','manifest','assert',statement);
+  const manifest=JSON.parse(readFileSync('client/public/last-stand/asset-manifest.json','utf8'));
+  const served=currentWaveExpected().served,report={binding:{served,served_after:clone(served)}};
+  verify(report,manifest,assert);assert.equal(report.served_recheck_scope,undefined);
+  report.binding.served_after[Object.keys(served)[0]].sha256='0'.repeat(64);
+  assert.throws(()=>verify(report,manifest,assert),/Served runtime bytes drifted/);
+});
 
 for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
   const recorded=hashWaveJourneyInputs();

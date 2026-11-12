@@ -209,6 +209,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-0695865ae1f33106f343ed455e250640d033e241
   - Spec ID: ST-LS-SKILLS-SPEC
   - Plan ID: ST-LS-SKILLS-PLAN
+- [~] Repair current Last Stand browser CI admission  (from github:SUaDtL/singedTerra/actions/runs/43151236183/browser)  (started 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43151236183/browser
+  - Desc: PR 559 browser jobs reject the complete current export using a historical fixed file count; qualify actual export membership, preserve final served-byte drift rejection, and resolve the observed tier geometry failure with current browser proof.
+  - Work type: fix
+  - Work ID: WORK-F0658F281A5FBD4A391C4F1CBD2346E6
+  - Work operation ID: work-c7c5591ce84a3181f900118c8b51b74adf21b733
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

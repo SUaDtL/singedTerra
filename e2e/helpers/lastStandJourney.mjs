@@ -1527,7 +1527,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       'exact source lock admitted');
     check(receipt.build===manifest.source.build && receipt.sourceAfterSha256===manifest.source.sourceInventorySha256,
       'runtime and current source receipt agree');
-    check(Object.keys(manifest.files).length===16,'complete sixteen-leaf public runtime inventory');
+    check(Object.keys(manifest.files).length>0 && Object.keys(manifest.files).length===Object.keys(receipt.artifacts).length-1 && Object.entries(receipt.artifacts).filter(([path])=>path!=='index.html').every(([path,sha256])=>manifest.files[path]===sha256),'complete exported public runtime inventory');
     report.binding={manifest_sha256:fileHash(manifestPath), receipt_sha256:fileHash(receiptPath),
       source_lock_sha256:manifest.source.sourceLockSha256, source_inventory_sha256:receipt.sourceAfterSha256,
       build:receipt.build, sourceHead:receipt.sourceHead, wrapper_sha256:manifest.wrapperSha256,
@@ -2007,7 +2007,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
           const response=await fetchBoundRuntime(base,path);assertServedBytes(response,expected);
           report.binding.served_after[path]={sha256:hash(response.bytes),bytes:response.bytes.length};
         }
-        if(Object.keys(report.binding.served).length===17)
+        if(Object.keys(report.binding.served).length===Object.keys(manifest.files).length+1)
           assert.deepEqual(report.binding.served_after,report.binding.served,'Served runtime bytes drifted during journey');
         else report.served_recheck_scope='Preflight admission was incomplete; original failure retained, after bytes checked against the manifest';
       }

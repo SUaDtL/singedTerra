@@ -471,7 +471,7 @@
       },
       "Unity/Assets/Editor/LastStandObservationContractChecks.cs": {
         "mode": "lf-text",
-        "sha256": "8fb12de2096a4ee9f85971cb12e0e7a898dcf517c9bab39806590234b913e0bb"
+        "sha256": "4d1910227261cf4ca2e86601d3bbca7c19899bc53e7b755684b3594cddda0aa4"
       },
       "Unity/Assets/Editor/LastStandObservationContractChecks.cs.meta": {
         "mode": "lf-text",
@@ -1799,7 +1799,7 @@
       },
       "Unity/Assets/Scripts/LastStandHudObservations.cs": {
         "mode": "lf-text",
-        "sha256": "61597c9caaeea29c53d97eae99876d453d55240ce64a1d85cc9f289ad3930fab"
+        "sha256": "6e1876a21d2093b9e6b44c41a65a947435dd8ed0f1bbb14ff6b46ce39581dc33"
       },
       "Unity/Assets/Scripts/LastStandHudObservations.cs.meta": {
         "mode": "lf-text",
@@ -1887,7 +1887,7 @@
       },
       "Unity/Assets/Scripts/LastStandModalHost.cs": {
         "mode": "lf-text",
-        "sha256": "ecb021641c167b7f529bcfefa6a9eb07b7ba3648ca846d2ed69f40954e7d9ecd"
+        "sha256": "fe209e2b23f4ab491c2f20d3d31c5d6435ba1f4842cfb951be049da0b8e0ad1f"
       },
       "Unity/Assets/Scripts/LastStandModalHost.cs.meta": {
         "mode": "lf-text",
@@ -15062,12 +15062,12 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "458bbcf119d8e40812526f848bd965de48b6b1c1662960a21c4a5499ed267427"
+    "sha256": "f3b3bdad46f688b24cbac871ecbb32f77c65bc7a5f0b81250d1802b32ade249f"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
       "mode": "lf-text",
-      "sha256": "262feef2ce62af0d0b304c0a6f6b0dd2848a80300dd0e7cf56239f81e72ca79c"
+      "sha256": "5a67663cbfa6d12a895ead16199dab14c3f2c5694bd3e8f71c93aa23d221b3ad"
     },
     "Tools/web-index-template.html": {
       "mode": "lf-text",
@@ -84505,7 +84505,7 @@
     },
     "sha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52"
   },
-  "receiptSha256": "a84049fc38f5e0fc59e15641e4b8617e292999c78b63069930ad1b4a37f72004",
+  "receiptSha256": "930b49e51246dec01c74a1f7d12cf2b1bf98b3c7975181340c9dba4860a3a39e",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

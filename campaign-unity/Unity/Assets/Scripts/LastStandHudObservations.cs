@@ -292,16 +292,19 @@ namespace SingedTerra.LastStand
                 skillsControls=ObserveControls(skills.Buttons,"Skills"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
-            layout.settingsScrollOffset = settings.ScrollOffset;
-            layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset;
-            layout.researchScrollOffset=research.ScrollOffset;layout.researchMaximumScrollOffset=research.MaximumScrollOffset;
-            layout.researchListScrollOffset=research.ListScrollOffset;layout.researchListMaximumScrollOffset=research.ListMaximumScrollOffset;
-            layout.researchDetailScrollOffset=research.DetailScrollOffset;layout.researchDetailMaximumScrollOffset=research.DetailMaximumScrollOffset;
-            layout.historyScrollOffset=history.ScrollOffset;layout.historyMaximumScrollOffset=history.MaximumScrollOffset;
-            layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
-            layout.appearanceScrollOffset=appearance.ScrollOffset;layout.appearanceMaximumScrollOffset=appearance.MaximumScrollOffset;
-            layout.armoryScrollOffset=armory.ScrollOffset;layout.armoryMaximumScrollOffset=armory.MaximumScrollOffset;
-            layout.skillsScrollOffset=skills.ScrollOffset;layout.skillsMaximumScrollOffset=skills.MaximumScrollOffset;
+            // Modal panes measure their internal design units. The observation
+            // contract uses CSS pixels, including the large-display type scale.
+            float density=modals.LayoutDensity;
+            layout.settingsScrollOffset = settings.ScrollOffset*density;
+            layout.settingsMaximumScrollOffset = settings.MaximumScrollOffset*density;
+            layout.researchScrollOffset=research.ScrollOffset*density;layout.researchMaximumScrollOffset=research.MaximumScrollOffset*density;
+            layout.researchListScrollOffset=research.ListScrollOffset*density;layout.researchListMaximumScrollOffset=research.ListMaximumScrollOffset*density;
+            layout.researchDetailScrollOffset=research.DetailScrollOffset*density;layout.researchDetailMaximumScrollOffset=research.DetailMaximumScrollOffset*density;
+            layout.historyScrollOffset=history.ScrollOffset*density;layout.historyMaximumScrollOffset=history.MaximumScrollOffset*density;
+            layout.plannerScrollOffset=planner.ScrollOffset*density;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset*density;
+            layout.appearanceScrollOffset=appearance.ScrollOffset*density;layout.appearanceMaximumScrollOffset=appearance.MaximumScrollOffset*density;
+            layout.armoryScrollOffset=armory.ScrollOffset*density;layout.armoryMaximumScrollOffset=armory.MaximumScrollOffset*density;
+            layout.skillsScrollOffset=skills.ScrollOffset*density;layout.skillsMaximumScrollOffset=skills.MaximumScrollOffset*density;
             return layout;
         }
         public void ReportLayout()
