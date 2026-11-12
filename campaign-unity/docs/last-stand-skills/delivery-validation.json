@@ -2,11 +2,11 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "runtime_ci_followup_committed_hosted_pending",
+  "status": "entry_resume_ci_verified_locally_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3"
+    "sha256": "17fe1ccaa712d8856fc054135ddbc256ac181ab940ec2732cb7285c6fbe29404"
   },
   "initialStructuralValidation": {
     "parsed": true,
@@ -1777,17 +1777,17 @@
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 92,
-    "anchorCount": 82,
+    "linkCount": 96,
+    "anchorCount": 86,
     "imageCount": 10,
     "allImageAltTextPresent": true,
     "linkCountIncludesImageSources": true,
     "browserRenderedReviewHtml": true,
     "imageDimensionsVerified": true,
-    "renderBoundary": "Current HTML rendered at1280x900 and390x844;10 images decoded and no horizontal overflow."
+    "renderBoundary": "Current HTML rendered at 1280x900 and 390x844; all ten images decoded, explicit image dimensions equal natural decoded dimensions, and no horizontal overflow."
   },
   "reviewDocumentRenders": {
-    "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
+    "htmlSha256": "17fe1ccaa712d8856fc054135ddbc256ac181ab940ec2732cb7285c6fbe29404",
     "views": [
       {
         "name": "desktop",
@@ -1795,16 +1795,16 @@
         "height": 900,
         "metrics": {
           "documentWidth": 1280,
-          "documentHeight": 13674,
+          "documentHeight": 14032,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop.png",
-          "sha256": "04e5021daaf8f2936efc014c83af9ceac78765781cb836f8dd7e4e29f8bc4331"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-entry-ci-desktop.png",
+          "sha256": "3fe72377b9c136067e05c871d081d82e46890cd0d31dfac4fbb4742e5e97f788"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop-top.png",
-          "sha256": "742d6e98f758a68c4504527a77bc14f0c38bc17ab1770c4ef838661652ad2cf6"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-entry-ci-desktop-top.png",
+          "sha256": "a3673f42698727b395c3eed3e1c014a9fd945cc3737c711019091dd8d686eeea"
         }
       },
       {
@@ -1813,29 +1813,29 @@
         "height": 844,
         "metrics": {
           "documentWidth": 390,
-          "documentHeight": 21867,
+          "documentHeight": 22455,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait.png",
-          "sha256": "b5c80771fed1781db1abd6b68a128d8ae2d11b6945fac70096838b746a750984"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-entry-ci-portrait.png",
+          "sha256": "7e7254c082ef5379d4a9f37974924c9eb14e6b471ccff2723c98f16797651c7e"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait-top.png",
-          "sha256": "2cc4373dac806049eb03c39f7c07ceb893b5ab0bf3e54056b3b0ebbf158c3fc6"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-entry-ci-portrait-top.png",
+          "sha256": "afc30234a2c53dd1ba713be38c3ac971950b1c46bacf71e4272c2e11d853bfb4"
         }
       }
     ],
     "status": "pass"
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T15:47:49.744Z",
-    "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
+    "observedUtc": "2026-11-12T16:13:23.400Z",
+    "htmlSha256": "17fe1ccaa712d8856fc054135ddbc256ac181ab940ec2732cb7285c6fbe29404",
     "views": [
-      "portrait-top",
-      "desktop-provenance"
+      "desktop-provenance",
+      "portrait-top"
     ],
-    "result": "Inspected current rendered images: readable current status and runtime proof, correctly retained historical native provenance, ten decoded images and no horizontal overflow at both widths."
+    "result": "Current status and resume correction readable at both widths. All ten image attributes match decoded natural dimensions; three historical native screenshot attributes were corrected without changing image bytes."
   },
   "browserCiRepair": {
     "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
@@ -2383,6 +2383,162 @@
           "portrait-top"
         ],
         "result": "Same verified responsive layout; approval and committed repair replace the pending gate. Current rendered widths and image decoding pass."
+      }
+    },
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
+  },
+  "entryResumeCiFollowup": {
+    "workId": "WORK-D7C9F1476CC6A307FDD146318B625E94",
+    "status": "local_verified_replacement_hosted_pending",
+    "baseHead": "3495c1e3d6a7ea8072c5ced0e3341d7e1b7e0a60",
+    "failedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43251922328",
+    "failedJob": 131300092870,
+    "rootCause": "An earned checkpoint returns to workshop with Redeploy active, but the entry helper and aggregate required the inactive garage Deploy control.",
+    "correction": "Select the actual enabled primary control after resizing. Retain observed state/layout; bind checkpoint run and wallet, action document/phase/time, raw telemetry and actual pointer document/time.",
+    "verification": {
+      "policyTests": 531,
+      "focusedCases": 71,
+      "independentBaselines": 9,
+      "independentGuardMutantsRejected": 13,
+      "retainedReplayInvalidVariantsRejected": 5,
+      "evidence": {
+        "ci-entry-resume-policy-final.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-policy-final.log",
+          "sha256": "60d9ab5da6fe95559bcc65630fb9c88678c98fbab02a491b718c987e1ecc74a9"
+        },
+        "ci-entry-resume-focused-final.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-focused-final.log",
+          "sha256": "ec6a003cb745397e5a1f1170d97ecdf30f40f66656ec013d378d88d5c777d9d6"
+        },
+        "ci-entry-resume-target-red.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-target-red.log",
+          "sha256": "0fa7c417a7a94c1e65632589db09429f8356dff8864901bb63bdb000e4c592ca"
+        },
+        "ci-entry-resume-target-green.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-target-green.log",
+          "sha256": "351156dc1bf3ae91b45a00eada1ccf60d61f9110e838edbb1a12189cc3f35a96"
+        },
+        "ci-entry-resume-action-binding-red.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-action-binding-red.log",
+          "sha256": "536569bb8c3fb60f89466040388566936f635231daf9202b6f9a1e4d7319bd1e"
+        },
+        "ci-entry-resume-action-binding-green.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-action-binding-green.log",
+          "sha256": "699dda87546a96fe0e6802fe7c781e861e0dac0ec34aabc9b786cd0c08404ab4"
+        },
+        "ci-entry-resume-raw-binding-red.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-raw-binding-red.log",
+          "sha256": "5d25a2c80728521f38ae0a8e0a351d9a6937dfa5e965f0dc050864592a380b79"
+        },
+        "ci-entry-resume-replay.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-replay.json",
+          "sha256": "ada6d977175d666460e7e85f67eed745571fde1a74daa4cec572ca2aac5fb0c6"
+        },
+        "ci-entry-resume-independent-mutations.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-independent-mutations.json",
+          "sha256": "de26791b7f6c3830c2824b010d4e6224f692a1a7e6bd6b2707138782485fbbd8"
+        }
+      },
+      "review": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-entry-resume-independent-review.json",
+        "sha256": "ba8969d26aa13fbc83b114662bf7f8707c47c362def4335bc44dbf105a31f100",
+        "verdict": "PASS with scope limits; no unresolved findings"
+      }
+    },
+    "boundaries": [
+      "The retained real hosted observations run through the current helper with inert resize/pointer adapters. This is not a fresh browser input run.",
+      "Only JavaScript journey and verification code changes; the 19 packaged paths remain byte-identical to HEAD.",
+      "The previous hosted tier, recovery and general suites passed; the new revision still requires its complete hosted run.",
+      "No new full Skills/native qualification, merge, publication or owner concept-fidelity acceptance is claimed."
+    ],
+    "documentCorrections": {
+      "imageBytesUnchanged": true,
+      "nativeDimensions": {
+        "native-overdrive-active.png": [
+          1602,
+          932
+        ],
+        "native-compact-build-applied.png": [
+          962,
+          632
+        ],
+        "native-tall-locked-collection.png": [
+          602,
+          932
+        ]
+      }
+    },
+    "previousDocumentValidation": {
+      "status": "runtime_ci_followup_committed_hosted_pending",
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 92,
+        "anchorCount": 82,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "linkCountIncludesImageSources": true,
+        "browserRenderedReviewHtml": true,
+        "imageDimensionsVerified": true,
+        "renderBoundary": "Current HTML rendered at1280x900 and390x844;10 images decoded and no horizontal overflow."
+      },
+      "reviewDocumentRenders": {
+        "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 13674,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop.png",
+              "sha256": "04e5021daaf8f2936efc014c83af9ceac78765781cb836f8dd7e4e29f8bc4331"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-desktop-top.png",
+              "sha256": "742d6e98f758a68c4504527a77bc14f0c38bc17ab1770c4ef838661652ad2cf6"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 21867,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait.png",
+              "sha256": "b5c80771fed1781db1abd6b68a128d8ae2d11b6945fac70096838b746a750984"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-runtime-ci-portrait-top.png",
+              "sha256": "2cc4373dac806049eb03c39f7c07ceb893b5ab0bf3e54056b3b0ebbf158c3fc6"
+            }
+          }
+        ],
+        "status": "pass"
+      },
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T15:47:49.744Z",
+        "htmlSha256": "d8e9cfe49827bd0dd349ba9fb4bd64c3af08a718042e94665c6557bdc01d46c3",
+        "views": [
+          "portrait-top",
+          "desktop-provenance"
+        ],
+        "result": "Inspected current rendered images: readable current status and runtime proof, correctly retained historical native provenance, ten decoded images and no horizontal overflow at both widths."
       }
     },
     "replacementHostedCi": "pending",
