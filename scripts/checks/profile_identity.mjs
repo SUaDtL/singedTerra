@@ -556,8 +556,8 @@ if ((accountSummaryFunction.match(/\b_body\b/g) ?? []).length !== 1) {
   fail('account_summary must not consume request-body identity, XP, level, or cumulative totals');
 }
 
-if (packageJson.devDependencies?.supabase !== '2.121.0') {
-  fail('deploy tooling must pin the reviewed Supabase CLI at exact version 2.121.0');
+if (packageJson.devDependencies?.supabase !== '3.0.0') {
+  fail('deploy tooling must pin the reviewed Supabase CLI at exact version 3.0.0');
 }
 let functionNames;
 try {
