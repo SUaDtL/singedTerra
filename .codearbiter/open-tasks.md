@@ -247,6 +247,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work type: fix
   - Work ID: WORK-6870DFD185388C0665AD8111DD801885
   - Work operation ID: st559-first-clock-fix
+- [x] Calibrate bounded Linux functional journey owner budgets  (from github:SUaDtL/singedTerra/actions/runs/43263332826/linux-workload)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43263332826/linux-workload
+  - Desc: Hosted job131340530596 reaches the 60-minute outer limit with 461 passing checks and a valid purchase14seconds before termination. Admit the full software-rendered Linux workload within a finite two-hour total, retain exact action/observation/cleanup safeguards and Windows40-minute budget, and verify all required CI on the final head.
+  - Work type: fix
+  - Work ID: WORK-51B650C9F752000C38A11BDCD58A982F
+  - Work operation ID: st559-linux-workload-fix
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

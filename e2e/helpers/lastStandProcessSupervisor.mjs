@@ -15,8 +15,11 @@ function implementation_lastStandJourneyTimeBudget(host=process.platform,{served
   assert.ok(['win32','linux'].includes(host),'Unsupported journey budget host');
   // Native qualification reached the hidden natural terminal at 28.5 minutes,
   // before loader/wasm and storage recovery matrices or final retention. Admit
-  // 40 minutes total; individual action, gameplay and media guards stay fixed.
-  const testMs=host==='win32'?2_400_000:3_600_000,startupMs=served?0:180_000;
+  // 40 minutes total on Windows. Hosted full-fidelity software rendering can
+  // exceed an hour while making valid progress (run43263332826, job2). Allow
+  // two hours for the complete Linux functional workload; individual action,
+  // observation, gameplay and media guards stay fixed.
+  const testMs=host==='win32'?2_400_000:7_200_000,startupMs=served?0:180_000;
   // Test/browser clocks start after webServer setup; the standalone owner
   // starts before it and must also admit owned-tree cleanup.
   // Software-rendered Linux Unity frames can occupy the page thread beyond

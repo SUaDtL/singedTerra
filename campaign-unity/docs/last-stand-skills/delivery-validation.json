@@ -2,11 +2,11 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "browser_journey_ci_fixes_verified_locally_hosted_pending",
+  "status": "linux_functional_workload_budget_verified_locally_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63"
+    "sha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b"
   },
   "initialStructuralValidation": {
     "parsed": true,
@@ -1777,17 +1777,17 @@
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 103,
-    "anchorCount": 93,
+    "linkCount": 108,
+    "anchorCount": 98,
     "imageCount": 10,
     "allImageAltTextPresent": true,
     "linkCountIncludesImageSources": true,
     "browserRenderedReviewHtml": true,
     "imageDimensionsVerified": true,
-    "renderBoundary": "Current HTML rendered at1280x900 and390x844;10 images decoded, all explicit dimensions matched natural dimensions, no horizontal overflow."
+    "renderBoundary": "Rendered1280x900 and390x844;10 decoded images with correct explicit dimensions, no horizontal overflow."
   },
   "reviewDocumentRenders": {
-    "htmlSha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63",
+    "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
     "views": [
       {
         "name": "desktop",
@@ -1795,16 +1795,16 @@
         "height": 900,
         "metrics": {
           "documentWidth": 1280,
-          "documentHeight": 14671,
+          "documentHeight": 15054,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-desktop.png",
-          "sha256": "fe529bfc3abb85a715b7b98a407d66b723b0e2bad9441424601123f481dc8cf6"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop.png",
+          "sha256": "a59ab78ac566be25365868cc9ae3d979e9f7f4a71a47ec237f09d040f8505806"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-desktop-top.png",
-          "sha256": "5258a2526afdf42801a8f87ad56baed9fb314a0b1b08c0d20502e2654efae886"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop-top.png",
+          "sha256": "de311ba0e0d70619a367e5c59ca9554ebf286d68673c84bd46d439332e3f9fd7"
         }
       },
       {
@@ -1813,29 +1813,29 @@
         "height": 844,
         "metrics": {
           "documentWidth": 390,
-          "documentHeight": 23561,
+          "documentHeight": 24361,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-portrait.png",
-          "sha256": "804e0822bd74b6cb3a25a8bd5c5153bb094b55f4b9a1a21e1d9cdcdf014653d8"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait.png",
+          "sha256": "d7183aa6643211e5cadbda6fc9c4ec97cae03359d961b1206fe2cc011e8a7f54"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-portrait-top.png",
-          "sha256": "d7f094f8d3689e91f8baa446858bfae6d721c9a90b367241722920e3d8067e79"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait-top.png",
+          "sha256": "9fbaa5c30e4d7cfa5e9e4435dc53f925e9bbd21de3edd11314a3522b692d4d9c"
         }
       }
     ],
     "status": "pass"
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T16:46:08.795Z",
-    "htmlSha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63",
+    "observedUtc": "2026-11-12T18:05:42.937Z",
+    "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
     "views": [
       "desktop-provenance",
       "portrait-top"
     ],
-    "result": "Inspected current rendered images; readable failure/fix and pending-hosted boundaries, ten decoded images with accurate dimensions, no horizontal overflow."
+    "result": "Current workload rationale and unchanged individual guard boundaries are readable; ten images decoded with matching dimensions; no horizontal overflow."
   },
   "browserCiRepair": {
     "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
@@ -2707,6 +2707,158 @@
           "portrait-top"
         ],
         "result": "Current status and resume correction readable at both widths. All ten image attributes match decoded natural dimensions; three historical native screenshot attributes were corrected without changing image bytes."
+      }
+    },
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
+  },
+  "linuxFunctionalBudgetFollowup": {
+    "sourceHead": "9938511862e1ee6058e4ce98d16895434b4f89e3",
+    "workId": "WORK-51B650C9F752000C38A11BDCD58A982F",
+    "failedHostedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43263332826",
+    "hostedEvidence": [
+      {
+        "job": "131340530596",
+        "viewport": "approved-wide",
+        "checksPassed": 461,
+        "checksFailed": 0,
+        "artifactSha256": "0982eefff7636fe56023ab1cb480d7a0be1c0c144a2054b23a726d8635620ec4",
+        "lastPurchaseUtc": "2026-11-12T17:53:56.918800Z",
+        "outcome": "Incomplete: overall3600000ms timeout"
+      },
+      {
+        "job": "131340530304",
+        "viewport": "standard",
+        "checksPassed": 510,
+        "checksFailed": 0,
+        "artifactSha256": "6b02d35cc8b1aac2f9f9ea14651cde2225aca73362d31c6d02124736c243a320",
+        "progress": "Upgraded-run background checkpoint and actual Pause",
+        "outcome": "Incomplete: overall3600000ms timeout"
+      }
+    ],
+    "change": {
+      "linuxTotalMs": 7200000,
+      "previousLinuxTotalMs": 3600000,
+      "windowsTotalMs": 2400000,
+      "individualLimitsUnchanged": true,
+      "derivedOwnerMarginsUnchanged": true,
+      "scope": "Finite functional harness allowance only; no product performance or completion-within-budget claim"
+    },
+    "localVerification": {
+      "targetRed": 3,
+      "targetGreen": 12,
+      "policyPassed": 534,
+      "focusedPassed": 170,
+      "independentBehaviorGroups": 4,
+      "guardMutantsKilled": 11,
+      "review": "PASS with scope limits; no unresolved findings",
+      "evidence": {
+        "ci-linux-budget-decision.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-decision.json",
+          "sha256": "87ddb8ebe7070c1d4c3b63fc68405ae2896d4a4667ca0db9ea53cccb63f614d2"
+        },
+        "ci-linux-budget-target-red.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-target-red.log",
+          "sha256": "1e24c8a46a65f490498edd295361945cea8d59fef55131775cc4e032fe3075d0"
+        },
+        "ci-linux-budget-target-green.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-target-green.log",
+          "sha256": "406a88d6435792fc8839818cd7609eef39301df68258e13c4de1b19ad60d97ba"
+        },
+        "ci-linux-budget-policy.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-policy.log",
+          "sha256": "988a0cf121946b7ef2e45af298c3a4e6a7c5da6180fc32193efa0ab1c202b8da"
+        },
+        "ci-linux-budget-focused.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-focused.log",
+          "sha256": "f4cfb1f6b9db16c0769c17c2bf8df2e3a76f21bdd35f09a18ea5656a1ca49f9b"
+        },
+        "ci-linux-budget-independent-review.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-independent-review.json",
+          "sha256": "7a423c9ad8bf5ddd7b3778d4e531821f4dd31e6556bed13c706730e43c60c5c7"
+        },
+        "ci-linux-budget-independent-checks.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-linux-budget-independent-checks.json",
+          "sha256": "417f59b2580ac4fdc3f75cf1c99265b1af4431943db63c25f41e4bdf34f98bd6"
+        }
+      }
+    },
+    "boundaries": [
+      "Eight other full lifecycle jobs, entry, recovery, tier, build and security passed on99385118. Those results are historical for the changed final head.",
+      "Actual process ownership, maximum-plus-one refusal and finite-expiry cleanup are tested with inert adapters; no new native runtime qualification is claimed.",
+      "Fresh full hosted completion is required. No assertion, screenshot geometry, observer deadline, sandbox, gameplay clock or native budget is relaxed.",
+      "Existing sprint-history encoding limitation remains separately retained; no historical bytes were rewritten."
+    ],
+    "previousDocumentValidation": {
+      "status": "browser_journey_ci_fixes_verified_locally_hosted_pending",
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 103,
+        "anchorCount": 93,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "linkCountIncludesImageSources": true,
+        "browserRenderedReviewHtml": true,
+        "imageDimensionsVerified": true,
+        "renderBoundary": "Current HTML rendered at1280x900 and390x844;10 images decoded, all explicit dimensions matched natural dimensions, no horizontal overflow."
+      },
+      "reviewDocumentRenders": {
+        "htmlSha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 14671,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-desktop.png",
+              "sha256": "fe529bfc3abb85a715b7b98a407d66b723b0e2bad9441424601123f481dc8cf6"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-desktop-top.png",
+              "sha256": "5258a2526afdf42801a8f87ad56baed9fb314a0b1b08c0d20502e2654efae886"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 23561,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-portrait.png",
+              "sha256": "804e0822bd74b6cb3a25a8bd5c5153bb094b55f4b9a1a21e1d9cdcdf014653d8"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-final-journey-ci-portrait-top.png",
+              "sha256": "d7f094f8d3689e91f8baa446858bfae6d721c9a90b367241722920e3d8067e79"
+            }
+          }
+        ],
+        "status": "pass"
+      },
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T16:46:08.795Z",
+        "htmlSha256": "5816343af3bf081656fc4d2bdaaeb245e29bdd49144355fea8b17f034a81de63",
+        "views": [
+          "desktop-provenance",
+          "portrait-top"
+        ],
+        "result": "Inspected current rendered images; readable failure/fix and pending-hosted boundaries, ten decoded images with accurate dimensions, no horizontal overflow."
       }
     },
     "replacementHostedCi": "pending",
