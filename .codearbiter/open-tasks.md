@@ -161,26 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
-- [ ] Migrate the pre-existing CombatBalanceMeasurements .NET SHA-256 helper and existing evidence callers to approved Node provenance with scoped parity proof.  (from review:auth-crypto-final-staged-review-20261111#triage-1)
-  - Work origin: review:auth-crypto-final-staged-review-20261111#triage-1
-  - Desc: Follow up CombatBalanceMeasurements.cs:145-146, whose pre-existing System.Security.Cryptography SHA-256 implementation lies outside POLICY-CRYPTO's Node-specific provenance approval. Inventory and migrate only the old helper and existing evidence-tool callers through the approved Node helper, preserving exact raw/LF-normalized provenance semantics and retaining scoped before/after parity evidence. New Skills callers have been removed in the current remediation; do not broaden that sprint, change gameplay, alter security policy, or invent an ADR. Source: auth-crypto-final-staged-review-20261111.md [NEEDS-TRIAGE].
-  - Work type: unknown
-  - Work ID: WORK-628DACD5D6FA79837B0BF0654EC77A39
-  - Work operation ID: ls-skills-harvest-existing-dotnet-provenance-20261112
-- [~] Last Stand Skills: collection, loadouts and combat use  (from feature-spec#ST-LS-SKILLS-SPEC)  (started 2026-11-11)
-  - Work origin: feature-spec#ST-LS-SKILLS-SPEC
-  - Desc: Deliver the authorized end-to-end Skills sprint over the existing equipment-bay UI: earned acquisition, duplicate development, shared active/passive loadouts, combat abilities, durable recovery, balance and actual player verification.
+- [~] Integrate Dependabot PRs 553-556  (from github-pr-batch#553-556)  (started 2026-11-09)
+  - Work origin: github-pr-batch#553-556
+  - Desc: Combine and qualify Supabase CLI 3, Supabase JS 2.119, Preact 11 and Pixelmatch 8, preserving backend release and gameplay compatibility
   - Work type: feature
-  - Work ID: WORK-3FCD1F1C76B8E5478A86EDA1C11A36AC
-  - Work operation ID: ls-skills-work-create-20261111-v2
-- [~] Deliver the concept-led Last Stand equipment bay, Armory and gameplay UI  (from feature-spec#ST-LS-BAY-SPEC)  (started 2026-11-09)
-  - Work origin: feature-spec#ST-LS-BAY-SPEC
-  - Desc: Implement and render the user supplied industrial equipment bay reference in Unity, with working current controls and isolated saves.
-  - Work type: feature
-  - Work ID: WORK-B0D64B792CB6E3ABA4B4231FD38EFC34
-  - Work operation ID: bay-work-create-20261109
-  - Spec ID: ST-LS-BAY-SPEC
-  - Plan ID: ST-LS-BAY-PLAN
+  - Work ID: WORK-4EF950741BDBBB4806FAC1B63883E8C6
+  - Work operation ID: dependabot-553-556-20261109
 - [x] Bound exact-candidate Pages journeys with the shared CI matrix  (from https://github.com/SUaDtL/singedTerra/actions/runs/42377836547)  (done 2026-11-07)
   - Work origin: https://github.com/SUaDtL/singedTerra/actions/runs/42377836547
   - Desc: Pages run 42377836547 exhausted 3600000 ms in its unpartitioned Campaigns journey. Target regression is red for the absent shared matrix. Reuse all maintained partitions and require complete source-bound evidence before publication while retaining immutable candidate checks.
@@ -195,6 +181,26 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-fd71c89c83e2c3770b65717723ed78373175bef2
   - Spec ID: ST-LS-BUILDCRAFT-SPEC
   - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [ ] Migrate the pre-existing CombatBalanceMeasurements .NET SHA-256 helper and existing evidence callers to approved Node provenance with scoped parity proof.  (from review:auth-crypto-final-staged-review-20261111#triage-1)
+  - Work origin: review:auth-crypto-final-staged-review-20261111#triage-1
+  - Desc: Follow up CombatBalanceMeasurements.cs:145-146, whose pre-existing System.Security.Cryptography SHA-256 implementation lies outside POLICY-CRYPTO's Node-specific provenance approval. Inventory and migrate only the old helper and existing evidence-tool callers through the approved Node helper, preserving exact raw/LF-normalized provenance semantics and retaining scoped before/after parity evidence. New Skills callers have been removed in the current remediation; do not broaden that sprint, change gameplay, alter security policy, or invent an ADR. Source: auth-crypto-final-staged-review-20261111.md [NEEDS-TRIAGE].
+  - Work type: unknown
+  - Work ID: WORK-628DACD5D6FA79837B0BF0654EC77A39
+  - Work operation ID: ls-skills-harvest-existing-dotnet-provenance-20261112
+- [x] Last Stand Skills: collection, loadouts and combat use  (from feature-spec#ST-LS-SKILLS-SPEC)  (done 2026-11-11)
+  - Work origin: feature-spec#ST-LS-SKILLS-SPEC
+  - Desc: Deliver the authorized end-to-end Skills sprint over the existing equipment-bay UI: earned acquisition, duplicate development, shared active/passive loadouts, combat abilities, durable recovery, balance and actual player verification.
+  - Work type: feature
+  - Work ID: WORK-3FCD1F1C76B8E5478A86EDA1C11A36AC
+  - Work operation ID: ls-skills-work-create-20261111-v2
+- [~] Deliver the concept-led Last Stand equipment bay, Armory and gameplay UI  (from feature-spec#ST-LS-BAY-SPEC)  (started 2026-11-09)
+  - Work origin: feature-spec#ST-LS-BAY-SPEC
+  - Desc: Implement and render the user supplied industrial equipment bay reference in Unity, with working current controls and isolated saves.
+  - Work type: feature
+  - Work ID: WORK-B0D64B792CB6E3ABA4B4231FD38EFC34
+  - Work operation ID: bay-work-create-20261109
+  - Spec ID: ST-LS-BAY-SPEC
+  - Plan ID: ST-LS-BAY-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

@@ -2,23 +2,23 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "windows_and_web_verified_delivery_pending",
+  "status": "windows_and_web_verified_pr_open",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a"
+    "sha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8"
   },
   "structuralValidation": {
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 72,
+    "linkCount": 75,
     "imageCount": 10,
     "allImageAltTextPresent": true,
     "imageDimensionsVerified": true,
     "browserRenderedReviewHtml": true,
-    "renderBoundary": "Exact HTML rendered at1280x900 and390x844; all10images decoded with no horizontal overflow. Root inspected both provenance-section renders; original captures/top renders were inspected separately. No new player journey is inferred.",
-    "anchorCount": 62,
+    "renderBoundary": "Exact PR delivery HTML rendered at1280x900 and390x844; all10images decoded without horizontal overflow. Root visually inspected both top renders.",
+    "anchorCount": 65,
     "linkCountIncludesImageSources": true
   },
   "images": [
@@ -603,14 +603,23 @@
     ]
   },
   "hosted": {
-    "exactHeadCi": "pending",
-    "pullRequest": "pending_root_update",
+    "pullRequest": {
+      "url": "https://github.com/SUaDtL/singedTerra/pull/559",
+      "number": 559,
+      "state": "open",
+      "headAtOpening": "f4516f4c8e71a5388b8373d7b0c1eb5ebee55a1d"
+    },
+    "implementationCommit": "f4516f4c8e71a5388b8373d7b0c1eb5ebee55a1d",
+    "exactHeadCi": "pending_not_qualified",
     "merge": "not_performed",
-    "publication": "not_performed"
+    "publication": "not_performed",
+    "babysitter": {
+      "enabled": false,
+      "on_red": "propose"
+    }
   },
   "requiredFinalUpdates": [
-    "Complete selective commit and PR delivery gates",
-    "Record commit, PR and exact-head hosted CI outcomes separately; no merge or publication authorized"
+    "Exact-head hosted CI and review remain prerequisites to any separately authorized merge or publication."
   ],
   "reviewDocumentRenders": [
     {
@@ -737,7 +746,7 @@
       "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
       "result": "pass",
       "proves": "Current supporting document render only; not new game input evidence",
-      "currentHtml": true,
+      "currentHtml": false,
       "topCapture": {
         "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop-top.png",
         "sha256": "2a742473ac9da0a2ece7c7d35587f6f42e514a8df44542a12ac50483c1a7c031"
@@ -761,7 +770,7 @@
       "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
       "result": "pass",
       "proves": "Current supporting document render only; not new game input evidence",
-      "currentHtml": true,
+      "currentHtml": false,
       "topCapture": {
         "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-top.png",
         "sha256": "ccd0b21b7623f6edd3a25dd2a46c850e46408ff03a765b8aa36cc88436ffe54b"
@@ -769,6 +778,46 @@
       "provenanceCapture": {
         "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-provenance.png",
         "sha256": "29243cf4e2422d389d048f76a1fd729d211819d90694e63c55a260ee805eba8a"
+      }
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-desktop.png",
+      "sha256": "694afc67aa789a921c5278c161aa6e3d22a979b2c72b509460ab727d93b84788",
+      "viewport": [
+        1280,
+        900
+      ],
+      "imageDimensions": [
+        1280,
+        12113
+      ],
+      "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
+      "result": "pass",
+      "currentHtml": true,
+      "proves": "Current delivery document only; not new player input evidence",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-desktop-top.png",
+        "sha256": "6b05d8e4eaac5758bf4a802af148099296f97cd212b129bad3e883d7be078dd1"
+      }
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-portrait.png",
+      "sha256": "95d487529d65f7e9d08acfb0637f1bd2b534e4354af4962fa517d8fd69028966",
+      "viewport": [
+        390,
+        844
+      ],
+      "imageDimensions": [
+        390,
+        17958
+      ],
+      "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
+      "result": "pass",
+      "currentHtml": true,
+      "proves": "Current delivery document only; not new player input evidence",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-portrait-top.png",
+        "sha256": "9a36585869b9ddcdc25ca99de735bc9bb954478449ccf3f91590e2803fe7730d"
       }
     }
   ],
@@ -1667,12 +1716,23 @@
     }
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T03:13:09.016722+00:00",
-    "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+    "observedUtc": "2026-11-12T03:32:20.184293+00:00",
+    "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
     "views": [
-      "desktop-provenance",
-      "portrait-provenance"
+      "desktop-top",
+      "portrait-top"
     ],
-    "result": "Readable spacing, complete text wrapping, working images and no horizontal overflow."
+    "result": "Open PR and local verification status readable; spacing, line wrapping and image loading passed."
+  },
+  "deliveryGitEvidence": {
+    "implementationContainment": {
+      "path": "campaign-unity/Evidence/last-stand-skills/commit-containment-20261112.json",
+      "sha256": "6ea5c1f0cd96d0811d972af70d3d15b98e86cdcaf71b462657a8b55200452aa1"
+    },
+    "taskBoardReconciliation": {
+      "path": "campaign-unity/Evidence/last-stand-skills/task-board-reconciliation.json",
+      "sha256": "04e034cd779f65815184b1bab8bf4d835482b020ba7fbbd9cca9746384e3aa9e"
+    },
+    "initialGitIntegrationObservation": "PR initially reportedCONFLICTING. Exact upstream record retained and owned new blocks relocated with plain three-way text merge exit0. Final GitHub readback is separate from this documentation commit."
   }
 }
