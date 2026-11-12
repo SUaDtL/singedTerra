@@ -1984,7 +1984,7 @@ class LastStandWebTests(unittest.TestCase):
         # its historical method name does not select the v3 Shop-only runner.
         runner = ROOT.parent / 'scripts' / 'last-stand-playable-loop.mjs'
         completed = subprocess.run(['node', str(runner)], cwd=ROOT.parent,
-                                   capture_output=True, text=True, timeout=2680 if os.name == 'nt' else 3880)
+                                   capture_output=True, text=True, timeout=2680 if os.name == 'nt' else 7480)
         print(completed.stdout, end='', flush=True)
         if completed.stderr:
             print(completed.stderr, end='', flush=True)

@@ -2864,5 +2864,42 @@
     "replacementHostedCi": "pending",
     "merged": false,
     "published": false
+  },
+  "pythonBudgetBridgeFollowup": {
+    "sourceHead": "ef58eaf9e72197c1e318d86dd5bddd71975554f8",
+    "workId": "WORK-51B650C9F752000C38A11BDCD58A982F",
+    "hostedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43276427104",
+    "job": "131386278696",
+    "cause": "The budget change omitted the Python entrypoint, which still allowed3880seconds on Linux while the central Node budget derived7480. The existing cross-language contract test rejected this mismatch before gameplay.",
+    "change": "Synchronize only the Python Linux timeout and its explicit contract bounds. Windows remains2680seconds. Preserve the actual Node/Python equality assertion and all other owner/individual deadlines.",
+    "verification": {
+      "targetRed": "Existing actual Python wrapper test fails3880 !=7480 before correction",
+      "contractModule": "2Python tests pass, including196nestedNode workflow tests",
+      "independent": "PASS with scope limits; both host branches, nonzero-exit refusal and6in-memory timeout mutants verified",
+      "consumerSearch": "No remaining old Last Stand journey envelope; unrelated hourly arithmetic and separate scenarios remain unchanged",
+      "evidence": {
+        "ci-python-budget-target-red.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-python-budget-target-red.log",
+          "sha256": "979d1e772cf842040f01e33c91463d9bb1887176db588b7392ff104e7af14b1d"
+        },
+        "ci-python-budget-contracts-green.log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-python-budget-contracts-green.log",
+          "sha256": "5096402ea2164fd5ad19bcea7c38cee889fddc9795b4b82ac2975c1bdbe60eaf"
+        },
+        "ci-python-budget-independent-review.json": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-python-budget-independent-review.json",
+          "sha256": "267980f990ff8af4bac460a531761787bf2168ab078f5917679cb7dd05b4b5d9"
+        }
+      }
+    },
+    "boundaries": [
+      "Previous local534policy/170focused tests remain source-current for unchanged JavaScript guards.",
+      "The previous review omitted this Python bridge; this follow-up explicitly records and corrects that omission.",
+      "Unity runtime and19packaged paths are unchanged. Current HTML image/render bytes remain unchanged.",
+      "Full replacement hostedCI remains required; no native requalification, merge or publication."
+    ],
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
   }
 }
