@@ -2,11 +2,11 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "linux_functional_workload_budget_verified_locally_hosted_pending",
+  "status": "keyboard_roundtrip_repair_verified_locally_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b"
+    "sha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1"
   },
   "initialStructuralValidation": {
     "parsed": true,
@@ -1777,17 +1777,17 @@
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 108,
-    "anchorCount": 98,
+    "linkCount": 114,
+    "anchorCount": 104,
     "imageCount": 10,
     "allImageAltTextPresent": true,
-    "linkCountIncludesImageSources": true,
-    "browserRenderedReviewHtml": true,
     "imageDimensionsVerified": true,
-    "renderBoundary": "Rendered1280x900 and390x844;10 decoded images with correct explicit dimensions, no horizontal overflow."
+    "browserRenderedReviewHtml": true,
+    "renderBoundary": "Exact current HTML rendered at1280x900 and390x844; all10images decode with matching dimensions and no horizontal overflow. Root inspected desktop repair section and portrait header.",
+    "linkCountIncludesImageSources": true
   },
   "reviewDocumentRenders": {
-    "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
+    "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
     "views": [
       {
         "name": "desktop",
@@ -1795,16 +1795,16 @@
         "height": 900,
         "metrics": {
           "documentWidth": 1280,
-          "documentHeight": 15054,
+          "documentHeight": 15556,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop.png",
-          "sha256": "a59ab78ac566be25365868cc9ae3d979e9f7f4a71a47ec237f09d040f8505806"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop.png",
+          "sha256": "000f88f28b8bbf36bde83ef0162b976899f9d4d33d4bf06f0c5b2b2f252dfada"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop-top.png",
-          "sha256": "de311ba0e0d70619a367e5c59ca9554ebf286d68673c84bd46d439332e3f9fd7"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop-top.png",
+          "sha256": "9a270ed6f43a210f507f2b154f9d6d55d8bb962c19287e81bc89f9237bd8a27c"
         }
       },
       {
@@ -1813,29 +1813,29 @@
         "height": 844,
         "metrics": {
           "documentWidth": 390,
-          "documentHeight": 24361,
+          "documentHeight": 25330,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait.png",
-          "sha256": "d7183aa6643211e5cadbda6fc9c4ec97cae03359d961b1206fe2cc011e8a7f54"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait.png",
+          "sha256": "75180856673a6e2de5fe315520c94914255d435a0676ea2d9e627fa4a64790ff"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait-top.png",
-          "sha256": "9fbaa5c30e4d7cfa5e9e4435dc53f925e9bbd21de3edd11314a3522b692d4d9c"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait-top.png",
+          "sha256": "5be2e21336c9e2971ddf0773e5cfef0b81c37bedd09e5ccc1d5addd6f43496bb"
         }
       }
     ],
     "status": "pass"
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T18:05:42.937Z",
-    "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
+    "observedUtc": "2026-11-12T19:13:56.017384+00:00",
+    "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
     "views": [
-      "desktop-provenance",
+      "desktop-keyboard-roundtrip-repair",
       "portrait-top"
     ],
-    "result": "Current workload rationale and unchanged individual guard boundaries are readable; ten images decoded with matching dimensions; no horizontal overflow."
+    "result": "Current repair and pending hosted status readable; no horizontal overflow."
   },
   "browserCiRepair": {
     "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
@@ -2897,6 +2897,142 @@
       "The previous review omitted this Python bridge; this follow-up explicitly records and corrects that omission.",
       "Unity runtime and19packaged paths are unchanged. Current HTML image/render bytes remain unchanged.",
       "Full replacement hostedCI remains required; no native requalification, merge or publication."
+    ],
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
+  },
+  "keyboardRoundtripCiFollowup": {
+    "sourceHead": "87c7be184e0bf0dab9e93e3811a7b90491ba56fe",
+    "workId": "WORK-4B9B8C6201E54EB0B046C05C14F02866",
+    "failedHostedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43279007301",
+    "job": 131395745820,
+    "cause": "Repeated browser document reads delayed actual keyboard Pause until natural defeat; the full-visibility assertion correctly rejected the unavailable control in result phase.",
+    "change": "Use retained layout identity for preparation, combine canvas entry with trace ownership, and obtain final geometry and focused document identity in one DOM snapshot. Actual Tab navigation, exact selection, full target visibility, backing size, raw keyboard edges, deadlines and one activation remain required.",
+    "localVerification": {
+      "targetRed": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-target-red-final.log",
+        "sha256": "8650bf852f2e75e96c6290fd125b5aa537015a39082bf9ef74f0af530e8aebf4"
+      },
+      "targetGreen": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-target-green-final.log",
+        "sha256": "7c135efac219033661b1a06e75d2ad85ee8acdda3fe6e2ffe1424a305edeb356"
+      },
+      "policy": {
+        "passed": 535,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-policy-green.log",
+          "sha256": "15f67f09e236f1066577b5a8d5bfcd8104c80c855717e269742bf5701629e827"
+        }
+      },
+      "focused": {
+        "passed": 190,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-focused-green.log",
+          "sha256": "818387b009f8e5413e9ea4bb035c12a99ba43a9b4e9e2940946f12c2484f4c6c"
+        }
+      },
+      "python": {
+        "passed": 2,
+        "nestedNodePassed": 196,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-python-green.log",
+          "sha256": "6babd3f79a0eec83ec00144358651a938c44b05831699738299a466f959c1dc5"
+        }
+      },
+      "independent": {
+        "status": "pass_with_scope_limits",
+        "adverseCases": 12,
+        "killedMutants": 10,
+        "report": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-independent-review.json",
+          "sha256": "59f852a85fbd39d0a51b6416f2de01210400e24ce51337806527121c4f229e47"
+        }
+      },
+      "decision": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-decision.json",
+        "sha256": "e9f9f23a2ec50646e16e79778ff919a594b6c4f2df6efb5d77a83427aa3f273d"
+      },
+      "packageBinding": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-keyboard-roundtrip-package-binding.json",
+        "sha256": "176d199112dad5a2fcb17a828c7fe27138cfedf42cbc412481bb1c2dd359654e",
+        "verifiedPaths": 19
+      }
+    },
+    "previousDocumentValidation": {
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 108,
+        "anchorCount": 98,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "linkCountIncludesImageSources": true,
+        "browserRenderedReviewHtml": true,
+        "imageDimensionsVerified": true,
+        "renderBoundary": "Rendered1280x900 and390x844;10 decoded images with correct explicit dimensions, no horizontal overflow."
+      },
+      "reviewDocumentRenders": {
+        "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 15054,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop.png",
+              "sha256": "a59ab78ac566be25365868cc9ae3d979e9f7f4a71a47ec237f09d040f8505806"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-desktop-top.png",
+              "sha256": "de311ba0e0d70619a367e5c59ca9554ebf286d68673c84bd46d439332e3f9fd7"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 24361,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait.png",
+              "sha256": "d7183aa6643211e5cadbda6fc9c4ec97cae03359d961b1206fe2cc011e8a7f54"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-linux-budget-ci-portrait-top.png",
+              "sha256": "9fbaa5c30e4d7cfa5e9e4435dc53f925e9bbd21de3edd11314a3522b692d4d9c"
+            }
+          }
+        ],
+        "status": "pass"
+      },
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T18:05:42.937Z",
+        "htmlSha256": "cea552a036de10bad31a4217466e3e1ac8728e79deea1551a933b5f31f62586b",
+        "views": [
+          "desktop-provenance",
+          "portrait-top"
+        ],
+        "result": "Current workload rationale and unchanged individual guard boundaries are readable; ten images decoded with matching dimensions; no horizontal overflow."
+      }
+    },
+    "boundaries": [
+      "Deterministic latency reproduction executes actual DOM callbacks using inert timing; it is not fresh browser or native qualification.",
+      "No Unity or packaged runtime changes. Earlier full Skills/native receipts retain their original identities and limits.",
+      "Numeric guard coverage remains unmeasured; no performance, merge or publication claim."
     ],
     "replacementHostedCi": "pending",
     "merged": false,

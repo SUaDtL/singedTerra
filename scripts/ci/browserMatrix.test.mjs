@@ -366,11 +366,13 @@ test('actual HUD geometry reads CSS bounds and backing pixels in one DOM snapsho
       page:{viewportSize:()=>({width:1280,height:720}),locator:()=>({
         boundingBox:async()=>{reads++;return fault==='hidden'?null:box;},
         evaluate:async fn=>{reads++;return runInNewContext('('+fn.toString()+')(element)',{element,
+          document:{hidden:false,hasFocus:()=>true,activeElement:element},performance:{timeOrigin:1000,now:()=>42},
           getComputedStyle:()=>({visibility:fault==='hidden'?'hidden':fault==='collapsed'?'collapse':'visible'})});},
       })}});
     const run=geometry('Menu');
     if(fault)await assert.rejects(run);
     else {const result=await run;assert.equal(result.item.name,'Menu');assert.equal(result.canvas.width,1280);
+      assert.deepEqual(JSON.parse(JSON.stringify(result.documentState)),{timeOrigin:1000,t:42,focused:true});
       assert.equal(reads,1,'Separate CSS/backing reads add a slow renderer roundtrip to every geometry check');}
   }
 });

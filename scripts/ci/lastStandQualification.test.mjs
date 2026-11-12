@@ -313,13 +313,63 @@ test('live keyboard Pause is submitted before a slow focus capture can reach nat
     keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=now+1;},
       down:async key=>{events.push(key);assert.equal(states.at(-1).phase,'battle');states.push({...value.state,action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
   const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
-    geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+    geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720},documentState:{...value.documentState,t:now+10}}),keyboardFocus:async()=>{},
     projectedControls:tierJourneyControlGeometry,hudControls:layout=>layout.controls,
     check:(condition,message)=>assert.ok(condition,message),
     screenshot:async()=>{events.push('capture');if(!states.at(-1).paused){states.at(-1).phase='result';value.layout.phase='result';}},
     until:async(items,start,predicate)=>items.slice(start).find(predicate),validateKeyboardSubmit:journey.validateKeyboardSubmit}).gameKey;
   await run('SpeedRate','session',item=>item.paused);
   assert.deepEqual(events,['Enter','capture']);assert.equal(states.at(-1).paused,true);
+});
+
+test('actual keyboard Pause avoids redundant document round trips before natural defeat',async()=>{
+  // Inert latency model of run43279007301: the hidden-return observation left
+  // about132seconds before real defeat; repeated DOM requests consumed it.
+  // Execute the actual DOM callbacks and geometry, without changing game time.
+  const identity={load:3,timeOrigin:1000,scope:'healthy'},trace=[],states=[],layouts=[],encounters=[];
+  const report={keyboard_actions:[],screenshots:[]},inputs=[],reads=[];
+  let t=10,paused=false,phase='battle',selection='SpeedRate',preInputReads;
+  const controls=['Menu','WaveInfo','SpeedMinus','SpeedRate','SpeedPlus','ShopEntry']
+    .map((name,i)=>({name,x:20+i*70,y:80,width:60,height:44,active:true,interactable:true}));
+  const publish=()=>{
+    if(t>=132000&&!paused)phase='result';
+    layouts.push({...identity,t,phase,selection,coordinates:'top-left',width:1280,height:616,
+      controls:controls.map(c=>({...c,active:phase==='battle',interactable:phase==='battle'})),shopControls:[],settingsControls:[],graphics:[]});
+    states.push({...identity,t,phase,paused,action:'session'});
+  };
+  const canvas={id:'unity-canvas',width:1280,height:616,getBoundingClientRect:()=>({x:0,y:104,width:1280,height:616})};
+  const link={id:'last-stand-return'},document={hidden:false,activeElement:canvas,hasFocus:()=>true,
+    getElementById:id=>id===canvas.id?canvas:link},window={__stInputArea:'outer'};
+  const environment={document,window,performance:{timeOrigin:1000,now:()=>t},
+    getComputedStyle:()=>({visibility:'visible',outlineStyle:'solid',outlineWidth:'2px'})};
+  const evaluate=async(fn,element)=>{
+    t+=24000;reads.push(typeof fn==='string'?fn:fn.toString());publish();
+    return runInNewContext(typeof fn==='string'?fn:`(${fn.toString()})(element)`,{...environment,element});
+  };
+  const edge=(kind,code)=>{t+=1500;trace.push({...identity,t,kind,code,target:document.activeElement.id,
+    focused:true,hidden:false,area:window.__stInputArea});};
+  const page={locator:selector=>({evaluate:fn=>evaluate(fn,selector==='#unity-canvas'?canvas:link)}),evaluate,
+    waitForTimeout:async ms=>{t+=ms;publish();},keyboard:{
+      press:async key=>{
+        const code=key==='Shift+Tab'?'Tab':key;edge('keydown',code);
+        if(key==='Shift+Tab')document.activeElement=link;
+        else if(document.activeElement===link){document.activeElement=canvas;selection=controls[0].name;}
+        else selection=controls[(controls.findIndex(c=>c.name===selection)+1)%controls.length].name;
+        edge('keyup',code);publish();
+      },
+      down:async key=>{preInputReads=reads.length;assert.equal(phase,'battle','Browser inspection consumed the live Pause window');
+        assert.equal(selection,'SpeedRate');inputs.push(key);edge('keydown',key);paused=true;encounters.push({action:'pause'});publish();},
+      up:async key=>{edge('keyup',key);publish();},
+    }};
+  publish();
+  const driver=journey.createJourneyActions({page,trace,states,layouts,encounters,report,process:{platform:'linux'},
+    check:(condition,message)=>assert.ok(condition,message),throwObserverFailure:()=>{},
+    screenshot:async()=>{assert.equal(paused,true,'Live focus capture must follow Pause');},
+    projectedControls:tierJourneyControlGeometry});
+  await driver.gameKey('SpeedRate','session',state=>state.paused);
+  assert.deepEqual(inputs,['Enter']);assert.equal(paused,true);
+  assert.ok(preInputReads<=4,'Only outer focus, return focus, canvas entry and final geometry need DOM reads before Enter');
+  assert.equal(journey.validateKeyboardGameplayInput(trace,report.keyboard_actions).matched,true);
 });
 
 test('actual keyboard caller refuses retained wave-boundary focus migration before Enter',async()=>{
@@ -334,7 +384,7 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
       keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
         down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
     const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
-      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720},documentState:{...value.documentState,t:now+10}}),keyboardFocus:async()=>{},
       projectedControls:tierJourneyControlGeometry,
       hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
       check:(condition,message)=>assert.ok(condition,message),screenshot:async()=>{value.layout.selection=selection;},

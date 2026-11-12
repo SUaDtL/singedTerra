@@ -26,8 +26,11 @@ function driverFixture({offset=0,targetY=587,fault,keyboardReveal=true,keyboardC
   const acknowledge=()=>states.push({...states[0],action:'abandon-request',t:t++});
   const page={
     viewportSize:()=>viewport,
-    locator:()=>({evaluate:async fn=>String(fn).includes('getBoundingClientRect')?
-      {canvas,pixels:{width:1280,height:616}}:true}),
+    locator:()=>({evaluate:async fn=>{
+      if(!String(fn).includes('getBoundingClientRect'))return true;
+      if(keyboardClipAtSubmit&&inputs.some(i=>i.kind==='key')){scroll=0;publish();}
+      return {canvas,pixels:{width:1280,height:616},documentState:{focused,timeOrigin:origin,t:t++}};
+    }}),
     evaluate:async expression=>{
       if(typeof expression!=='function')return;
       if(keyboardClipAtSubmit&&inputs.some(i=>i.kind==='key')){scroll=0;publish();}
@@ -113,7 +116,7 @@ test('actual reveal preserves unreachable geometry refusal and keyboard final fu
   await assert.rejects(keyboard.driver.gameKey('MenuAbandon','abandon-request'),/completely visible inside its actual viewport/);
   assert.equal(keyboard.inputs.some(i=>i.kind==='key-down'),false,'Do not submit Enter into a clipped control');
   const changed=driverFixture({keyboardClipAtSubmit:true});
-  await assert.rejects(changed.driver.gameKey('MenuAbandon','abandon-request'),/Keyboard submit requires the complete target/);
+  await assert.rejects(changed.driver.gameKey('MenuAbandon','abandon-request'),/real HUD MenuAbandon is completely visible/);
   assert.equal(changed.inputs.some(i=>i.kind==='key-down'),false,'Recheck current target after the final document read');
 });
 
