@@ -1734,5 +1734,43 @@
       "sha256": "04e034cd779f65815184b1bab8bf4d835482b020ba7fbbd9cca9746384e3aa9e"
     },
     "initialGitIntegrationObservation": "PR initially reportedCONFLICTING. Exact upstream record retained and owned new blocks relocated with plain three-way text merge exit0. Final GitHub readback is separate from this documentation commit."
+  },
+  "ciRepair": {
+    "workId": "WORK-2B8444F7CEDC75704E7CCD60C2AED265",
+    "sourceCommit": "450c70a8b9051e49b3689cf3e9a11abd119fdb42",
+    "originalHostedFailure": {
+      "head": "333d6e8d283009f08cf73e66a5cb9cd7fadf04af",
+      "job": "https://github.com/SUaDtL/singedTerra/actions/runs/43149326771/job/130954511674"
+    },
+    "localTests": {
+      "passed": 521,
+      "failed": 0,
+      "log": "campaign-unity/Evidence/last-stand-skills/ci-policy-scope-green-final.log"
+    },
+    "regressionEvidence": [
+      "ci-wave-qualification-red.log",
+      "ci-wave-qualification-fixture-red.log",
+      "ci-wave-qualification-oracle-red.log",
+      "ci-wave-commit-red.log"
+    ],
+    "review": {
+      "path": "campaign-unity/Evidence/last-stand-skills/ci-fix-independent-review.json",
+      "sha256": "85bf5ba553233c1e99c2442ae0d0d5198b294e9ce78b92f5b78926a26f94ac3f",
+      "verdict": "PASS for bounded local correctness and behavioral coverage"
+    },
+    "historicalBrowserReuse": {
+      "unchangedInputs": 39,
+      "totalInputs": 41,
+      "supersededInputs": [
+        "campaign-unity/Tools/last_stand_skills/generate_review_profiles.py",
+        "e2e/helpers/lastStandWaveJourney.mjs"
+      ],
+      "unchangedPackagedBindings": 22,
+      "executedWaveProbeUnchanged": true,
+      "scope": "The Skills journey imports only the unchanged wave probe. The changed validateWaveCommit is covered by current regression checks. Original run12 result is retained, not rerun or rewritten."
+    },
+    "runtimeChanges": false,
+    "newHeadHostedCi": "pending",
+    "boundary": "Local repair complete and independently reviewed. Final hosted readback is retained separately after push; this documentation commit does not claim its own future CI outcome."
   }
 }

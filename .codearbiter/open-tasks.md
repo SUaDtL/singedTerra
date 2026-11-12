@@ -201,6 +201,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: bay-work-create-20261109
   - Spec ID: ST-LS-BAY-SPEC
   - Plan ID: ST-LS-BAY-PLAN
+- [x] Repair Skills edition CI qualification  (from github:SUaDtL/singedTerra/actions/jobs/130954511674)  (done 2026-11-11)
+  - Work origin: github:SUaDtL/singedTerra/actions/jobs/130954511674
+  - Desc: CI and local wave qualification reject the synthetic current-edition background fixture because it combines v4 rules with a v8 envelope. Make the fixture represent a complete neutral v9 Skills checkpoint while retaining legacy compatibility and strict malformed-edition rejection.
+  - Work type: fix
+  - Work ID: WORK-2B8444F7CEDC75704E7CCD60C2AED265
+  - Work operation ID: work-0695865ae1f33106f343ed455e250640d033e241
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.
