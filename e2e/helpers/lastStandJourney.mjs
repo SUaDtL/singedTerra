@@ -1789,7 +1789,6 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark();
     // First qualify a short earned boundary before the later natural terminal.
     // The separate 10–12-hour endurance obligation is not implied by this run.
-    await page.waitForTimeout(16000);
     await until(states,0,item=>item.load===load && item.completedWave>=2 && item.saveState==='ready',90);
     const captureEnd=await mark();
     await gameKey('SpeedRate','session',item=>item.paused);

@@ -156,6 +156,7 @@ export function createJourneyActions(runtime) {
 
   const gameKey=context.gameKey??(async(name,action,predicate=()=>true)=>{
       const {layout:prepared}=await geometry(name,{requireFull:false}),navigationStart=context.trace.length;
+      const captureAfterPause=name==='SpeedRate'&&context.states.at(-1)?.phase==='battle'&&context.states.at(-1)?.paused===false;
       await keyboardFocus(context.page.locator('#last-stand-return'));
       await context.page.keyboard.press('Tab');
       context.check(await context.page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
@@ -169,7 +170,10 @@ export function createJourneyActions(runtime) {
       // selection to become the requested target. The exact owner is checked below.
       await until(context.layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
         item.scope===navigation.scope && item.t>=navigation.t,8);
-      await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
+      // A software-rendered screenshot can outlast the remaining live run.
+      // Keep the fresh input guards below before Enter; capture a live Pause
+      // only after its single activation has been observed.
+      if(!captureAfterPause)await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
       const {canvas:keyboardCanvas}=await geometry(name);
       const documentState=await context.page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
         focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
@@ -183,6 +187,7 @@ export function createJourneyActions(runtime) {
       const activations=name==='SpeedRate'?context.encounters.slice(encStart).filter(item=>item.action==='pause'):
         context.states.slice(start).filter(item=>item.action===action);
       context.check(activations.length===1,'one actual owner receives each keyboard activation',activations);
+      if(captureAfterPause)await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
       await context.page.evaluate("window.__stInputArea='outer'");return observed;
     });
 

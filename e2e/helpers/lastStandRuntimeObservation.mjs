@@ -33,9 +33,11 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
   const initial=await clock(),deadline=Date.now()+8000;
   const documentRecord=item=>item?.load===load && item.timeOrigin===initial.timeOrigin;
   const loopRun=item=>item?.runId || item?.pendingRunId || 0;
-  let detail;
+  // The first clock already bounds a current pair. Another remote request can
+  // age that pair out while the browser is busy, before we ever inspect it.
+  let detail,now=initial;
   while(true) {
-    const now=await clock(),latest=encounters.at(-1),current=states.at(-1);
+    const latest=encounters.at(-1),current=states.at(-1);
     check(Number.isFinite(now.t) && Number.isFinite(now.timeOrigin) && now.timeOrigin===initial.timeOrigin && now.t>=initial.t,
       'coherent observation document clock',{initial,now});
     const encounter=options.status || options.action ? encounters.findLast(item=>documentRecord(item) &&
@@ -70,6 +72,7 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
       return {...encounter,hull:state.hull,loop:state};
     }
     await wait(40);
+    now=await clock();
   }
 }
 

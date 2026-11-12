@@ -82,7 +82,7 @@ function delayedRuntimePair({delay=2300,wallDelay=delay,inFlight=true}={}){
   const state={...identity,action:'session',sessionRun:1,runId:19,pendingRunId:0,tick:200,t:10101,hull:120,kills:4,paused:false};
   const deployment={...encounter,action:'deploy',tick:0,t:1000,kills:0};
   const deployedState={...state,action:'deploy',tick:0,t:1010,kills:0};
-  const encounters=[deployment,{...encounter,tick:180,t:9000}],states=[deployedState,{...state,tick:180,t:9001}];
+  const encounters=[deployment,{...encounter,tick:180,t:8999}],states=[deployedState,{...state,tick:180,t:9000}];
   const future={...encounter,tick:240,t:10000+delay+4};
   let now=10000,wall=0,calls=0,waits=0;
   const owner=journey.createRuntimeObservation({Date:{now:()=>wall}});
@@ -101,8 +101,19 @@ test('runtime pair acquisition preserves a newly emitted pair through slow clock
     const x=delayedRuntimePair(options),observed=await x.run();
     assert.equal(observed.tick,200);assert.equal(observed.t,10100);
     assert.equal(observed.loop,x.state);assert.equal(observed.loop.t,10101);
-    assert.equal(x.waits(),0,'A coherent pair emitted during this bounded request is already available');
+    assert.equal(x.waits(),1,'Only the initial sample lacked a fresh pair; the delayed response needs no further wait');
   }
+});
+
+test('runtime pair acquisition uses the first sampled clock when its current pair is already coherent',async()=>{
+  const x=delayedRuntimePair({delay:9000,wallDelay:9000,inFlight:false});
+  x.encounters.push({...x.encounter,t:9953.3});
+  const current={...x.state,t:9972.8};x.states.push(current);
+  const observed=await x.run();
+  assert.equal(observed.tick,200);assert.equal(observed.t,9953.3);
+  assert.equal(observed.loop,current);
+  assert.equal(x.waits(),0,'A fresh complete pair needs no second remote clock request');
+  assert.equal(x.elapsed(),0,'Use the existing sample without extending either deadline');
 });
 
 test('runtime pair acquisition rejects stale, foreign, contradictory and overdue observations',async()=>{
@@ -117,7 +128,7 @@ test('runtime pair acquisition rejects stale, foreign, contradictory and overdue
   for(const options of [{delay:8000,inFlight:false},{wallDelay:8000,inFlight:false}]){
     const x=delayedRuntimePair(options);
     await assert.rejects(x.run,/coherent actual loop\/session observation pair absent within bounded wait/);
-    assert.equal(x.waits(),0,'An overdue valid pair must be refused immediately');
+    assert.equal(x.waits(),1,'An overdue response must be refused without another wait after the initial incomplete sample');
   }
 });
 
@@ -273,6 +284,44 @@ test('keyboard submit requires fresh exact selection and a current focused docum
     const value=keyboardSubmitFixture();mutate(value);assert.throws(()=>journey.validateKeyboardSubmit(value));
   }
 });
+test('earned checkpoint capture pauses immediately after its real wave condition without an extra timed delay',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf('    // First qualify a short earned boundary'),end=source.indexOf('    const savedWave=',begin);
+  assert.ok(begin>0&&end>begin);
+  const run=new Function('page','until','states','load','mark','gameKey',`return (async()=>{${source.slice(begin,end)}})()`);
+  for(const earned of [true,false]){
+    let phase='battle',inputs=0,checked=false;
+    const state={load:3,completedWave:earned?4:1,saveState:'ready'};
+    const execute=()=>run({waitForTimeout:async()=>{phase='result';}},async(items,start,predicate)=>{
+      checked=true;assert.equal(items[0],state);if(!predicate(state))throw Error('checkpoint not yet earned');return state;
+    },[state],3,async()=>100,async(name,action,predicate)=>{
+      assert.equal(checked,true);assert.equal(phase,'battle','Extra delay consumed the live checkpoint pause window');
+      assert.deepEqual([name,action],['SpeedRate','session']);assert.equal(predicate({paused:true}),true);inputs++;
+    });
+    if(earned){await execute();assert.equal(inputs,1);}else {await assert.rejects(execute,/checkpoint not yet earned/);assert.equal(inputs,0);}
+  }
+});
+
+test('live keyboard Pause is submitted before a slow focus capture can reach natural defeat',async()=>{
+  const value=keyboardSubmitFixture(),trace=[],states=[{...value.state,paused:false}],encounters=[],events=[],report={keyboard_actions:[],screenshots:[]};
+  value.layout.width=1280;value.layout.height=720;
+  value.layout.controls=[{name:'Menu',x:20,y:20},{name:'SpeedRate',x:20,y:80}]
+    .map(c=>({...c,width:44,height:44,active:true,interactable:true}));
+  const layouts=[value.layout];let now=10;
+  const page={locator:()=>({evaluate:async()=>true}),waitForTimeout:async()=>{},
+    evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
+    keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=now+1;},
+      down:async key=>{events.push(key);assert.equal(states.at(-1).phase,'battle');states.push({...value.state,action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
+  const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
+    geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+    projectedControls:tierJourneyControlGeometry,hudControls:layout=>layout.controls,
+    check:(condition,message)=>assert.ok(condition,message),
+    screenshot:async()=>{events.push('capture');if(!states.at(-1).paused){states.at(-1).phase='result';value.layout.phase='result';}},
+    until:async(items,start,predicate)=>items.slice(start).find(predicate),validateKeyboardSubmit:journey.validateKeyboardSubmit}).gameKey;
+  await run('SpeedRate','session',item=>item.paused);
+  assert.deepEqual(events,['Enter','capture']);assert.equal(states.at(-1).paused,true);
+});
+
 test('actual keyboard caller refuses retained wave-boundary focus migration before Enter',async()=>{
   for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
     const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};

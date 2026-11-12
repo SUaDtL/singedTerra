@@ -233,6 +233,20 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: st559-entry-resume-fix
   - Spec ID: ST-LS-SKILLS-SPEC
   - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Submit live keyboard Pause before capture latency  (from github:SUaDtL/singedTerra/actions/runs/43251922328/keyboard-pause)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43251922328/keyboard-pause
+  - Desc: Hosted run 43251922328 job 131300092898 completed four waves but reached natural defeat during a blocking pre-Enter keyboard focus screenshot. Preserve current visibility, focus and selection checks, send verified Pause before capturing the paused result, and remove redundant fixed delay after earned checkpoints are already available. Keep actual earned-state, one-activation and input guards and qualify the hosted matrix.
+  - Work type: fix
+  - Work ID: WORK-4B9B8C6201E54EB0B046C05C14F02866
+  - Work operation ID: st559-keyboard-pause-fix
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Use the first current runtime clock before another browser request  (from github:SUaDtL/singedTerra/actions/runs/43251922328/first-clock)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43251922328/first-clock
+  - Desc: A coherent pair present at the initial clock sample ages out during an unnecessary second request in CI job5. Evaluate the initial sample with unchanged freshness, run, counter and eight-second guards; retain target RED and independent review.
+  - Work type: fix
+  - Work ID: WORK-6870DFD185388C0665AD8111DD801885
+  - Work operation ID: st559-first-clock-fix
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.
