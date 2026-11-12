@@ -1737,7 +1737,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     restored=await until(states,start,item=>item.action==='ready',60);
     check(validateSavedRunReady({state:restored,saved:JSON.parse(returnSave),expectedRunId:returnBefore.runId}),
       'unfinished Return offers explicit saved-run resume',restored);
-    await resumeReturnedJourney({resize,captureViewport,gameClick});
+    await resumeReturnedJourney({resize,captureViewport,gameClick,states,layouts,report});
     const checkpoint=JSON.parse(returnSave).checkpoint;
     await page.waitForTimeout(1200);
     check(states.at(-1).paused && states.at(-1).tick===checkpoint.encounter.tick,'Return resume waits paused at saved state');

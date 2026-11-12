@@ -240,6 +240,15 @@ export function verifyWaveFiles(resultPath,report) {
     item.t===state.t&&item.action===state.action),state,'Reported state differs from actual runtime telemetry');
   const actualLayout=layout=>assert.deepEqual(telemetry.layouts.find(item=>item.load===layout.load&&item.timeOrigin===layout.timeOrigin&&
     item.t===layout.t),layout,'Reported geometry differs from actual runtime telemetry');
+  if(report.return_resume){
+    const {state,layout}=report.return_resume;actualState(state);actualLayout(layout);
+    const edge=trace.filter(row=>row.area==='gameplay'&&row.kind==='pointerdown')[2];
+    assert.ok(edge,'Return resume pointer must exist');
+    for(const row of [state,layout]){
+      for(const key of ['load','timeOrigin','scope'])assert.equal(row[key],edge[key],'Return resume pointer identity must match: '+key);
+      assert.ok(Number.isFinite(row.t)&&Number.isFinite(edge.t)&&row.t<=edge.t,'Return resume pointer must follow its observed state and layout');
+    }
+  }
   const oracle=before=>profiles[`${before.tier}:${before.fitting}:${before.loop.cannonDamage}`]??
     profiles[`${before.loop.activeTier}:${before.fitting}:${before.loop.cannonDamage}`];
   for(const record of report.lifecycle??[]){

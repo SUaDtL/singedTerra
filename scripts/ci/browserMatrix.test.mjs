@@ -343,7 +343,10 @@ test('native Return inspects the Last Stand-only library without launching retir
     else {await run;assert.equal(report.retired_campaign_preservation.retirement,'observed Last Stand only');}
   }
   const viewport={width:1280,height:720},operations=[];
+  const state={load:1,timeOrigin:1000,scope:'healthy',phase:'garage',saveState:'ready',hasCheckpoint:true};
+  const layout={...state,controls:[{name:'Deploy',label:'RESUME RUN',active:true,interactable:true}]};
   await journey.resumeReturnedJourney({captureViewport:viewport,
+    states:[state],layouts:[layout],report:{},
     resize:async actual=>{assert.equal(actual,viewport);operations.push('resize');},
     gameClick:async(name,action)=>{assert.deepEqual(operations,['resize'],
       'The next Unity deployment restores the canonical profile after native Return');
