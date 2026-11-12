@@ -38,8 +38,11 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
   let detail,now=initial;
   while(true) {
     const latest=encounters.at(-1),current=states.at(-1);
+    // Journal every clock check immediately. Rewriting the accumulated full
+    // report here can consume the very deadline being measured; the outcome
+    // below retains normal snapshot cadence and immediate failed snapshots.
     check(Number.isFinite(now.t) && Number.isFinite(now.timeOrigin) && now.timeOrigin===initial.timeOrigin && now.t>=initial.t,
-      'coherent observation document clock',{initial,now});
+      'coherent observation document clock',{initial,now},{snapshot:false});
     const encounter=options.status || options.action ? encounters.findLast(item=>documentRecord(item) &&
       (options.status===undefined || item.status===options.status) && (options.action===undefined || item.action===options.action) &&
       (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) :

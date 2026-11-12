@@ -116,6 +116,35 @@ test('runtime pair acquisition uses the first sampled clock when its current pai
   assert.equal(x.elapsed(),0,'Use the existing sample without extending either deadline');
 });
 
+test('runtime observer journals polling checks without full snapshots consuming its deadline',async()=>{
+  // Actual run43290726426/load6 had a stale first pair, then a coherent pair
+  // within4578.7ms of page time. Full54.7MB report writes also consumed wall time.
+  const identity={load:6,timeOrigin:1794515393776.7,scope:'healthy'};
+  const deploy={...identity,action:'deploy',run:1,tick:0,t:67851.8,status:'Running',hp:120,kills:0,paused:false};
+  const deployed={...identity,action:'deploy',sessionRun:1,runId:3,pendingRunId:0,tick:0,t:68048.8,phase:'battle',hull:120,kills:0,paused:false};
+  const encounters=[deploy,{...deploy,action:'tick',tick:41,t:69937.8,kills:1}];
+  const states=[deployed,{...deployed,action:'session',tick:41,t:70104.3,kills:1}];
+  const current={...deployed,action:'session',tick:132,t:74612.8,kills:3};
+  const report={checks:[]},journal=[],snapshots=[];let wall=0,calls=0;
+  const check=journey.createJourneyCheck({report,resultPath:'inert-result',throwObserverFailure:()=>{},now:()=>wall,
+    append:(_path,line)=>journal.push(JSON.parse(line)),
+    writeSnapshot:()=>{snapshots.push(report.checks.at(-1).name);wall+=2500;}});
+  const owner=journey.createRuntimeObservation({Date:{now:()=>wall}});
+  const observed=await owner.observeRuntimePair({encounters,states,load:6,check,
+    clock:async()=>{
+      if(calls++===0)return {timeOrigin:identity.timeOrigin,t:72768.1};
+      wall+=4578.7;encounters.push({...deploy,action:'tick',tick:132,t:74458.5,kills:3});states.push(current);
+      return {timeOrigin:identity.timeOrigin,t:77346.8};
+    },wait:async ms=>{wall+=ms;}});
+  assert.equal(observed.tick,132);assert.equal(observed.loop,current);
+  assert.deepEqual(journal.map(row=>[row.name,row.pass]),[
+    ['coherent observation document clock',true],['coherent observation document clock',true],
+    ['coherent actual loop/session observation counters',true]]);
+  assert.deepEqual(snapshots,['coherent actual loop/session observation counters']);
+  assert.deepEqual(report.checks,journal,'Every admitted check remains durable before return');
+  assert.ok(wall<8000,'Evidence polling must not spend the acquisition deadline on repeated full snapshots');
+});
+
 test('runtime pair acquisition rejects stale, foreign, contradictory and overdue observations',async()=>{
   for(const change of [x=>{x.encounter.t=9999;x.state.t=9999.5;},x=>x.encounter.load++,x=>x.encounter.timeOrigin++,
     x=>x.encounter.run++,x=>x.state.sessionRun++,x=>x.state.runId++,x=>x.encounter.hp--,x=>x.state.kills++,

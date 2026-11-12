@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Keep runtime polling journals within the acquisition deadline  (from github:SUaDtL/singedTerra/actions/runs/43290726426/jobs/131436285882/observer-journal)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43290726426/jobs/131436285882/observer-journal
+  - Desc: Run 43290726426 job 131436285882 retained a coherent pair within 4578.7ms of page time but hit its wall deadline while full 54.7MB report snapshots ran inside polling. Reproduce snapshot latency through the actual check writer, retain every clock check in the durable journal, defer successful full snapshots until acquisition outcome, and preserve immediate failure snapshots and both eight-second deadlines.
+  - Work type: fix
+  - Work ID: WORK-2094382A25B47EA0C66D3E3A4283C152
+  - Work operation ID: st559-observer-journal-create
 - [~] Integrate Dependabot PRs 553-556  (from github-pr-batch#553-556)  (started 2026-11-09)
   - Work origin: github-pr-batch#553-556
   - Desc: Combine and qualify Supabase CLI 3, Supabase JS 2.119, Preact 11 and Pixelmatch 8, preserving backend release and gameplay compatibility

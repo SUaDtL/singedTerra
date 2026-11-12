@@ -2102,14 +2102,14 @@ export function persistJourneyFinalEvidence({report,observations,write,output,lo
 export function createJourneyCheck({report,resultPath,throwObserverFailure,
   writeSnapshot=writeShopPresentationJson,append=appendFileSync,now=Date.now}) {
   let lastResultWrite=-Infinity;
-  return (condition, name, detail) => {
+  return (condition, name, detail, {snapshot=true}={}) => {
     throwObserverFailure();
     const observation={name,pass:Boolean(condition),detail};
     report.checks.push(observation);
     // Keep every assertion durable without repeatedly rewriting accumulated
     // screenshots/layouts. Failure and the existing finally retain full state.
     append(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
-    if(!condition || now()-lastResultWrite>=1000) {
+    if(!condition || snapshot && now()-lastResultWrite>=1000) {
       writeSnapshot(resultPath,report);lastResultWrite=now();
     }
     assert.ok(condition,name);

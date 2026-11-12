@@ -22,7 +22,7 @@ test('matrix guards run before npm install without third-party packages',()=>{
       '--test-skip-pattern=matrix guards run before npm install without third-party packages','scripts/ci/browserMatrix.test.mjs'],
       {cwd:process.cwd(),env:{...environment,NODE_PATH:''},encoding:'utf8',timeout:20000,maxBuffer:128*1024});
     assert.ifError(result.error);assert.equal(result.status,0,result.stderr||result.stdout);
-    assert.match(result.stdout,/^# pass 16$/m);assert.match(result.stdout,/^# skipped 0$/m);
+    assert.match(result.stdout,/^# pass 17$/m);assert.match(result.stdout,/^# skipped 0$/m);
   `,{additionalSources:['scripts/ci/browserMatrix.test.mjs','scripts/ci/browserMatrix.mjs',
     'scripts/ci/lastStandDependencyFreeFixture.mjs','scripts/ci/lastStandMatrixResult.mjs','scripts/ci/lastStandQualification.mjs',
     'scripts/ci/lastStandWaveMatrixResult.mjs','scripts/ci/lastStandWaveQualification.mjs']});
@@ -419,4 +419,22 @@ test('actual journey check journals every observation without rewriting the grow
     writeSnapshot:()=>assert.fail('A journal failure cannot be hidden by a passing snapshot'),
   });
   assert.throws(()=>failedCheck(true,'must fail persistence'),error=>error===appendError);
+});
+
+test('polling snapshot deferral retains journals, failed snapshots and outcome cadence',()=>{
+  const report={checks:[]},journal=[],snapshots=[];let clock=0,appendError;
+  const check=journey.createJourneyCheck({report,resultPath:'inert-result',now:()=>clock,throwObserverFailure:()=>{},
+    append:(_path,line)=>{if(appendError)throw appendError;journal.push(JSON.parse(line));},
+    writeSnapshot:(_path,value)=>snapshots.push(structuredClone(value))});
+  check(true,'first clock',{t:1},{snapshot:false});clock=10000;
+  check(true,'next clock',{t:2},{snapshot:false});
+  assert.equal(journal.length,2);assert.equal(snapshots.length,0);
+  check(true,'admitted counters',{tick:132});
+  assert.equal(snapshots.length,1);assert.deepEqual(snapshots[0].checks,journal);
+  assert.throws(()=>check(false,'invalid clock',{t:0},{snapshot:false}),/invalid clock/);
+  assert.equal(snapshots.length,2);assert.deepEqual(snapshots[1].checks,journal);
+  assert.equal(journal.at(-1).pass,false,'Snapshot deferral cannot suppress a failed check');
+  appendError=new Error('journal unavailable');
+  assert.throws(()=>check(true,'cannot admit without journal',{}, {snapshot:false}),error=>error===appendError);
+  assert.equal(snapshots.length,2);assert.equal(journal.length,4);
 });

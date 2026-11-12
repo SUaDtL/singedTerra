@@ -2,11 +2,11 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "keyboard_roundtrip_repair_verified_locally_hosted_pending",
+  "status": "observer_journal_repair_verified_locally_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1"
+    "sha256": "82da42a6a705d9d5a7b007dabe2ccb681543fc081359c462381f21f12ee67716"
   },
   "initialStructuralValidation": {
     "parsed": true,
@@ -1777,17 +1777,17 @@
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
-    "linkCount": 114,
-    "anchorCount": 104,
+    "linkCount": 121,
+    "anchorCount": 111,
     "imageCount": 10,
     "allImageAltTextPresent": true,
     "imageDimensionsVerified": true,
     "browserRenderedReviewHtml": true,
-    "renderBoundary": "Exact current HTML rendered at1280x900 and390x844; all10images decode with matching dimensions and no horizontal overflow. Root inspected desktop repair section and portrait header.",
+    "renderBoundary": "Exact current HTML rendered at1280x900 and390x844; all10images decode with matching dimensions and no horizontal overflow. Root inspected desktop observer repair section and portrait header.",
     "linkCountIncludesImageSources": true
   },
   "reviewDocumentRenders": {
-    "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
+    "htmlSha256": "82da42a6a705d9d5a7b007dabe2ccb681543fc081359c462381f21f12ee67716",
     "views": [
       {
         "name": "desktop",
@@ -1795,16 +1795,16 @@
         "height": 900,
         "metrics": {
           "documentWidth": 1280,
-          "documentHeight": 15556,
+          "documentHeight": 16084,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop.png",
-          "sha256": "000f88f28b8bbf36bde83ef0162b976899f9d4d33d4bf06f0c5b2b2f252dfada"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-observer-journal-ci-desktop.png",
+          "sha256": "ed98bcf6af4d3879e0454a5f33a417220602af78fea82b41fb7aaf51614ce05b"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop-top.png",
-          "sha256": "9a270ed6f43a210f507f2b154f9d6d55d8bb962c19287e81bc89f9237bd8a27c"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-observer-journal-ci-desktop-top.png",
+          "sha256": "81ff91b0c21d20a6c5b79209ef101cb5d6be2d0382240b26c64654def2eb9415"
         }
       },
       {
@@ -1813,29 +1813,29 @@
         "height": 844,
         "metrics": {
           "documentWidth": 390,
-          "documentHeight": 25330,
+          "documentHeight": 26324,
           "images": 10
         },
         "full": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait.png",
-          "sha256": "75180856673a6e2de5fe315520c94914255d435a0676ea2d9e627fa4a64790ff"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-observer-journal-ci-portrait.png",
+          "sha256": "71a408ef75d215c205418b3fe75a4c8eefdbe11188ee6d91ebb5ca241d6451d2"
         },
         "top": {
-          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait-top.png",
-          "sha256": "5be2e21336c9e2971ddf0773e5cfef0b81c37bedd09e5ccc1d5addd6f43496bb"
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-observer-journal-ci-portrait-top.png",
+          "sha256": "3cfd566fdb64286d8573b257609fb7f0d46730eb76bde8710cf5f063eea451dc"
         }
       }
     ],
     "status": "pass"
   },
   "rootDocumentInspection": {
-    "observedUtc": "2026-11-12T19:13:56.017384+00:00",
-    "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
+    "observedUtc": "2026-11-12T20:47:05.734598+00:00",
+    "htmlSha256": "82da42a6a705d9d5a7b007dabe2ccb681543fc081359c462381f21f12ee67716",
     "views": [
-      "desktop-keyboard-roundtrip-repair",
+      "desktop-observer-journal-repair",
       "portrait-top"
     ],
-    "result": "Current repair and pending hosted status readable; no horizontal overflow."
+    "result": "Current repair, timing limits and pending hosted status readable; no horizontal overflow."
   },
   "browserCiRepair": {
     "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
@@ -3033,6 +3033,145 @@
       "Deterministic latency reproduction executes actual DOM callbacks using inert timing; it is not fresh browser or native qualification.",
       "No Unity or packaged runtime changes. Earlier full Skills/native receipts retain their original identities and limits.",
       "Numeric guard coverage remains unmeasured; no performance, merge or publication claim."
+    ],
+    "replacementHostedCi": "pending",
+    "merged": false,
+    "published": false
+  },
+  "observerJournalCiFollowup": {
+    "sourceHead": "5d5889a935802bf385144419a2da720d86233bf8",
+    "workId": "WORK-2094382A25B47EA0C66D3E3A4283C152",
+    "workAttachment": "Legacy writer rejected the maintained string spec ID; spec/plan metadata remains unbound. The typed plan references this repair without fabricating an attachment.",
+    "failedHostedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43290726426",
+    "job": 131436285882,
+    "observed": "The second sampled clock bounded a coherent pair within4578.7ms of page time, while the wall deadline expired. Passing polling checks synchronously rewrote the accumulated54700672byte report.",
+    "mechanism": "Actual observer/check writer regression reproduces the same timeout with controlled2500ms snapshot latency. Exact hosted per-write cost was not recorded; sole causation is not claimed.",
+    "change": "Passing clock checks append full details immediately to the journal and defer full-report snapshots. Acquisition outcomes retain default one-second cadence; failures force immediate snapshots and journal errors propagate. Both8000ms deadlines and all pair guards remain unchanged.",
+    "localVerification": {
+      "targetRed": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-target-red.log",
+        "sha256": "6e7ea188a7f1b73d36a9dcaef441a7f623baa39a42768becf48b96015dbb77fa"
+      },
+      "targetGreen": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-target-green.log",
+        "sha256": "ec8f55bbcdd768d0af0c0b39afc05ecaab965aef3d3ef2d6bb0ede9eb720f395"
+      },
+      "policy": {
+        "passed": 536,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-policy-green.log",
+          "sha256": "76c970b2f1ec8ef9558dfbd284519d63a2e93f9e501c332fda3dc0f67f27c0c0"
+        }
+      },
+      "focused": {
+        "passed": 192,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-focused-final-green.log",
+          "sha256": "ad3067d05a88859cdb60d2670b09a260ad4608b91fae831c5f462635174c927f"
+        }
+      },
+      "python": {
+        "passed": 2,
+        "nestedNodePassed": 196,
+        "log": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-python-green.log",
+          "sha256": "d73956a64a39ad9cded578c8f56c24930a583979e9b318c0323a7b3f9357be10"
+        }
+      },
+      "independent": {
+        "status": "pass_with_scope_limits",
+        "behaviorGroups": 9,
+        "killedMutants": 14,
+        "report": {
+          "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-independent-review.json",
+          "sha256": "5ad775b9a519753e0b2a1de3c1b4022c75d577cb9e12bbbf519cbbca93746f2c"
+        }
+      },
+      "decision": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-decision.json",
+        "sha256": "a69c19fd50c8740179af8121e731b9c821b21f329245097b5f18b7220a66b524"
+      },
+      "packageBinding": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-observer-journal-package-binding.json",
+        "sha256": "b426314c6345343f419794c0c73ec38313c7f42aa1c55deaacfc618345f3d951",
+        "verifiedPaths": 19
+      },
+      "inventoryCorrection": "The added writer regression increases the dependency-free matrix inventory16to17; the initial mismatch remains retained in ci-observer-journal-focused-inventory-red.log."
+    },
+    "previousDocumentValidation": {
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 114,
+        "anchorCount": 104,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "imageDimensionsVerified": true,
+        "browserRenderedReviewHtml": true,
+        "renderBoundary": "Exact current HTML rendered at1280x900 and390x844; all10images decode with matching dimensions and no horizontal overflow. Root inspected desktop repair section and portrait header.",
+        "linkCountIncludesImageSources": true
+      },
+      "reviewDocumentRenders": {
+        "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 15556,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop.png",
+              "sha256": "000f88f28b8bbf36bde83ef0162b976899f9d4d33d4bf06f0c5b2b2f252dfada"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-desktop-top.png",
+              "sha256": "9a270ed6f43a210f507f2b154f9d6d55d8bb962c19287e81bc89f9237bd8a27c"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 25330,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait.png",
+              "sha256": "75180856673a6e2de5fe315520c94914255d435a0676ea2d9e627fa4a64790ff"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-keyboard-roundtrip-ci-portrait-top.png",
+              "sha256": "5be2e21336c9e2971ddf0773e5cfef0b81c37bedd09e5ccc1d5addd6f43496bb"
+            }
+          }
+        ],
+        "status": "pass"
+      },
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T19:13:56.017384+00:00",
+        "htmlSha256": "43bb977447a1f3094b99df2394f49ede144ab7083802ad1016a007be83dfe4d1",
+        "views": [
+          "desktop-keyboard-roundtrip-repair",
+          "portrait-top"
+        ],
+        "result": "Current repair and pending hosted status readable; no horizontal overflow."
+      }
+    },
+    "boundaries": [
+      "Controlled timing mechanism proof is not fresh browser or native qualification.",
+      "Unity package and game clock are unchanged; earlier full Skills/native receipts retain their original identities and limits.",
+      "Numeric guard coverage remains unmeasured; no device performance, merge or publication claim."
     ],
     "replacementHostedCi": "pending",
     "merged": false,
