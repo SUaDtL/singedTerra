@@ -178,7 +178,14 @@ public static class LastStandLoopBuild
         Require(Digest(GraphicsPath) == graphicsBefore && Digest(QualityPath) == qualityBefore,
             "Build changed saved project graphics settings");
         Require(Digest(WebSettingsPath) == webSettingsBefore, "Build changed saved WebGL resource settings");
-        Debug.Log("ST_LS_WEB_BUILD_PASS configuration=" + configuration + " options=" + options
+        Require(((report.summary.options & BuildOptions.Development) != 0) == (configuration == "development"),
+            "Actual WebGL development mode differs from the requested configuration");
+        // Unity's Flags enum formats zero-valued aliases alongside Development.
+        // Bind the actual report bit above and keep the requested option stable
+        // instead of depending on Enum.ToString's display names.
+        Debug.Log("ST_LS_WEB_BUILD_PASS configuration=" + configuration + " options="
+            + (configuration == "development" ? "Development" : "None")
+            + " effectiveOptionsBits=" + (long)report.summary.options
             + " bytes=" + report.summary.totalSize + " path=" + output);
     }
 }

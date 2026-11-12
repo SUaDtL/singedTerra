@@ -1,6 +1,33 @@
 import assert from 'node:assert/strict';
 import { waveIntervalEvents, validateModelObservation } from './lastStandRuntimeObservation.mjs';
 
+export const SKILL_KEYS=Object.freeze(['overdrive','emergencyRepairs','minefield','reinforcedHull','ballistics','reactiveLining']);
+const skillList=ids=>Array.isArray(ids)&&ids.length<=3&&new Set(ids).size===ids.length&&ids.every(id=>SKILL_KEYS.includes(id));
+export function assertSkillProfile(skills){
+  assert.deepEqual(Object.keys(skills??{}).sort(),['intel','copies','loadout','firstAwards'].sort(),'Exact skills profile shape');
+  assert.ok(Number.isSafeInteger(skills.intel)&&skills.intel>=0&&skills.intel<=2147483647,'Bounded Skill Intel');
+  assert.ok(Array.isArray(skills.copies)&&skills.copies.length===6&&skills.copies.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Bounded skill copies');
+  assert.ok(skillList(skills.loadout)&&skills.loadout.every(id=>skills.copies[SKILL_KEYS.indexOf(id)]>0),'Owned unique skill loadout');
+  assert.ok(Array.isArray(skills.firstAwards)&&new Set(skills.firstAwards).size===skills.firstAwards.length&&
+    skills.firstAwards.every(id=>['tier-1:skills-25','tier-1:skills-50'].includes(id)),'Bounded first Intel awards');
+  return true;
+}
+export function assertSkillCheckpoint(checkpoint){
+  const {skills,skillState:state,encounter:e}=checkpoint;
+  assert.deepEqual(Object.keys(skills??{}).sort(),['loadout','ranks'],'Exact captured skills');
+  assert.ok(skillList(skills.loadout)&&Array.isArray(skills.ranks)&&skills.ranks.length===6,'Bounded captured skill loadout');
+  skills.ranks.forEach((rank,index)=>assert.ok(Number.isInteger(rank)&&rank>=0&&rank<=3&&
+    skills.loadout.includes(SKILL_KEYS[index])===(rank>0),'Captured rank matches equipped skill'));
+  assert.deepEqual(Object.keys(state??{}).sort(),['spentMask','overdriveUntilTick','minefieldArmed','minefieldDamage'].sort(),'Exact skill combat state');
+  for(const key of ['spentMask','overdriveUntilTick','minefieldDamage'])assert.ok(Number.isSafeInteger(state[key])&&state[key]>=0&&state[key]<=2147483647,'Bounded skill state');
+  assert.ok(state.spentMask<=7&&typeof state.minefieldArmed==='boolean','Valid skill state flags');
+  for(let id=0;id<3;id++)if(state.spentMask&(1<<id))assert.ok(skills.ranks[id]>0,'Unequipped skill cannot be spent');
+  const duration=(9+3*skills.ranks[0])*20;
+  assert.ok(state.spentMask&1?state.overdriveUntilTick>=duration&&state.overdriveUntilTick<=e.tick+duration:state.overdriveUntilTick===0,'Bounded overdrive expiry');
+  assert.ok(state.spentMask&4?state.minefieldDamage>=1&&state.minefieldDamage<=e.cannonDamage*(3+skills.ranks[2]):!state.minefieldArmed&&state.minefieldDamage===0,'Armed mines require a spent equipped use');
+  if(e.tick===0)assert.deepEqual(state,{spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0},'Initial skill state must be unspent');
+  return true;
+}
 
 export function isWaveResultFor(before,item) {
   return item?.action==='result' && item.phase==='result' && item.sessionRun===before.run &&
@@ -102,7 +129,7 @@ export function validateBackgroundWaveTerminal({interval,evidence,events=interva
 // transaction revisions may advance during Return, reload or explicit Resume.
 // A funded project needs the separate research journey's completion evidence.
 export function assertIdleWaveSave(saved) {
-  assert.ok([5,6,7,8].includes(saved?.version),'Supported wave/profile envelope required');
+  assert.ok([5,6,7,8,9].includes(saved?.version),'Supported wave/profile envelope required');
   if(saved.version>=6&&saved.checkpoint)assertWaveCheckpointEdition(saved.checkpoint,saved.version);
   if(saved.version===5&&saved.checkpoint){
     const {encounter:e,shop:s}=saved.checkpoint;
@@ -120,18 +147,19 @@ export function assertIdleWaveSave(saved) {
     }
   }
   assert.ok(Number.isSafeInteger(saved.revision)&&saved.revision>0);
-  const r=saved.research;assert.equal(r?.version,1);assert.equal(r.catalogVersion,saved.version===8?'research-v2':'research-v1');
+  const r=saved.research;assert.equal(r?.version,1);assert.equal(r.catalogVersion,saved.version>=8?'research-v2':'research-v1');
   assert.ok(Number.isSafeInteger(r.revision)&&r.revision>=0);
   assert.ok(Number.isSafeInteger(r.lastObservedUtcMilliseconds)&&r.lastObservedUtcMilliseconds>=0);
   assert.equal(r.nextProjectIdentity,1);assert.equal(r.completionSequence,0);
-  const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics',...(saved.version===8?['armorPiercing','areaControl','fieldEngineering']:[])];
+  const tracks=['gameSpeed','salvageRecovery','researchSpeed','scrapLogistics',...(saved.version>=8?['armorPiercing','areaControl','fieldEngineering']:[])];
   const empty=Object.fromEntries(tracks.map(key=>[key,0]));
   assert.deepEqual(r.completedRanks,empty,'Ordinary wave qualification uses no research grants');
-  if(saved.checkpoint?.encounter.rulesVersion==='last-stand-waves-v3')
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(saved.checkpoint?.encounter.rulesVersion))
     assert.deepEqual(saved.checkpoint.combatResearch,{armorPiercing:0,areaControl:0,fieldEngineering:0},'Captured combat ranks must be funded by the idle profile');
   assert.deepEqual(r.partials,Object.fromEntries(Object.keys(empty).map(key=>[key,null])));
-  assert.deepEqual(r.slots,Array.from({length:saved.version===8?3:2},()=>({active:null,queued:null})));
+  assert.deepEqual(r.slots,Array.from({length:saved.version>=8?3:2},()=>({active:null,queued:null})));
   assert.equal(saved.history?.version,1);
+  if(saved.version===9){assertSkillProfile(saved.skills);assert.deepEqual(saved.skills.copies,[0,0,0,0,0,0],'Ordinary wave journey grants no skill ownership');assert.deepEqual(saved.skills.loadout,[]);}
 }
 
 export const WAVE_FITTINGS=Object.freeze(['launcher','repair','scattergun','mortar','railgun','arc','shield']);
@@ -139,10 +167,10 @@ export const WAVE_FITTINGS=Object.freeze(['launcher','repair','scattergun','mort
 export function assertWaveCheckpointEdition(checkpoint,profileVersion){
   const e=checkpoint?.encounter,s=checkpoint?.shop;
   assert.ok(e&&s,'Complete checkpoint edition required');
-  const buildcraft=e.rulesVersion==='last-stand-waves-v3',current=buildcraft||e.rulesVersion==='last-stand-waves-v2';
-  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(e.rulesVersion),'Unknown wave rules');
-  if(buildcraft&&profileVersion!==undefined)assert.equal(profileVersion,8,'Buildcraft requires profile8');
-  assert.equal(checkpoint.contentVersion,buildcraft?'last-stand-content-v3':current?'last-stand-content-v2':'last-stand-content-v1','Mixed content edition');
+  const skills=e.rulesVersion==='last-stand-waves-v4',buildcraft=skills||e.rulesVersion==='last-stand-waves-v3',current=buildcraft||e.rulesVersion==='last-stand-waves-v2';
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3','last-stand-waves-v4'].includes(e.rulesVersion),'Unknown wave rules');
+  if(buildcraft&&profileVersion!==undefined)assert.ok(skills?profileVersion===9:[8,9].includes(profileVersion),'Buildcraft or skills requires its supported profile');
+  assert.equal(checkpoint.contentVersion,skills?'last-stand-content-v4':buildcraft?'last-stand-content-v3':current?'last-stand-content-v2':'last-stand-content-v1','Mixed content edition');
   assert.ok(buildcraft?s.economyVersion==='buildcraft-economy-v5':current?s.economyVersion==='combat-depth-economy-v4':
     ['long-run-economy-v1','research-farming-economy-v2','research-farming-economy-v3'].includes(s.economyVersion),'Mixed economy edition');
   assert.ok(Number.isInteger(e.tier)&&e.tier>=1&&e.tier<=(buildcraft?6:current?4:2),'Tier outside saved edition');
@@ -155,7 +183,7 @@ export function assertWaveCheckpointEdition(checkpoint,profileVersion){
     assert.ok(e.mortarDamage>=18&&e.railgunDamage>=40,'Invalid armament damage');
   }
   if(buildcraft){
-    assert.deepEqual(Object.keys(checkpoint).sort(),['runId','contentVersion','encounter','shop','loadout','combatResearch','buildcraft'].sort(),'Exact buildcraft checkpoint shape');
+    assert.deepEqual(Object.keys(checkpoint).sort(),['runId','contentVersion','encounter','shop','loadout','combatResearch','buildcraft',...(skills?['skills','skillState']:[])].sort(),'Exact buildcraft checkpoint shape');
     const l=checkpoint.loadout,r=checkpoint.combatResearch,b=checkpoint.buildcraft;
     assert.deepEqual(Object.keys(l??{}).sort(),['primary','secondary']);
     assert.equal(l.primary,WAVE_FITTINGS[e.fitting]);
@@ -167,12 +195,13 @@ export function assertWaveCheckpointEdition(checkpoint,profileVersion){
     for(const key of fields)assert.ok(Number.isSafeInteger(b[key])&&b[key]>=0&&b[key]<=2147483647,'Invalid buildcraft state: '+key);
     assert.ok(b.nextArcTick>=1&&b.nextShieldRechargeTick>=1&&b.arcDamage>=16&&b.shield<=b.shieldCapacity&&b.lastShieldHitTick<=e.tick,'Invalid buildcraft effects or schedule');
     assert.equal(s.version,3);assert.equal(s.fitting,e.fitting);assert.equal(s.tier,e.tier);
+    if(skills)assertSkillCheckpoint(checkpoint);
   }else for(const key of ['loadout','combatResearch','buildcraft'])assert.ok(!Object.hasOwn(checkpoint,key),'Buildcraft state cannot enter a retained edition');
   return {rulesVersion:e.rulesVersion,contentVersion:checkpoint.contentVersion,economyVersion:s.economyVersion};
 }
 
 export function assertWaveStateEdition(state,saved){
-  if(saved.version!==6&&saved.version!==7&&saved.version!==8)return; // Historical reader fixtures retain their envelope.
+  if(saved.version!==6&&saved.version!==7&&saved.version!==8&&saved.version!==9)return; // Historical reader fixtures retain their envelope.
   const edition=assertWaveCheckpointEdition(saved.checkpoint,saved.version);
   assert.equal(state.profileVersion,edition.rulesVersion);
   assert.equal(state.contentVersion,edition.contentVersion);
@@ -185,7 +214,7 @@ export function assertWaveRestoredState(state,saved){
   if(!edition)return;
   if(edition.rulesVersion!=='last-stand-waves-v1')for(const key of ['mortarShots','railgunShots','mortarDamage','railgunDamage'])
     assert.equal(state[key],saved.checkpoint.encounter[key],'Restored armament differs: '+key);
-  if(edition.rulesVersion==='last-stand-waves-v3'){
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(edition.rulesVersion)){
     for(const key of ['arcShots','arcDamage','shield','shieldCapacity'])assert.equal(state[key],saved.checkpoint.buildcraft[key],'Restored buildcraft state differs: '+key);
     assert.equal(state.activeSecondaryId,saved.checkpoint.loadout.secondary??'','Restored secondary fitting differs');
   }
@@ -213,7 +242,7 @@ export function validateBackgroundCheckpoint({interval,after,checkpointState:sta
   assert.equal(e.wave,e.completedWave,'A saved checkpoint names its completed cohort');
   assert.equal(state.completedWave,e.completedWave);assert.equal(state.checkpointWave,e.completedWave);assert.equal(state.wave,e.completedWave+1);
   assert.ok(Number.isSafeInteger(e.tick)&&e.tick>0&&Number.isSafeInteger(state.tick)&&state.tick>=e.tick&&state.tick>=after.tick);
-  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(e.rulesVersion));assertWaveStateEdition(state,saved);assertWaveStateEdition(after.loop,saved);assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3','last-stand-waves-v4'].includes(e.rulesVersion));assertWaveStateEdition(state,saved);assertWaveStateEdition(after.loop,saved);assert.equal(state.profileVersion,e.rulesVersion);assert.equal(after.loop.profileVersion,e.rulesVersion);
   assert.equal(state.activeTier,e.tier);assert.equal(after.loop.activeTier,e.tier);
   assert.equal(state.fittingId,WAVE_FITTINGS[e.fitting]);assert.equal(state.fittingId,after.fitting);
   assert.equal(state.cannonDamage,e.committedCannonDamage);assert.equal(state.cannonDamage,after.loop.cannonDamage);

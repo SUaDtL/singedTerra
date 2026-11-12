@@ -11,7 +11,7 @@ import unittest
 
 TOOLS = Path(__file__).resolve().parents[1]
 CONTRACTS = tuple(json.loads((TOOLS / f"contracts/last-stand-observation-v{version}.json").read_text(encoding="utf8"))
-                  for version in (1, 2, 3, 4, 5, 6))
+                  for version in (1, 2, 3, 4, 5, 6, 7))
 CONTINUITY_CONTROLS = ("DataExport", "DataImport", "DataPrevious", "DataGarage", "BackupCancel", "BackupReplace",
                        "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction")
 
@@ -50,7 +50,7 @@ class ObservationVersionTests(unittest.TestCase):
             value = self.read_controls(source)
             self.assertEqual(value["raw"], source)
             self.assertFalse(value["graphicsTruncated"])
-            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10, 10, 10)[CONTRACTS.index(contract)])
+            self.assertEqual(len(value["historyControls"]), (2, 9, 10, 10, 10, 10, 10)[CONTRACTS.index(contract)])
             self.assertEqual("plannerControls" in value, contract is not CONTRACTS[0])
 
     def test_incomplete_extra_repeated_and_malformed_current_refused(self):
@@ -152,7 +152,7 @@ class ObservationVersionTests(unittest.TestCase):
                 self.read_controls(raw(changed))
 
     def test_buildcraft_v6_requires_armory_and_expanded_research_exactly(self):
-        current = packet(CONTRACTS[-1])
+        current = packet(CONTRACTS[5])
         self.assertEqual(self.read_controls(raw(current))["schema"], "singedterra-last-stand-observation/v6")
         self.assertEqual(len(current["armoryControls"]), 12)
         self.assertIn("ArmoryName", [row["name"] for row in current["armoryControls"]])
@@ -171,4 +171,25 @@ class ObservationVersionTests(unittest.TestCase):
                        lambda p: p.update(schema="singedterra-last-stand-observation/v5")):
             changed = deepcopy(current); change(changed)
             with self.assertRaises((AssertionError, ValueError, KeyError, TypeError)):
+                self.read_controls(raw(changed))
+
+    def test_skills_v7_requires_complete_collection_battle_and_navigation_controls(self):
+        current = packet(CONTRACTS[6])
+        self.assertEqual(self.read_controls(raw(current))["schema"], "singedterra-last-stand-observation/v7")
+        self.assertEqual(len(current["skillsControls"]), 12)
+        self.assertEqual(sum(len(current[row["field"]]) for row in CONTRACTS[6]["inventories"]), 205)
+        for field, names in (("skillsControls", [row["name"] for row in current["skillsControls"]]),
+                             ("controls", ["CombatSkill0", "CombatSkill1", "CombatSkill2"]),
+                             ("settingsControls", ["MenuSkills"]), ("armoryControls", ["ArmorySkills"])):
+            for name in names:
+                missing=deepcopy(current);missing[field]=[row for row in missing[field] if row["name"]!=name]
+                with self.subTest(missing=name), self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
+                    self.read_controls(raw(missing))
+        for change in (lambda p:p.pop("skillsControls"), lambda p:p.pop("skillsScrollOffset"),
+                       lambda p:p.update(skillsMaximumScrollOffset="500"), lambda p:p.update(skillsScrollOffset=-1),
+                       lambda p:p["skillsControls"].append(deepcopy(p["skillsControls"][0])),
+                       lambda p:p["skillsControls"][0].update(name="invented-skill"),
+                       lambda p:p.update(schema="singedterra-last-stand-observation/v6")):
+            changed=deepcopy(current);change(changed)
+            with self.assertRaises((AssertionError,ValueError,KeyError,TypeError)):
                 self.read_controls(raw(changed))

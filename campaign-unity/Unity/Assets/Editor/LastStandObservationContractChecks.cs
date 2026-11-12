@@ -32,9 +32,9 @@ public static class LastStandObservationContractChecks
     static object Field(object value,string name)=>value.GetType().GetField(name).GetValue(value);
     static Contract CurrentContract()
     {
-        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v6.json"));
+        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v7.json"));
         var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
-        Require(contract.schema=="singedterra-last-stand-observation/v6"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+        Require(contract.schema=="singedterra-last-stand-observation/v7"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
         return contract;
     }
     internal static Dictionary<string,string[]> CurrentControlInventory()
@@ -120,7 +120,7 @@ public static class LastStandObservationContractChecks
                 var observations=hud.GetType().GetField("observations",Private).GetValue(hud);
                 var capture=observations.GetType().GetMethod("CaptureLayoutSnapshot",Private);
                 var packets=new List<string>();
-                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance","armory"})
+                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance","armory","skills"})
                 {
                     if(page!="")loop.OpenMenu(page);else loop.CloseMenu();loop.RefreshControls();
                     var snapshot=capture.Invoke(observations,new object[]{null});Check(snapshot,contract);

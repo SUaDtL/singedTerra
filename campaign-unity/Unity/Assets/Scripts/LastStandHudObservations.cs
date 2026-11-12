@@ -43,6 +43,7 @@ namespace SingedTerra.LastStand
         LastStandPlannerHud planner=>modals.Planner;
         LastStandAppearanceHud appearance=>modals.Appearance;
         LastStandArmoryHud armory=>modals.Armory;
+        LastStandSkillsHud skills=>modals.Skills;
         bool CanOpenRunShop()=>shop.CanOpenRunShop();
         bool CanOpenPermanentShop()=>shop.CanOpenPermanentShop();
         static float PreferredPixelRatio()=>LastStandHudDisplay.PreferredPixelRatio();
@@ -175,16 +176,17 @@ namespace SingedTerra.LastStand
         }
         [Serializable] sealed class LayoutState
         {
-            public string schema="singedterra-last-stand-observation/v6";
+            public string schema="singedterra-last-stand-observation/v7";
             public string phase,coordinates,selection;
             public int width,height; public float pixelRatio,scrollOffset,maximumScrollOffset;
             public float settingsScrollOffset,settingsMaximumScrollOffset;
-            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls,appearanceControls,armoryControls; public GraphicObservation[] graphics;
+            public Control[] controls,shopControls,settingsControls,researchControls,historyControls,plannerControls,appearanceControls,armoryControls,skillsControls; public GraphicObservation[] graphics;
             public float researchScrollOffset,researchMaximumScrollOffset,historyScrollOffset,historyMaximumScrollOffset;
             public float researchListScrollOffset,researchListMaximumScrollOffset,researchDetailScrollOffset,researchDetailMaximumScrollOffset;
             public float plannerScrollOffset,plannerMaximumScrollOffset;
             public float appearanceScrollOffset,appearanceMaximumScrollOffset;
             public float armoryScrollOffset,armoryMaximumScrollOffset;
+            public float skillsScrollOffset,skillsMaximumScrollOffset;
         }
         string NodePath(Transform node)
         {
@@ -242,6 +244,12 @@ namespace SingedTerra.LastStand
                 case "ArmoryBay1Next":return "Next fitting for Bay 1";
                 case "ArmoryBay2Previous":return "Previous fitting for Bay 2";
                 case "ArmoryBay2Next":return "Next fitting for Bay 2";
+                case "ArmorySkills":return "Manage skills for the next deployment";
+                case "SkillsDraw":return "Draw one eligible non-maxed skill for one Skill Intel";
+                case "SkillsApply":return "Save the selected skills for the next deployment";
+                case "SkillsCancel":case "SkillsClose":return "Cancel skill selection and close Skills";
+                case "SkillsArmory":return "Open Armory and named builds";
+                case "SkillsRetrySave":return "Retry the unconfirmed skill save";
                 default:return fallback;
             }
         }
@@ -251,9 +259,15 @@ namespace SingedTerra.LastStand
         {
             Canvas.ForceUpdateCanvases();
             var graphics = new List<GraphicObservation>(); timerObservation = null;
+            // Leaders follow the animated rig and have their own small semantic
+            // observations. Including them here emits the entire HUD every frame.
+            var callouts=root.GetComponentsInChildren<LastStandFittingCallout>(true);
             foreach (var graphic in root.GetComponentsInChildren<Graphic>(true))
             {
-                if(fittingCallout.DecorationRoot && graphic.transform.IsChildOf(fittingCallout.DecorationRoot))continue;
+                bool decoration=false;
+                foreach(var callout in callouts)
+                    if(callout.DecorationRoot&&graphic.transform.IsChildOf(callout.DecorationRoot)){decoration=true;break;}
+                if(decoration)continue;
                 var bounds = ScreenBounds(graphic.rectTransform); var text = graphic as Text;
                 bool displayedText = text && graphic.gameObject.activeInHierarchy;
                 var mask = graphic.GetComponentInParent<RectMask2D>(true);
@@ -275,6 +289,7 @@ namespace SingedTerra.LastStand
                 plannerControls=ObserveControls(planner.Buttons,"Planner"),
                 appearanceControls=ObserveControls(appearance.Buttons,"Appearance"),
                 armoryControls=ObserveControls(armory.Controls,"Armory"),
+                skillsControls=ObserveControls(skills.Buttons,"Skills"),
                 graphics = graphics.ToArray(), selection = EventSystem.current?.currentSelectedGameObject?.name ?? "",
                 scrollOffset = shopScrollOffset, maximumScrollOffset = shopMaximumScroll };
             layout.settingsScrollOffset = settings.ScrollOffset;
@@ -286,6 +301,7 @@ namespace SingedTerra.LastStand
             layout.plannerScrollOffset=planner.ScrollOffset;layout.plannerMaximumScrollOffset=planner.MaximumScrollOffset;
             layout.appearanceScrollOffset=appearance.ScrollOffset;layout.appearanceMaximumScrollOffset=appearance.MaximumScrollOffset;
             layout.armoryScrollOffset=armory.ScrollOffset;layout.armoryMaximumScrollOffset=armory.MaximumScrollOffset;
+            layout.skillsScrollOffset=skills.ScrollOffset;layout.skillsMaximumScrollOffset=skills.MaximumScrollOffset;
             return layout;
         }
         public void ReportLayout()

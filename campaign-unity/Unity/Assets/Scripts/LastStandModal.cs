@@ -27,7 +27,7 @@ namespace SingedTerra.LastStand
         {
             ui=new LastStandUiPrimitives(font,metal,surface);this.surface=surface;
             Shade=Node(name+"Modal",parent);Shade.gameObject.AddComponent<Image>().color=new Color(0,0,0,.82f);
-            Panel=Node(name+"Panel",Shade);LastStandConsoleChrome.Surface(Panel,surface,false).color=new Color(.12f,.15f,.13f);
+            Panel=Node(name+"Panel",Shade);LastStandConsoleChrome.Surface(Panel,surface,false).color=LastStandUiPrimitives.Graphite;
             LastStandConsoleChrome.Frame(Panel,metal);Title=Text(name+"Heading",Panel,22);Title.color=Brass;
             Status=Text(name+"Status",Panel,16);Close=Button(name+"Close","CLOSE",Panel,close);
         }
@@ -46,8 +46,8 @@ namespace SingedTerra.LastStand
         public float Preferred(Text text,float width)=>ui.Preferred(text,width,sx,sy);
         public float Layout(float width,float height,float unitsX,float unitsY,float maxWidth)
         {
-            float w=Math.Min(maxWidth,width-16);
-            return LayoutFrame(width,height,unitsX,unitsY,new Rect((width-w)/2,8,w,height-16));
+            float w=Math.Min(maxWidth,width-16),h=Math.Min(760,height-16);
+            return LayoutFrame(width,height,unitsX,unitsY,new Rect((width-w)/2,(height-h)/2,w,h));
         }
         public float LayoutFloating(float width,float height,float unitsX,float unitsY,float maxWidth,float maxHeight)
         {

@@ -203,7 +203,11 @@ namespace SingedTerra.LastStand
         public void Layout(float w,float h,float sx,float sy)
         {
             width=w;height=h;unitsX=sx;unitsY=sy;if(!open)return;
-            float panelWidth=modal.Layout(w,h,sx,sy,800),top=modal.HeaderBottom;
+            float panelWidth;
+            if(runs.Count==0&&!showHelp)
+            {float pw=Math.Min(800,w-16),ph=Math.Min(460,h-16);panelWidth=modal.LayoutAt(w,h,sx,sy,new Rect((w-pw)/2,(h-ph)/2,pw,ph));}
+            else panelWidth=modal.Layout(w,h,sx,sy,800);
+            float top=modal.HeaderBottom;
             pane.Layout(12,top,panelWidth-24,Math.Max(44,modal.PanelHeight-top-12),sx,sy);
             float contentWidth=panelWidth-24,inner=contentWidth-24,y=modal.Preferred(modal.Status,inner);
             modal.Place(modal.Status,12,0,inner,y);y+=8;

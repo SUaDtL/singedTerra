@@ -18,7 +18,7 @@ export const BACKUP_HEADER='SINGED_TERRA_LAST_STAND_BACKUP 1\n',BACKUP_LIMIT=128
 const inputs=[...new Set(['scripts/last-stand-continuity.mjs','scripts/ci/lastStandContinuity.test.mjs',
   'e2e/helpers/lastStandBrowserActor.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
-  ...[1,2,3,4,5,6].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
+  ...[1,2,3,4,5,6,7].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json'),
   ...['LastStandProgressionBackup','LastStandLoopContinuity','LastStandSettingsHud','LastStandGuidance',
     'LastStandStore','LastStandProgression','LastStandSaveJson','LastStandProgressionSave','LastStandResearchPresentation',
     'Platform/LastStandUnityBackupTransport','Platform/LastStandBackupTransport'].map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
@@ -146,7 +146,7 @@ async function main(){
   };
   try{
     const context=await createContext();let actor=await createActor(context,'continuity');
-    check('current v6 packet and fresh profile are present',()=>{assert.equal(actor.layout().schema,'singedterra-last-stand-observation/v6');assert.equal(actor.state().wallet,0);assert.equal(actor.state().hasCheckpoint,false);});
+    check('current v7 packet and fresh profile are present',()=>{assert.equal(actor.layout().schema,'singedterra-last-stand-observation/v7');assert.equal(actor.state().wallet,0);assert.equal(actor.state().hasCheckpoint,false);});
     await actor.click('Menu');check('fresh profile has an actionable optional introduction',()=>assert.equal(control(actor,'MenuGuidance').label,'LEARN THE CONTROLS'));
     await actor.click('MenuGuidance');await actor.until(()=>actor.state().menu==='help');await actor.shot('first-session-help');
     await openSave(actor);

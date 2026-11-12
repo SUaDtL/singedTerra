@@ -40,6 +40,19 @@ class ArmorySessionChecks
             Check(!editor.HasChanges && editor.Slot==2 && editor.Matches(sustain,applied,7),"confirmed apply did not update basis");
             bool bounded=false;try{editor.SelectPreset(3);}catch(ArgumentOutOfRangeException){bounded=true;}
             Check(bounded,"fourth preset admitted");
+            var active=new LastStandSkillLoadout(LastStandSkillId.Overdrive);
+            var passive=new LastStandSkillLoadout(LastStandSkillId.ReinforcedHull);
+            var complete=new[]{new LastStandLoadoutPreset("Push",saved,active),new LastStandLoadoutPreset("Farm",sustain,passive),null};
+            editor.Begin(saved,active,complete,9);
+            Check(editor.Slot==0&&!editor.HasChanges&&editor.Skills.Equals(active),"complete build basis");
+            editor.SelectPreset(1);
+            Check(editor.Draft.Equals(sustain)&&editor.Skills.Equals(passive),"preset did not preview equipment and skills together");
+            Check(editor.Matches(saved,active,complete,9),"complete saved basis unexpectedly changed");
+            Check(!editor.Matches(saved,passive,complete,9),"changed equipped skills accepted stale draft");
+            var replaced=(LastStandLoadoutPreset[])complete.Clone();replaced[1]=new LastStandLoadoutPreset("Farm",sustain,active);
+            Check(!editor.Matches(saved,active,replaced,9),"changed preset skills accepted stale draft");
+            editor.SelectPreset(2);Check(editor.Skills.Equals(active),"empty preset did not use selected skill basis");
+            editor.Close();Check(editor.Skills==null,"closed editor retained skill draft");
             Console.WriteLine("PASS Armory preview, presets, cancel, names and replacement protection");
             return 0;
         }

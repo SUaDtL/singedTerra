@@ -39,6 +39,7 @@ public static class LastStandAppearanceChecks
         public readonly Canvas Canvas;
         public readonly LastStandHudKeyboard Keyboard;
         RenderTexture target;
+        Camera uiCamera;
         public Fixture(string initialSave=null)
         {
             Game.Value=initialSave;
@@ -67,14 +68,19 @@ public static class LastStandAppearanceChecks
         public void Open(){Click("Menu");Click("MenuAppearance");Need(Loop.MenuPage=="appearance","menu opens appearance");}
         public void Resize(int w,int h)
         {
+            CloseBay();
             Art.view.targetTexture=null;if(target)UnityEngine.Object.DestroyImmediate(target);
             target=new RenderTexture(w,h,16);Art.view.targetTexture=target;
+            // The production bay owns the world camera's transparent target.
+            // A separate UI camera keeps test viewport sizing independent of it.
+            if(!uiCamera){uiCamera=new GameObject("Appearance check UI camera").AddComponent<Camera>();uiCamera.enabled=false;uiCamera.cullingMask=0;}
+            uiCamera.targetTexture=target;
             Canvas.renderMode=RenderMode.ScreenSpaceOverlay;Canvas.renderMode=RenderMode.ScreenSpaceCamera;
-            Canvas.worldCamera=Art.view;Canvas.planeDistance=1;Canvas.GetComponent<CanvasScaler>().enabled=false;
+            Canvas.worldCamera=uiCamera;Canvas.planeDistance=1;Canvas.GetComponent<CanvasScaler>().enabled=false;
             Canvas.scaleFactor=Mathf.Sqrt((w/1280f)*(h/720f));UnityEngine.Canvas.ForceUpdateCanvases();Loop.RefreshControls();
             // Batch mode does not execute the usual screen-space camera follow.
             Canvas.renderMode=RenderMode.ScreenSpaceOverlay;Canvas.renderMode=RenderMode.ScreenSpaceCamera;
-            Canvas.worldCamera=Art.view;UnityEngine.Canvas.ForceUpdateCanvases();Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
+            Canvas.worldCamera=uiCamera;UnityEngine.Canvas.ForceUpdateCanvases();Loop.RefreshControls();UnityEngine.Canvas.ForceUpdateCanvases();
         }
         public Rect Bounds(Component component)
         {
@@ -82,7 +88,14 @@ public static class LastStandAppearanceChecks
             var points=corners.Select(c=>RectTransformUtility.WorldToScreenPoint(Canvas.worldCamera,c)).ToArray();
             return Rect.MinMaxRect(points.Min(p=>p.x),points.Min(p=>p.y),points.Max(p=>p.x),points.Max(p=>p.y));
         }
-        public void Dispose(){if(Art)Art.view.targetTexture=null;if(target)UnityEngine.Object.DestroyImmediate(target);}
+        void CloseBay()
+        {
+            if(!Loop)return;var hud=typeof(LastStandLoopController).GetField("hud",Private).GetValue(Loop);
+            var garage=hud.GetType().GetField("garage",Private).GetValue(hud);
+            var bay=garage.GetType().GetField("equipmentBay",Private).GetValue(garage);
+            Invoke(bay,"SetActive",false);
+        }
+        public void Dispose(){CloseBay();if(Art&&Art.view)Art.view.targetTexture=null;if(uiCamera)uiCamera.targetTexture=null;if(target)UnityEngine.Object.DestroyImmediate(target);if(uiCamera)UnityEngine.Object.DestroyImmediate(uiCamera.gameObject);}
     }
     static void Need(bool value,string message){if(!value)throw new InvalidOperationException("Appearance UI: "+message);}
     static void Set(object value,string field,object data)=>value.GetType().GetField(field,Private).SetValue(value,data);
@@ -240,7 +253,9 @@ public static class LastStandAppearanceChecks
                     float fill=Mathf.Max(rendered.width/viewport.width,rendered.height/viewport.height);
                     Need(fill>=.65f,"tank fills at least65percent of a preview dimension at "+size+" "+kit.Id+" yaw "+yaw+"; actual="+fill);
                     minimumFill=Mathf.Min(minimumFill,fill);
-                    f.Art.OrbitRight();
+                    // The actual editor action also reframes the hangar matte;
+                    // exercise that owner instead of moving only its camera.
+                    f.Loop.RotateAppearance(1);
                 }
             }
             Debug.Log("ST_LS_APPEARANCE_FRAMING "+size+" minimum_fill="+minimumFill);

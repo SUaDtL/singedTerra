@@ -117,7 +117,9 @@ static class HudLayoutChecks
         // chrome. Research may border that world region without hiding an action.
         var visible=boxes.Where(b=>b.Kind!="preview"&&!(scenario.InlineGarage&&b.Id=="LastStandDock")).ToList();
         for(int i=0;i<visible.Count;i++) for(int j=i+1;j<visible.Count;j++)
-            Require(!Intersects(visible[i],visible[j]) || Ancestor(visible[i],visible[j],boxes) || Ancestor(visible[j],visible[i],boxes),
+            Require(!Intersects(visible[i],visible[j]) || Ancestor(visible[i],visible[j],boxes) || Ancestor(visible[j],visible[i],boxes) ||
+                (visible[i].Id=="LastStandDock"&&(visible[j].Id=="ShopEntry"||visible[j].Parent=="ShopEntry")&&Contains(visible[i],visible[j])) ||
+                (visible[j].Id=="LastStandDock"&&(visible[i].Id=="ShopEntry"||visible[i].Parent=="ShopEntry")&&Contains(visible[j],visible[i])),
                 context+": overlap "+visible[i].Id+" / "+visible[j].Id);
     }
     static double UnionArea(List<Box> boxes)
@@ -146,7 +148,7 @@ static class HudLayoutChecks
         double area=UnionArea(boxes);
         Require(area <= width*height*.25+.001,context+": chrome area "+area+" exceeds 25 percent");
     }
-    static void Sizes(List<Box> boxes, Scenario scenario, string context)
+    static void Sizes(List<Box> boxes, Scenario scenario, int width,int height,string context)
     {
         foreach(var text in boxes.Where(b => b.Kind == "text"))
             Require(text.FontSize >= 14-.001 && text.Height >= text.FontSize,context+": text smaller than 14 pixels "+text.Id+" at "+text.FontSize);
@@ -154,7 +156,11 @@ static class HudLayoutChecks
             Require(control.Width >= 44-.001 && control.Height >= 44-.001,context+": target smaller than 44x44 "+control.Id);
         if(scenario.InlineGarage)
         {
-            foreach(string id in new[]{"GarageTierName","GarageTierDetail","GarageFittingDescription","GarageSave"})
+            // The wide bay has authored dossier and installed-system labels;
+            // their actual Canvas/data binding is covered by the live checks.
+            // Compact views retain the original inline fitting description.
+            bool equipmentBay=width>=1100&&height>=640;
+            foreach(string id in equipmentBay?new[]{"GarageTierName","GarageTierDetail","GarageSave"}:new[]{"GarageTierName","GarageTierDetail","GarageFittingDescription","GarageSave"})
                 Require(boxes.Any(b=>b.Kind=="text"&&b.Id==id),context+": missing inline garage field "+id);
             Require(boxes.Any(b=>b.Kind=="control"&&b.Id=="ArmoryEntry"&&b.Parent=="GarageFittingCard"),context+": build card owns the Armory entry");
             Require(!boxes.Any(b=>b.Id=="PhaseDetail"||b.Id=="SaveStatus"),context+": ready garage must use its inline reading hierarchy");
@@ -235,7 +241,8 @@ static class HudLayoutChecks
                 Require(boxes.Count(b=>b.Kind=="control")==scenario.Controls.Length,context+": unexpected visible control");
                 foreach(string id in new[]{"Menu","ShopEntry"})
                     if(scenario.Controls.Contains(id))Require(boxes.Single(b=>b.Id==id).Parent==null,context+": standalone action must remain a root child "+id);
-                Require(boxes.Any(b => b.Id == "PhaseHeading"),context+": missing phase heading");
+                bool equipmentBay=scenario.InlineGarage&&width>=1100&&height>=640;
+                Require(boxes.Any(b => b.Id == (equipmentBay?"GarageTierName":"PhaseHeading")),context+": missing phase/tier heading");
                 if(scenario.Phase != "battle" && scenario.Phase != "settling"&&!scenario.InlineGarage)
                     Require(boxes.Any(b => b.Kind == "text" && b.Id == "PhaseDetail"),context+": missing required noncombat detail slot PhaseDetail");
             }
@@ -246,7 +253,7 @@ static class HudLayoutChecks
                 foreach(string id in new[] {"HullValue","HullBar","ElapsedTime","DisabledCount","CannonDamage","Fitting"})
                     Require(boxes.Any(b => b.Id == id),context+": missing live instrument slot "+id);
             }
-            else if(name == "text_targets_and_long_notice_bounds") Sizes(boxes,scenario,context);
+            else if(name == "text_targets_and_long_notice_bounds") Sizes(boxes,scenario,width,height,context);
             else throw new ArgumentException("Unknown check "+name);
         }
     }

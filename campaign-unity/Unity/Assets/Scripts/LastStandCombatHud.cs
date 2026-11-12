@@ -31,7 +31,7 @@ namespace SingedTerra.LastStand
             Card = Node("LastStandCard",root); var cardImage = LastStandConsoleChrome.Surface(Card,metalSurface,false,false); cardImage.color = Graphite;
             CardFrame = Frame(Card);
             nodes.Add(Card.name,Card);
-            Heading = Label("PhaseHeading",Card,29); Heading.color = Brass; Heading.fontStyle = FontStyle.Bold;
+            Heading = Label("PhaseHeading",Card,29); Heading.color = Brass;
             Detail = Label("PhaseDetail",Card,18);
             Status = Label("SaveStatus",Card,15); Status.color = Brass;
             recovery=new LastStandScrollPane("Recovery",Card,metalSurface);
@@ -41,7 +41,7 @@ namespace SingedTerra.LastStand
             DockFrame=Frame(Dock);
             nodes.Add(Dock.name,Dock);
             var dockHeading = Label("DockHeading",Dock,14); dockHeading.text = "FIELD CONTROLS";
-            dockHeading.color = Brass; dockHeading.fontStyle = FontStyle.Bold;
+            dockHeading.color = Brass;
             var receiptPanel=Panel("WaveReceiptPanel",root);
             WaveReceipt=Label("WaveReceipt",receiptPanel,14);WaveReceipt.color=Brass;
             WaveReceipt.alignment=TextAnchor.MiddleLeft;
@@ -206,7 +206,9 @@ namespace SingedTerra.LastStand
         public void ScrollRecovery(string direction){if(CanScrollRecovery)recovery.ScrollKeyboard(direction);}
         public void LayoutInstruments(Dictionary<string,LastStandHudLayout.Slot> slots,float unitsX,float unitsY)
         {
-            var cardSlot = slots["LastStandCard"].Bounds;
+            if(!slots.TryGetValue("LastStandCard",out var card))
+            {CardFrame.SetInstruments(false,default(Rect),default(Rect),default(Rect));return;}
+            var cardSlot = card.Bounds;
             bool instruments = slots.ContainsKey("HullValue") && cardSlot.Height == LastStandHudLayout.InstrumentCardHeight;
             if (instruments)
             {

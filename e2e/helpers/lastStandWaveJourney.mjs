@@ -19,6 +19,7 @@ export const WAVE_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUTS,'e2e
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-first-session.mjs']);
 export const hashWaveJourneyInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));

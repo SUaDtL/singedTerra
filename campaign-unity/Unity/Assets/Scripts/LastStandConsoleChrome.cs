@@ -19,6 +19,11 @@ namespace SingedTerra.LastStand
         }
         public static LastStandConsoleFrame Frame(RectTransform parent, Texture2D material, bool action = false)
         {
+            if(!action && LastStandEquipmentArt.Panel)
+            {
+                var art=LastStandUiPrimitives.Node("AuthoredPanel",parent);art.anchorMin=Vector2.zero;art.anchorMax=Vector2.one;
+                art.offsetMin=art.offsetMax=Vector2.zero;art.gameObject.AddComponent<EquipmentBayFrame>().raycastTarget=false;
+            }
             var rect = new GameObject("ConsoleFrame",typeof(RectTransform),typeof(CanvasRenderer)).GetComponent<RectTransform>();
             rect.SetParent(parent,false); rect.pivot = new Vector2(0,1);
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
@@ -82,6 +87,7 @@ namespace SingedTerra.LastStand
     }
     sealed class LastStandConsoleSurface : Image
     {
+        public override Texture mainTexture=>LastStandEquipmentArt.Metal?LastStandEquipmentArt.Metal:base.mainTexture;
         bool action;
         public void Initialize(bool isAction) { action = isAction; SetVerticesDirty(); }
         protected override void OnPopulateMesh(VertexHelper mesh)
@@ -107,12 +113,12 @@ namespace SingedTerra.LastStand
         bool action, primary, available = true, highlighted, pressed, instruments;
         Texture2D surface;
         Rect hull, timer, disabled;
-        static readonly Color Metal = new Color(.22f,.245f,.225f,1);
+        static readonly Color Metal = new Color(.24f,.23f,.20f,1);
         static readonly Color Rim = new Color(.43f,.35f,.22f,1);
         static readonly Color EdgeLight = new Color(.67f,.56f,.37f,1);
         static readonly Color EdgeDark = new Color(.028f,.034f,.032f,1);
         static readonly Color Well = new Color(.044f,.058f,.056f,1);
-        public override Texture mainTexture { get { return surface ? surface : Texture2D.whiteTexture; } }
+        public override Texture mainTexture { get { return !action && LastStandEquipmentArt.Metal ? LastStandEquipmentArt.Metal : surface ? surface : Texture2D.whiteTexture; } }
         public void Initialize(bool isAction, Texture2D material)
         { action = isAction; surface = material; raycastTarget = false; SetVerticesDirty(); SetMaterialDirty(); }
         public void SetAction(bool isPrimary, bool isAvailable)
@@ -186,6 +192,13 @@ namespace SingedTerra.LastStand
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear(); Rect r = rectTransform.rect; if (r.width < 14 || r.height < 14) return;
+            // Authored panels already include their border and fasteners. Only
+            // instrument wells belong above that material, never a second rim.
+            if (!action && LastStandEquipmentArt.Panel)
+            {
+                if (instruments) { Instrument(mesh,r,hull); Instrument(mesh,r,timer); Instrument(mesh,r,disabled); }
+                return;
+            }
             Color rim = !available ? Metal : Rim;
             Color light = !available ? Metal : highlighted ? new Color(.81f,.69f,.45f,1) : EdgeLight;
             float cut = LastStandConsoleGeometry.Cut(r,action);
@@ -197,7 +210,7 @@ namespace SingedTerra.LastStand
             }
             if (!action)
             {
-                Face(mesh,r,cut,new Color(.14f,.16f,.155f,1),new Color(.065f,.080f,.075f,1));
+                if(!LastStandEquipmentArt.Panel)Face(mesh,r,cut,new Color(.14f,.16f,.155f,1),new Color(.065f,.080f,.075f,1));
                 Ring(mesh,r,1,cut,EdgeDark,EdgeDark);
                 Ring(mesh,Inset(r,1),1,cut-1,light,EdgeDark);
                 Ring(mesh,Inset(r,2),3,cut-2,rim,new Color(.16f,.13f,.085f,1));
@@ -217,8 +230,8 @@ namespace SingedTerra.LastStand
             }
             else
             {
-                Color top = !available ? new Color(.17f,.19f,.155f,1) : primary ? new Color(.82f,.67f,.41f,1) : new Color(.23f,.265f,.22f,1);
-                Color bottom = !available ? new Color(.10f,.12f,.095f,1) : primary ? new Color(.71f,.55f,.31f,1) : new Color(.115f,.145f,.12f,1);
+                Color top = !available ? new Color(.16f,.155f,.14f,1) : primary ? new Color(.82f,.67f,.41f,1) : new Color(.245f,.23f,.195f,1);
+                Color bottom = !available ? new Color(.095f,.09f,.08f,1) : primary ? new Color(.71f,.55f,.31f,1) : new Color(.12f,.115f,.10f,1);
                 Face(mesh,r,cut,pressed ? bottom : top,pressed ? top : bottom);
                 // Wider side bevels and narrow top/bottom lips stay inside the
                 // unchanged eight-by-two action padding. Press reverses relief.

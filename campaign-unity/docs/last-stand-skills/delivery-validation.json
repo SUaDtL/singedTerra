@@ -1,0 +1,1678 @@
+{
+  "schema": "singedterra-skills-delivery-review/v1",
+  "canonicalArtifact": false,
+  "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
+  "status": "windows_and_web_verified_delivery_pending",
+  "finalizationOwner": "root",
+  "html": {
+    "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+    "sha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a"
+  },
+  "structuralValidation": {
+    "parsed": true,
+    "uniqueIds": true,
+    "localLinkTargetsPresent": true,
+    "linkCount": 72,
+    "imageCount": 10,
+    "allImageAltTextPresent": true,
+    "imageDimensionsVerified": true,
+    "browserRenderedReviewHtml": true,
+    "renderBoundary": "Exact HTML rendered at1280x900 and390x844; all10images decoded with no horizontal overflow. Root inspected both provenance-section renders; original captures/top renders were inspected separately. No new player journey is inferred.",
+    "anchorCount": 62,
+    "linkCountIncludesImageSources": true
+  },
+  "images": [
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/skills-collection-desktop.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/desktop-mixed-shared-slots.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "0e695caf191474f3ade491a3df835fd5d089f84b4c65fd1ba84e8f5745cdae57",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/armory-complete-build.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/desktop-full-build-preset.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "91bec72c37141550423ab2d5bce3b09e2d94faa5724a9bbbf36ec5ef1cc053ef",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/combat-spent-actives.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/desktop-combat-all-actives-used.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "3d45fa932e7f158519445ca84912e43dc16a1c3434834d30307aeaf7e4efa989",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/resume-captured-skills.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/desktop-combat-paused-resume.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "d2fcaf01d5ef0c65a464277f785b5159d79e295a653e80aef4ed1ec44c4c3222",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/skills-portrait.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/portrait-portrait-scrolled.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e7b556748c4ea8fa8fa2ac2ae7b1df1ffee3022b465ae841b0b9583d3d5354a4",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/armory-portrait.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/portrait-armory.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b2a5330b19df8ab166f5efc06eff96504420bb46a8fee72d1ff3201ede0609b1",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/combat-short-landscape.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/browser/run-12/short-landscape-mixed-combat.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "db31525cd5101de40c77faab946a237838c87cfba86ea10b2d387d7db017d775",
+      "inspection": "Viewed actual run12 PNG with local image tool; text, active/passive states, empty bay and compact callout routing inspected. Separate from owner acceptance or native input."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/native-overdrive-active.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/05-overdrive-active.png",
+      "sha256": "9aeb5bdf955627392c03c9aef7d964a0e2c781f266951e7fa08804b439a8fd9f",
+      "width": 6291456,
+      "height": 4292542531,
+      "inspection": "Actual native PNG viewed by records agent; active status, applied build and locked tall layout readable. Captures include the native window frame; game viewport dimensions are separately stated."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/native-compact-build-applied.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/12-native-preset-applied.png",
+      "sha256": "6c99ae12255fae3fba3309768a476ce5cbfa6a026196edd6dfdef838cc3bd6b2",
+      "width": 6291456,
+      "height": 4292542531,
+      "inspection": "Actual native PNG viewed by records agent; active status, applied build and locked tall layout readable. Captures include the native window frame; game viewport dimensions are separately stated."
+    },
+    {
+      "path": "campaign-unity/docs/last-stand-skills/screenshots/native-tall-locked-collection.png",
+      "source": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/15-fresh-draw-locked.png",
+      "sha256": "7159b2167096cc79b506583a88742d9ec7e5f83f3c8a767a41cdd7a62a42bc9a",
+      "width": 6291456,
+      "height": 4292542531,
+      "inspection": "Actual native PNG viewed by records agent; active status, applied build and locked tall layout readable. Captures include the native window frame; game viewport dimensions are separately stated."
+    }
+  ],
+  "buildCandidates": [
+    {
+      "label": "candidate-web",
+      "buildStatus": "pass",
+      "target": "webgl",
+      "configuration": "development",
+      "directory": "C:\\w\\st-bay\\campaign-unity\\Builds\\Web-20261112T012431Z-6d33ce",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-webgl-20261112T012431Z-6d33ce/result.json",
+        "sha256": "788e3c30f4852e2d225094d672aabed8f461079f44d47d5debb18eccffe76ecd"
+      },
+      "sourceBeforeSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+      "sourceAfterSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+      "sourceUnchanged": true,
+      "runtimeQualification": "Web journey passed",
+      "published": false
+    },
+    {
+      "label": "candidate-windows",
+      "buildStatus": "pass",
+      "target": "windows",
+      "configuration": "development",
+      "directory": "C:\\w\\st-bay\\campaign-unity\\Builds\\LastStand-windows-20261112T012736Z-f3d9c7",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261112T012736Z-f3d9c7/result.json",
+        "sha256": "d6426853ad078715c8cee2d3cbd50934de9219c41605e8c1d836477b7c49e149"
+      },
+      "sourceBeforeSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+      "sourceAfterSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+      "sourceUnchanged": true,
+      "runtimeQualification": "Actual native input journey independently reviewed; declared local development fixtures only",
+      "published": false
+    }
+  ],
+  "browser": {
+    "currentAttempt": 12,
+    "receipt": {
+      "path": "campaign-unity/Evidence/last-stand-skills/browser/run-12/result.json",
+      "sha256": "0cea4ab75c74a0140ae7aca66f940b37a09e413c631728f62c4448386d11461f"
+    },
+    "statusObserved": "pass",
+    "passedChecksObserved": 21,
+    "checks": [
+      "Fresh collection explains locked pool, ownership and shared capacity",
+      "First ordinary draw spends one Intel for one eligible owned copy",
+      "Apply survives actual reload without a second draw",
+      "One existing named preset atomically applies hardware and passive skills",
+      "Empty secondary bay contains no misleading equipment artwork",
+      "Menu pause refuses Q/E/R without time, use or audio changes",
+      "Q activates Overdrive through its actual slot with admitted cue",
+      "R repairs real damage once through its actual slot",
+      "E arms Minefield once through captured slot",
+      "Reload resumes paused with captured spent actives despite future passive build",
+      "Resume cannot refill spent skills",
+      "portrait applies mixed slots through scrolling touch controls",
+      "portrait pointer actives work while passive shared slot stays noninteractive",
+      "short-landscape applies mixed slots through scrolling touch controls",
+      "short-landscape pointer actives work while passive shared slot stays noninteractive",
+      "fresh has zero browser errors and trusted action edges",
+      "first-draw has zero browser errors and trusted action edges",
+      "desktop has zero browser errors and trusted action edges",
+      "desktop-combat has zero browser errors and trusted action edges",
+      "portrait has zero browser errors and trusted action edges",
+      "short-landscape has zero browser errors and trusted action edges"
+    ],
+    "browserErrors": [],
+    "acceptance": "Actual packaged Web journey passed; native/device/owner acceptance remains separate",
+    "fixtures": {
+      "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\review-profiles.json",
+      "sha256": "6c3c449aa1815190f671e5bf3d0a6b85429344c482c7b2d070a981b8f7c6087c",
+      "scope": "Development fixtures, not earned-player balance proof. Gifted permanent levels clear 750 actual Tier 1 cohorts through production wave transactions; real Intel draws use explicit deterministic outcomes. Idle review profile resets workshop strength and grants small research ranks for inspection. Normal saves are never accessed.",
+      "profileSha256": {
+        "fresh": "874bc3d8a604a64573fcb11a854e6231d7df07014a7278fcdb22efd872e75e3f",
+        "eligible": "21db0a3ecf9b283890a22ce7c3c5e6cac4063092a445691c2b4544fbf229c0f5",
+        "collection": "802c1ba39499075a4a95ece7dd29a5b31d9da6a36e2613f6d342e719e77676be"
+      },
+      "combat": {
+        "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\review-profiles-combat.json",
+        "sha256": "93c13116bd7a9ac5e427e98d8c55427482b2236ea4caa8aa0a130e8f4225b8d0",
+        "profileSha256": "dd9848f5387e7cb7c61e6561821e08042462546649b064b4deb9dae141afeb4e",
+        "scope": "Development combat review fixture, not earned-player balance proof. Derived from the explicit existing collection fixture; gifted Hull Capacity 40, all other permanent tracks zero. Non-firing Repair fitting retains its normal baseline 3 HP per simulated second; it is not suppressed. Production-model preflight uses natural enemies, damage, fixed steps, skill actions and durable wave commits; no enemy, hull, tick or clock mutation. Normal saves are never accessed.",
+        "preflight": {
+          "mode": "production-model-natural-damage",
+          "tier": 2,
+          "maximumHull": 1232,
+          "firstDamageTick": 1122,
+          "firstDamageSimulatedMilliseconds": 56100,
+          "firstDamageHull": 1220,
+          "interventionWindowSimulatedMilliseconds": 10000,
+          "repairTick": 1322,
+          "beforeRepairHull": 1178,
+          "afterRepairHull": 1232,
+          "checkpointWave": 2,
+          "checkpointTick": 1515,
+          "checkpointHull": 1175,
+          "spentMask": 7,
+          "cannonDamage": 20,
+          "fitting": "repair",
+          "baselineRepairAmount": 3,
+          "baselineRepairPeriodTicks": 20,
+          "survived": true,
+          "damageLimitSimulatedMilliseconds": 60000,
+          "checkpointLimitSimulatedMilliseconds": 120000,
+          "policy": "Overdrive on deployment; normal fixed steps and wave commits; ten simulated seconds after first natural damage, activate Repairs and Minefield; continue to next confirmed checkpoint."
+        }
+      }
+    },
+    "sourceAndInputIdentityPreserved": true,
+    "actorCount": 6,
+    "recordedActions": 150,
+    "retainedScreenshots": 16,
+    "inputHashCount": 41,
+    "packageIdentityCount": 22,
+    "finishedUtc": "2026-11-12T01:42:04.970Z",
+    "browserRuntime": {
+      "channel": "chromium",
+      "browserVersion": "153.0.8010.12",
+      "playwrightVersion": "1.63.0",
+      "nodeVersion": "v24.18.0"
+    }
+  },
+  "native": {
+    "candidate": "C:\\w\\st-bay\\campaign-unity\\Builds\\LastStand-windows-20261112T012736Z-f3d9c7",
+    "status": "actual_input_verified_locally",
+    "actualSkillsInputQualified": true,
+    "observationMethod": "Root actual Sky mouse/keyboard/scroll actions; independently reviewed retained actions, logs, saves and captures",
+    "actionCount": 50,
+    "captureCount": 16,
+    "viewports": [
+      [
+        1600,
+        900
+      ],
+      [
+        960,
+        600
+      ],
+      [
+        600,
+        900
+      ]
+    ],
+    "executableSha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+    "integrity": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/native-integrity.json",
+      "sha256": "21be1c158f843f729b1573a0c7fc729dee0e7930230b080b3239dd2b964d275f"
+    },
+    "actions": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/actions.json",
+      "sha256": "04a6d35a78754dc4069fc7835b7c919a27665bd9bd0e1563b309471dd2a3ab5e"
+    },
+    "closure": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/process-closure.json",
+      "sha256": "7b1bdb2603ebe124c629aea72b9ef9bc4df5e87cfdf9665e05b8c4a4f2a08f81"
+    },
+    "independentReview": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-independent-review-20261112.json",
+      "sha256": "c7e2b3b0ea019ac99191d220771bc84e10878178988fd58f470301ca879a4ebb"
+    },
+    "checkpoint": {
+      "tick": 1525,
+      "hull": 1220,
+      "completedWave": 2,
+      "spentMask": 7
+    },
+    "checkpointUnchangedAcrossFutureBuild": true,
+    "normalProfilesUnchanged": true,
+    "normalProfileFiles": 6,
+    "qualification": "Actual Sky input with disclosed development fixtures; no numeric coverage, device performance, audible-audio or owner concept-fidelity acceptance claim.",
+    "launches": [
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/reopened-launch.json",
+        "sha256": "bc9d988977ed3edba2d253de6feee9761eb310fa3eb89e582b2b2319bcd09773"
+      },
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/fresh-launch.json",
+        "sha256": "11ba99544013fe13cce55942ab5e4997b0ab52bb475926ac4b78e5f127c5eda7"
+      }
+    ],
+    "originalLaunchSource": "Original PID99252 exact1600x900 launch argv is coordinator-reported from retained execution history; same executable and isolated skills-combat-1111 profile."
+  },
+  "localEvidence": {
+    "portableModules": 89,
+    "portableFailed": [],
+    "importedSkillsUiMarkers": 7,
+    "garageRegressionMarkers": 20,
+    "retainedLogs": [
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/portable-suite-02.txt",
+        "sha256": "caf7faa2b58f8a28a35be4fea01f24018ad707a8f2b8eefdb8b57cf2d555a374"
+      },
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/ui-checks-05.log",
+        "sha256": "328c3f2436c75dc783dcf91b17417d2fa5a01ee2a68852542e537231c3541d57"
+      },
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/bay-mesh-ownership-red.log",
+        "sha256": "73bbff8f22792decf6bc017fa75c56ca7ca056635271be19bb057dc27471e0a5"
+      },
+      {
+        "path": "campaign-unity/Evidence/last-stand-skills/bay-mesh-ownership-green.log",
+        "sha256": "9758a7887c60524ae3cf126abff1da201596e966a11fa0e180889ff4621ef79e"
+      }
+    ],
+    "measuredReports": [
+      {
+        "path": "campaign-unity/docs/last-stand-skills/balance.json",
+        "sha256": "6c1e645f9cd906564a9169a3fd9ffe71e6b5ff3f0615d38e33cd981a59cc5208"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-skills/acquisition.json",
+        "sha256": "5c8d26cfc36dfba9d9aedbcebb65d7ca6c1c41c4101376a67077a5659626c309"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-skills/guard-mutations.json",
+        "sha256": "1699110e651697552b034b96e8a976ed160f66b1dafc668e294f23792d1973be"
+      }
+    ],
+    "emptyBayRegression": {
+      "red": {
+        "path": "campaign-unity/Evidence/last-stand-skills/empty-bay-art-red02.log",
+        "sha256": "898a3cc344128551d4d3faa30bb4e8535607d4aff84c20376e59f2390e0fd2d2"
+      },
+      "green": {
+        "path": "campaign-unity/Evidence/last-stand-skills/empty-bay-art-green.log",
+        "sha256": "edc7d92a5e90634e8921c926fab24c60e57ce03734e64a70c7fe51d59c4713b1"
+      },
+      "greenImportedMarkers": 6,
+      "independentReview": {
+        "path": "campaign-unity/Evidence/last-stand-skills/empty-bay-independent-review-20261111.json",
+        "sha256": "b3fc4384b140fe95a53ccbf1f9bfb4c0755128f46b323af7ac2fd819ad4e2d0b"
+      },
+      "result": "focused pass; separate from final player qualification"
+    },
+    "laterFocusedPortableCheck": {
+      "pythonWrapperPassed": 1,
+      "nodeCasesPassed": 5,
+      "reportedExit": 0,
+      "command": "python -B -m unittest discover -s campaign-unity/Tools/last_stand_skills -p test_journey_guards.py -v",
+      "source": {
+        "path": "campaign-unity/Evidence/last-stand-skills/journey-guards-five-final.txt",
+        "sha256": "52456bd8088dc7358c4154ca2cf46487b6b8b89b415b9b867b2d817b7dcb7826"
+      },
+      "scope": "Focused actual run; no newer full portable aggregate is inferred"
+    },
+    "invocationFailureBeforeUnity": {
+      "path": "campaign-unity/Evidence/last-stand-skills/web-build-05.txt",
+      "sha256": "35d51404b3050181c875bd03f99e0e4fbc5ba3ae87afe055828ab11bfd707666"
+    },
+    "existingFocusContracts": {
+      "argv": [
+        "node",
+        "--test",
+        "scripts/ci/lastStandFocus.test.mjs"
+      ],
+      "exitCode": 0,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "source": "Root-observed tool output in chat; no separate raw process log was retained"
+    },
+    "declaredInventory": {
+      "modules": 125,
+      "cases": 747,
+      "portableModules": 91,
+      "portableCases": 624,
+      "qualification": "Declared inventory only; latest full portable execution remains the retained 89-module run plus separately reported affected checks."
+    },
+    "reconciliationControls": {
+      "red": {
+        "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-controls-red.log",
+        "sha256": "0b316f6d87fc90493c39d33b7af9049bc64972e23b4e64ed89ba5f850e8c9253"
+      },
+      "green": {
+        "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-controls-green.log",
+        "sha256": "12e1883bf53bc783bf0f38e53988da7d86094e63de3bb8038e7f8c944f96afd8"
+      },
+      "passMarkers": 7,
+      "result": "Actual RED followed by seven-case imported GREEN; final pointer behavior is qualified separately by the current browser report"
+    },
+    "backgroundRegression": {
+      "runCases": 3,
+      "feedbackCases": 4,
+      "cueAdmissionCases": 2,
+      "run": {
+        "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-fix/result.json",
+        "sha256": "bd82996c36ef4e7f5ee6fd5f11ff432b24aa74ecc92b7c32941356482b6d06e4"
+      },
+      "feedback": {
+        "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-feedback/editor-20261112T011744Z-e3a20b7b/result.json",
+        "sha256": "50ac42de904b0745e27703a6df479fe930166b0ff2274fb90be8bb1b06e5ac2b"
+      },
+      "cueAdmission": {
+        "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-background-RunCueAdmission.log",
+        "sha256": "f3a7660bf0a4569712ef296f65037dff9853bf03d185fa548254b5697cb22382"
+      },
+      "correction": "Fixture timestamp dispatch follows actual BackgroundContinuation; two migrated version expectations changed from 5 to 9. Audio/timing/no-replay assertions unchanged."
+    },
+    "compactCallouts": {
+      "red": {
+        "path": "campaign-unity/Evidence/last-stand-buildcraft/armory-ui/editor-20261112T011830Z-591d54f9/unity-editor.log",
+        "sha256": "5a49c3b1b57b99bacd56a07485881f8528991051d09d7aef0e15166bf0f443f9"
+      },
+      "green": {
+        "path": "campaign-unity/Evidence/last-stand-buildcraft/armory-ui/editor-20261112T012358Z-bf47c62f/unity-editor.log",
+        "sha256": "ccbb359f67891186848db584e6c70b4e69f006455c68b1d8e4663e16e8c0dfe8"
+      },
+      "result": "Imported regression evidence; current screenshots and Web interaction are separate"
+    },
+    "wrapperPointerFocus": {
+      "red": {
+        "path": "campaign-unity/Evidence/last-stand-skills/wrapper-focus-red-02.txt",
+        "sha256": "2b758d969068038747553a6cd48d9ff27f34e913a96ae559c1449889fae68392"
+      },
+      "green": {
+        "path": "campaign-unity/Evidence/last-stand-skills/wrapper-focus-green-01.txt",
+        "sha256": "72b770e77a117fafeb3d159fea16e6c5d47eca34de05ff34ee53fac920f6500a"
+      },
+      "testsPassed": 5,
+      "result": "Generated HTML regression: pointer refocus preserves the target; mouse/touch/pen events, later Tab/Shift+Tab and keyboard entry remain intact. Wrapper-only refresh preserves the existing Unity and native candidates. Actual current Web interaction remains separately reported."
+    }
+  },
+  "coverage": {
+    "csharp": {
+      "measured": false,
+      "linePercent": null,
+      "branchPercent": null
+    },
+    "python": {
+      "measured": false,
+      "linePercent": null,
+      "branchPercent": null
+    },
+    "note": "Test/mutation counts do not establish numeric code coverage."
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "failed",
+      "passedChecks": 0,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-01/result.json",
+        "sha256": "4638468779f0abc83c2b504165094f16e4ab400a09e8ea075b81341051157f92"
+      },
+      "category": "harness",
+      "interpretation": "Before browser launch: obsolete fixed package count; genuine receipt has 17 entries.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: Complete packaged runtime inventory required"
+    },
+    {
+      "attempt": 2,
+      "status": "failed",
+      "passedChecks": 3,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-02/result.json",
+        "sha256": "bdc865ccb40598bd783b5e54ac76197f0b095bc5768abe53cb07b0ad4d35b71c"
+      },
+      "category": "runtime",
+      "interpretation": "Stripped MeshCollider request opened a Development Console overlay. Rendering-only owned mesh corrected it.",
+      "firstErrorLine": "mouse.click: Target page, context or browser has been closed"
+    },
+    {
+      "attempt": 3,
+      "status": "failed",
+      "passedChecks": 3,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-03/result.json",
+        "sha256": "4a0286aaae917e5aebc91540f42dffd8ea7e8c4b144f62b0ed9f9163fcbc84fe"
+      },
+      "category": "harness",
+      "interpretation": "Armory geometry assumed desktop header actions belonged to a scroll viewport.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: Measured scroll viewport and control required"
+    },
+    {
+      "attempt": 4,
+      "status": "failed",
+      "passedChecks": 3,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-04/result.json",
+        "sha256": "4579bcf9d4c7373d0a89577ab368b103262bbbd389f57b212399283dc7c7d616"
+      },
+      "category": "harness",
+      "interpretation": "Assumed preset 0; actual UI correctly preserved named builds and used empty slot 2.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+    },
+    {
+      "attempt": 5,
+      "status": "failed",
+      "passedChecks": 4,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-05/result.json",
+        "sha256": "6fbf5a9662e8a02041e8a1d5d80cd2c93a6ca96df6f813f3d3499b7e09a97afb"
+      },
+      "category": "harness",
+      "interpretation": "Assumed catalog order; actual equipped order deliberately places Minefield before Repairs.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+    },
+    {
+      "attempt": 6,
+      "status": "failed",
+      "passedChecks": 5,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-06/result.json",
+        "sha256": "1523a03577344f703960d6060f42162ba1c093bc9751c6e41bafa7ecbf8d1a37"
+      },
+      "category": "harness",
+      "interpretation": "Actual Overdrive cue included one Unity terminal newline; exact normalization corrected the assertion.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:"
+    },
+    {
+      "attempt": 7,
+      "status": "failed",
+      "passedChecks": 3,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-07/result.json",
+        "sha256": "234b8888aa1a5004c3bb1040a547ded6a0281384f68ccb28d59be85e450a05c8"
+      },
+      "category": "harness",
+      "interpretation": "Immediate assertion raced the already-correct selected-loadout observation.",
+      "firstErrorLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+    },
+    {
+      "attempt": 8,
+      "status": "failed",
+      "passedChecks": 1,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-08/result.json",
+        "sha256": "cd9b529bc05ec33aa6da95bac5a19dd0113de354ec38f2a2a8f9f878e42efd0f"
+      },
+      "category": "harness",
+      "interpretation": "Receipt predicate expected Saved. at the start instead of its actual suffix.",
+      "firstErrorLine": "Error: first-draw missing observation: {\"action\":\"research\",\"phase\":\"workshop\",\"saveState\":\"ready\",\"saveError\":\"\",\"notice\":\"\",\"profileVersion\":\"last-stand-waves-v4\",\"contentVersion\":\"last-stand-content-v4\",\"economyVersion\":\"buildcraft-economy-v5\",\"wallet\":12387,\"level\":2500,\"nextCost\":0,\"cannonDamage\":102645,\"runId\":0,\"pendingRunId\":0,\"tick\":0,\"hull\":120,\"kills\":0,\"mortarShots\":0,\"railgunShots\":0,\"mortarDamage\":18,\"railgunDamage\":40,\"selectedTier\":1,\"activeTier\":0,\"bestTicks1\":0,\"bestTicks2\":0,\"bestKills1\":0,\"bestKills2\":0,\"pendingTier\":0,\"pendingReward\":0,\"paused\":false,\"muted\":false,\"tierTwoUnlocked\":false,\"goalMet\":false,\"wave\":0,\"completedWave\":0,\"remainingWaveEnemies\":0,\"checkpointWave\":0,\"bestWave\":25,\"hasCheckpoint\":false,\"checkpointBlocked\":false,\"speed\":1,\"selectedSpeed\":1,\"menu\":\"skills\",\"preferencesState\":\"ready\",\"selectionId\":\"\",\"environmentId\":\"sunlit-ash\",\"fittingId\":\"repair\",\"selectionUnlocked\":false,\"garageTierId\":\"1\",\"garageTierUnlocked\":true,\"lockedTierPreview\":false,\"renderScale\":1,\"fullscreen\":false,\"musicEnabled\":true,\"tutorialTips\":true,\"purchaseSuggestions\":true,\"masterVolume\":100,\"effectsVolume\":100,\"musicVolume\":20,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceDraft\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceStatus\":\"\",\"appearanceCanApply\":false,\"armoryDraftPrimaryId\":\"repair\",\"armoryDraftSecondaryId\":\"\",\"armoryStatus\":\"\",\"selectedPrimaryId\":\"repair\",\"selectedSecondaryId\":\"\",\"activeSecondaryId\":\"\",\"armoryCanApply\":false,\"armoryPresetSlot\":0,\"arcShots\":0,\"arcDamage\":16,\"shield\":0,\"shieldCapacity\":0,\"equipmentBayCount\":1,\"researchLabCount\":1,\"skillIntel\":0,\"skillSlots\":1,\"overdriveRemainingTicks\":0,\"selectedSkills\":[],\"skillDraft\":[],\"activeSkills\":[],\"skillCopies\":[0,0,0,1,0,0],\"skillsStatus\":\"ACQUIRED / Reinforced Hull \u00b7 Rank 1 \u00b7 1 / 6 copies. Saved.\",\"overdriveUsed\":false,\"repairsUsed\":false,\"minefieldUsed\":false,\"minefieldArmed\":false}"
+    },
+    {
+      "attempt": 9,
+      "status": "failed",
+      "passedChecks": 7,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-09/result.json",
+        "sha256": "d434ffceda6fd14e4490cdbb368c08140874cbdd3916e2c6b837a2a4814f3f1b"
+      },
+      "category": "fixture",
+      "interpretation": "The declared 180-second wait ended at Tier 2 wave 25 with full 492 hull. Strong collection fixture was unsuitable for real-damage timing.",
+      "firstErrorLine": "Error: desktop missing observation: {\"action\":\"session\",\"phase\":\"battle\",\"saveState\":\"ready\",\"saveError\":\"\",\"notice\":\"W24 +1 SALVAGE\\nWAVE REWARD SAVED\",\"profileVersion\":\"last-stand-waves-v4\",\"contentVersion\":\"last-stand-content-v4\",\"economyVersion\":\"buildcraft-economy-v5\",\"wallet\":12374,\"level\":5,\"nextCost\":3,\"cannonDamage\":70,\"runId\":2,\"pendingRunId\":0,\"tick\":9256,\"hull\":492,\"kills\":148,\"mortarShots\":0,\"railgunShots\":0,\"mortarDamage\":18,\"railgunDamage\":40,\"selectedTier\":2,\"activeTier\":2,\"bestTicks1\":0,\"bestTicks2\":0,\"bestKills1\":0,\"bestKills2\":0,\"pendingTier\":0,\"pendingReward\":0,\"paused\":false,\"muted\":false,\"tierTwoUnlocked\":true,\"goalMet\":false,\"wave\":25,\"completedWave\":24,\"remainingWaveEnemies\":7,\"checkpointWave\":24,\"bestWave\":24,\"hasCheckpoint\":true,\"checkpointBlocked\":false,\"speed\":2.5,\"selectedSpeed\":2.5,\"menu\":\"\",\"preferencesState\":\"ready\",\"selectionId\":\"\",\"environmentId\":\"iron-perimeter\",\"fittingId\":\"launcher\",\"selectionUnlocked\":false,\"garageTierId\":\"\",\"garageTierUnlocked\":false,\"lockedTierPreview\":false,\"renderScale\":1,\"fullscreen\":false,\"musicEnabled\":true,\"tutorialTips\":true,\"purchaseSuggestions\":true,\"masterVolume\":100,\"effectsVolume\":100,\"musicVolume\":20,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceDraft\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceStatus\":\"\",\"appearanceCanApply\":false,\"armoryDraftPrimaryId\":\"launcher\",\"armoryDraftSecondaryId\":\"\",\"armoryStatus\":\"Build saved. Ready to deploy.\",\"selectedPrimaryId\":\"launcher\",\"selectedSecondaryId\":\"\",\"activeSecondaryId\":\"\",\"armoryCanApply\":false,\"armoryPresetSlot\":0,\"arcShots\":0,\"arcDamage\":16,\"shield\":0,\"shieldCapacity\":0,\"equipmentBayCount\":2,\"researchLabCount\":2,\"skillIntel\":3,\"skillSlots\":3,\"overdriveRemainingTicks\":0,\"selectedSkills\":[\"overdrive\",\"minefield\",\"emergencyRepairs\"],\"skillDraft\":[\"overdrive\",\"minefield\",\"emergencyRepairs\"],\"activeSkills\":[\"overdrive\",\"minefield\",\"emergencyRepairs\"],\"skillCopies\":[1,1,1,1,1,1],\"skillsStatus\":\"Skills saved for the next deployment. Save a named build in Armory to recall them with its equipment.\",\"overdriveUsed\":true,\"repairsUsed\":false,\"minefieldUsed\":false,\"minefieldArmed\":false}"
+    },
+    {
+      "attempt": 10,
+      "status": "failed",
+      "passedChecks": 12,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-10/result.json",
+        "sha256": "931a3129bac0626f2a1e7fe9d1b564b35cfeefbc520d65bc8af98dea1c5e0e6c"
+      },
+      "category": "runtime",
+      "interpretation": "Twelve checks passed, then actual portrait touch activation failed because HUD projected while Session was reconciling. Portrait Armory also showed lines extending to clipped labels.",
+      "firstErrorLine": "Error: portrait missing observation: {\"action\":\"session\",\"phase\":\"battle\",\"saveState\":\"ready\",\"saveError\":\"\",\"notice\":\"W2 +1 SALVAGE\\nWAVE REWARD SAVED\",\"profileVersion\":\"last-stand-waves-v4\",\"contentVersion\":\"last-stand-content-v4\",\"economyVersion\":\"buildcraft-economy-v5\",\"wallet\":12347,\"level\":5,\"nextCost\":3,\"cannonDamage\":70,\"runId\":2,\"pendingRunId\":0,\"tick\":430,\"hull\":541,\"kills\":15,\"mortarShots\":0,\"railgunShots\":0,\"mortarDamage\":18,\"railgunDamage\":40,\"selectedTier\":1,\"activeTier\":1,\"bestTicks1\":0,\"bestTicks2\":0,\"bestKills1\":0,\"bestKills2\":0,\"pendingTier\":0,\"pendingReward\":0,\"paused\":false,\"muted\":false,\"tierTwoUnlocked\":true,\"goalMet\":false,\"wave\":3,\"completedWave\":2,\"remainingWaveEnemies\":3,\"checkpointWave\":2,\"bestWave\":750,\"hasCheckpoint\":true,\"checkpointBlocked\":false,\"speed\":1,\"selectedSpeed\":1,\"menu\":\"\",\"preferencesState\":\"ready\",\"selectionId\":\"\",\"environmentId\":\"sunlit-ash\",\"fittingId\":\"launcher\",\"selectionUnlocked\":false,\"garageTierId\":\"\",\"garageTierUnlocked\":false,\"lockedTierPreview\":false,\"renderScale\":1,\"fullscreen\":false,\"musicEnabled\":true,\"tutorialTips\":true,\"purchaseSuggestions\":true,\"masterVolume\":100,\"effectsVolume\":100,\"musicVolume\":20,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceDraft\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceStatus\":\"\",\"appearanceCanApply\":false,\"armoryDraftPrimaryId\":\"launcher\",\"armoryDraftSecondaryId\":\"repair\",\"armoryStatus\":\"Build saved. Ready to deploy.\",\"selectedPrimaryId\":\"launcher\",\"selectedSecondaryId\":\"repair\",\"activeSecondaryId\":\"repair\",\"armoryCanApply\":false,\"armoryPresetSlot\":0,\"arcShots\":0,\"arcDamage\":16,\"shield\":0,\"shieldCapacity\":0,\"equipmentBayCount\":2,\"researchLabCount\":2,\"skillIntel\":3,\"skillSlots\":3,\"overdriveRemainingTicks\":0,\"selectedSkills\":[\"overdrive\",\"minefield\",\"reinforcedHull\"],\"skillDraft\":[\"overdrive\",\"minefield\",\"reinforcedHull\"],\"activeSkills\":[\"overdrive\",\"minefield\",\"reinforcedHull\"],\"skillCopies\":[1,1,1,1,1,1],\"skillsStatus\":\"Skills saved for the next deployment. Save a named build in Armory to recall them with its equipment.\",\"overdriveUsed\":false,\"repairsUsed\":false,\"minefieldUsed\":false,\"minefieldArmed\":false}"
+    },
+    {
+      "attempt": 11,
+      "status": "failed",
+      "passedChecks": 14,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-11/result.json",
+        "sha256": "34fdb27efb9148e6347ed6c80ce0ccc1bc1498f88ebb496bf6734e450ccdf4b3"
+      },
+      "category": "runtime-wrapper",
+      "interpretation": "Fourteen checks passed, including portrait pointer actives and corrected callout routing. In short landscape, return from wrapper title to the correctly revealed Apply target caused canvas focus to send keyboard enter-first, moving scroll from468 to80 between pointerdown and pointerup. The action did not fire; focus-diagnosis.json retains exact input/layout evidence.",
+      "firstErrorLine": "Error: short-landscape missing observation: {\"action\":\"research\",\"phase\":\"workshop\",\"saveState\":\"ready\",\"saveError\":\"\",\"notice\":\"\",\"profileVersion\":\"last-stand-waves-v4\",\"contentVersion\":\"last-stand-content-v4\",\"economyVersion\":\"buildcraft-economy-v5\",\"wallet\":12345,\"level\":5,\"nextCost\":3,\"cannonDamage\":70,\"runId\":0,\"pendingRunId\":0,\"tick\":0,\"hull\":120,\"kills\":0,\"mortarShots\":0,\"railgunShots\":0,\"mortarDamage\":18,\"railgunDamage\":40,\"selectedTier\":1,\"activeTier\":0,\"bestTicks1\":0,\"bestTicks2\":0,\"bestKills1\":0,\"bestKills2\":0,\"pendingTier\":0,\"pendingReward\":0,\"paused\":false,\"muted\":false,\"tierTwoUnlocked\":true,\"goalMet\":false,\"wave\":0,\"completedWave\":0,\"remainingWaveEnemies\":0,\"checkpointWave\":0,\"bestWave\":750,\"hasCheckpoint\":false,\"checkpointBlocked\":false,\"speed\":1,\"selectedSpeed\":1,\"menu\":\"armory\",\"preferencesState\":\"ready\",\"selectionId\":\"\",\"environmentId\":\"sunlit-ash\",\"fittingId\":\"launcher\",\"selectionUnlocked\":false,\"garageTierId\":\"1\",\"garageTierUnlocked\":true,\"lockedTierPreview\":false,\"renderScale\":1,\"fullscreen\":false,\"musicEnabled\":true,\"tutorialTips\":true,\"purchaseSuggestions\":true,\"masterVolume\":100,\"effectsVolume\":100,\"musicVolume\":20,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceDraft\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"appearanceStatus\":\"\",\"appearanceCanApply\":false,\"armoryDraftPrimaryId\":\"launcher\",\"armoryDraftSecondaryId\":\"repair\",\"armoryStatus\":\"Build name changed. Apply to save.\",\"selectedPrimaryId\":\"launcher\",\"selectedSecondaryId\":\"repair\",\"activeSecondaryId\":\"\",\"armoryCanApply\":true,\"armoryPresetSlot\":2,\"arcShots\":0,\"arcDamage\":16,\"shield\":0,\"shieldCapacity\":0,\"equipmentBayCount\":2,\"researchLabCount\":2,\"skillIntel\":3,\"skillSlots\":3,\"overdriveRemainingTicks\":0,\"selectedSkills\":[\"overdrive\",\"minefield\",\"reinforcedHull\"],\"skillDraft\":[\"overdrive\",\"minefield\",\"reinforcedHull\"],\"activeSkills\":[],\"skillCopies\":[1,1,1,1,1,1],\"skillsStatus\":\"Skills saved for the next deployment. Save a named build in Armory to recall them with its equipment.\",\"overdriveUsed\":false,\"repairsUsed\":false,\"minefieldUsed\":false,\"minefieldArmed\":false}"
+    },
+    {
+      "attempt": 12,
+      "status": "pass",
+      "passedChecks": 21,
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-12/result.json",
+        "sha256": "0cea4ab75c74a0140ae7aca66f940b37a09e413c631728f62c4448386d11461f"
+      },
+      "category": "player_verification",
+      "interpretation": "Current actual player verification",
+      "firstErrorLine": ""
+    }
+  ],
+  "earlierUiBaseline": {
+    "completedUtc": "2026-11-10T22:57:16.997227+00:00",
+    "sourceSha256": "4d4c5283fc273caf8c60e956c5e72877b91bf9b3b8ba4e87b6c72544ed76f6db",
+    "reviewLinks": 44,
+    "primaryCaptures": 9,
+    "normalProfilesUnchanged": 6,
+    "currentSkillsQualification": false,
+    "receipts": [
+      {
+        "path": "campaign-unity/Evidence/equipment-bay/implementation-verification-225110.json",
+        "sha256": "b57bce0b685223fd152eea9cd909ed541f669f9a540eafe19c8258d578c86cd0"
+      },
+      {
+        "path": "campaign-unity/Evidence/equipment-bay/review-integrity-225110.json",
+        "sha256": "e7608286601903c19ae66f9fce218a1c8a7a515024840c6ca0c642a3ddd48498"
+      }
+    ]
+  },
+  "hosted": {
+    "exactHeadCi": "pending",
+    "pullRequest": "pending_root_update",
+    "merge": "not_performed",
+    "publication": "not_performed"
+  },
+  "requiredFinalUpdates": [
+    "Complete selective commit and PR delivery gates",
+    "Record commit, PR and exact-head hosted CI outcomes separately; no merge or publication authorized"
+  ],
+  "reviewDocumentRenders": [
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-desktop.png",
+      "sha256": "619c56ce177950624b1087b3183c5a37b561dc64de652ec857390456f88bbaf6",
+      "viewport": [
+        1280,
+        900
+      ],
+      "imageDimensions": [
+        1280,
+        6198
+      ],
+      "result": "root-reported pass",
+      "proves": "Historical review document image loading/overflow only; no game input acceptance",
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-portrait.png",
+      "sha256": "fb7b8c1f2a8e4be4515208e8c9f9df9c06451023be6e756b268dfcc968f068e2",
+      "viewport": [
+        390,
+        844
+      ],
+      "imageDimensions": [
+        390,
+        10070
+      ],
+      "result": "root-reported pass",
+      "proves": "Historical review document image loading/overflow only; no game input acceptance",
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-desktop.png",
+      "sha256": "d279d28d7e90ce2ae79075eb0bc0f5668e6baa0259cdcfa158e2a9a7f996e0ee",
+      "viewport": [
+        1280,
+        900
+      ],
+      "imageDimensions": [
+        1280,
+        9450
+      ],
+      "result": "pass",
+      "htmlSha256": "1cf50576d2706f703438bfbfa4d1917b351f0a28fd133c9b561faea87c3d7973",
+      "proves": "Historical review document image loading/overflow only; no game input acceptance",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-desktop-top.png",
+        "sha256": "1fc95e9024ad96e5eaa4860b84731c9004a8151cf0bf50ee1b8c3dd82c1cd750"
+      },
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-portrait.png",
+      "sha256": "f350bc5bc359da9dbc21760bb44a9f227b1af9aa42d78e00e7b0ca847bc7286c",
+      "viewport": [
+        390,
+        844
+      ],
+      "imageDimensions": [
+        390,
+        14753
+      ],
+      "result": "pass",
+      "htmlSha256": "1cf50576d2706f703438bfbfa4d1917b351f0a28fd133c9b561faea87c3d7973",
+      "proves": "Historical review document image loading/overflow only; no game input acceptance",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-portrait-top.png",
+        "sha256": "588fdc0eeb73c9ef16abe4584cf917e9fd814de85df9c46a3b2c7a9559f4500f"
+      },
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-desktop.png",
+      "sha256": "3c04dce6d90fba1e829a15067ffc3f572061116e67225928ea5cb2dd4f92f528",
+      "viewport": [
+        1280,
+        900
+      ],
+      "imageDimensions": [
+        1280,
+        11833
+      ],
+      "htmlSha256": "fb8cc57c62dbc3ea1b1708bbe818119d25a80ff5ad29e875409f019db8b8b0e5",
+      "result": "pass",
+      "proves": "Current review document loading and overflow; game acceptance has separate actual-input evidence",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-desktop-top.png",
+        "sha256": "2a742473ac9da0a2ece7c7d35587f6f42e514a8df44542a12ac50483c1a7c031"
+      },
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-portrait.png",
+      "sha256": "69ca1c93f5d21c510417696f7943eea0bff40d210af966fc77eb46ed78c80df0",
+      "viewport": [
+        390,
+        844
+      ],
+      "imageDimensions": [
+        390,
+        17447
+      ],
+      "htmlSha256": "fb8cc57c62dbc3ea1b1708bbe818119d25a80ff5ad29e875409f019db8b8b0e5",
+      "result": "pass",
+      "proves": "Current review document loading and overflow; game acceptance has separate actual-input evidence",
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-portrait-top.png",
+        "sha256": "ccd0b21b7623f6edd3a25dd2a46c850e46408ff03a765b8aa36cc88436ffe54b"
+      },
+      "currentHtml": false
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop.png",
+      "sha256": "bd06824bc891d85fa08a1b85bace1e2fed099418988592dd2bc3e82424c07ddc",
+      "viewport": [
+        1280,
+        900
+      ],
+      "imageDimensions": [
+        1280,
+        12088
+      ],
+      "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+      "result": "pass",
+      "proves": "Current supporting document render only; not new game input evidence",
+      "currentHtml": true,
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop-top.png",
+        "sha256": "2a742473ac9da0a2ece7c7d35587f6f42e514a8df44542a12ac50483c1a7c031"
+      },
+      "provenanceCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop-provenance.png",
+        "sha256": "15c57f5aeef660e787fb5ba8744385a5e4ed194dc740f2890970f7e0aff4e44b"
+      }
+    },
+    {
+      "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait.png",
+      "sha256": "a9da0aa5ae0a630bbf70addb4826765b7c6e4d009016d6c2e632516bbbaf69fb",
+      "viewport": [
+        390,
+        844
+      ],
+      "imageDimensions": [
+        390,
+        17958
+      ],
+      "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+      "result": "pass",
+      "proves": "Current supporting document render only; not new game input evidence",
+      "currentHtml": true,
+      "topCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-top.png",
+        "sha256": "ccd0b21b7623f6edd3a25dd2a46c850e46408ff03a765b8aa36cc88436ffe54b"
+      },
+      "provenanceCapture": {
+        "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-provenance.png",
+        "sha256": "29243cf4e2422d389d048f76a1fd729d211819d90694e63c55a260ee805eba8a"
+      }
+    }
+  ],
+  "prPortability": {
+    "status": "selected_actual_screenshots_versioned",
+    "currentScaffoldImages": "Only report-bound screenshots copied; raw logs, saves, telemetry and binaries remain local",
+    "plannedScreenshotDirectory": "campaign-unity/docs/last-stand-skills/screenshots",
+    "rawBuildAndLogLinks": "Explicitly labeled local evidence only",
+    "excludedFromDeliveryCopy": [
+      "seeded saves",
+      "raw telemetry",
+      "raw logs",
+      "build binaries"
+    ],
+    "finalization": "Ten selected actual Web/native game captures retained; updated delivery HTML rendered at desktop and portrait. Hosted delivery, owner concept-fidelity acceptance and physical-device performance remain separate."
+  },
+  "wrapperRefresh": {
+    "receipt": {
+      "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261112T012431Z-6d33ce/wrapper-refresh-10e0f0c4b69346858235ad5c3b6976ae.json",
+      "sha256": "18e5e1f7345929d2834a35e0e69296daac28230ec438fb05624d71ce913e626e"
+    },
+    "wrapperSha256": "64ad46d694ffdf0303ef427c0ee6a50a4cedfb218147d92f8d381712499f1aac",
+    "unchangedRuntimeFiles": 17,
+    "rawExportReceiptSha256": "c99e268a4ff95fe0f468ebab10ba7ad02bc66fffc172ba33add05b02e2e04e45",
+    "destinationFiles": [
+      "index.html",
+      "asset-manifest.json"
+    ],
+    "scope": "Authored wrapper and manifest only; Unity/runtime/native build receipts remain unchanged"
+  },
+  "normalProfiles": {
+    "observedUtc": "2026-11-12T02:19:49.187194+00:00",
+    "normalProfileFileCount": 6,
+    "unchanged": true,
+    "receipt": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/native-integrity.json",
+      "sha256": "21be1c158f843f729b1573a0c7fc729dee0e7930230b080b3239dd2b964d275f"
+    }
+  },
+  "visualInspection": {
+    "observedUtc": "2026-11-12T01:44:26.569816+00:00",
+    "actor": "skills_records",
+    "selectedActualCaptures": 7,
+    "additionalShortLandscapeArmoryInspected": true,
+    "result": "Seven actual Web and three actual native selected captures visually inspected. Updated native document source awaits root render; prior renders remain historical.",
+    "nativeCapturesViewed": 3,
+    "nativeCaptureNames": [
+      "campaign-unity/docs/last-stand-skills/screenshots/native-overdrive-active.png",
+      "campaign-unity/docs/last-stand-skills/screenshots/native-compact-build-applied.png",
+      "campaign-unity/docs/last-stand-skills/screenshots/native-tall-locked-collection.png"
+    ]
+  },
+  "independentReviewFollowup": {
+    "path": "campaign-unity/Evidence/last-stand-skills/web-run12-independent-review-followup-20261112.json",
+    "sha256": "d8be48ebcef5c27fdc2fe338b0b7457917ac7e71bd8c1c09b9681eea7cce0e4e",
+    "verdict": "Web interaction gap resolved for the disclosed local development fixtures; native actual-input and manual acceptance remain open.",
+    "checksPassed": 21,
+    "inputHashesCurrent": {
+      "count": 41,
+      "mismatches": []
+    },
+    "packagedHashesCurrent": {
+      "count": 22,
+      "mismatches": []
+    },
+    "remainingFinding": {
+      "severity": "HIGH",
+      "scope": "Actual native-player input and manual acceptance",
+      "status": "open",
+      "basis": "Coordinator reports current native PID99252 remains behind Windows firewall prompt; no native interaction qualification exists. Packaged Web assertions do not establish native/device behavior or owner visual acceptance."
+    },
+    "authority": "Read-only evidence reassessment; no new test, Unity or browser execution. Prior reports remain unchanged.",
+    "historical": true,
+    "supersededNativeFindingBy": "campaign-unity/Evidence/last-stand-skills/native-independent-review-20261112.json"
+  },
+  "rootVisualInspection": {
+    "source": "root agent message after viewing all seven selected actual run12 captures",
+    "result": "Layout and labels acceptable; compact callout stays outside the header, empty bay has no equipment art, active/spent/resume states readable.",
+    "limit": "Prior coordinator review of seven Web captures; owner concept-fidelity acceptance is not implied."
+  },
+  "nativeHistory": [
+    {
+      "candidate": "C:\\w\\st-bay\\campaign-unity\\Builds\\LastStand-windows-20261112T012736Z-f3d9c7",
+      "status": "pending_existing_user_handoff",
+      "observedHandoff": {
+        "schema": "last-stand-native-input-handoff/v1",
+        "observedUtc": "2026-11-12T01:30:26.074872+00:00",
+        "status": "awaiting-user",
+        "build": "campaign-unity/Builds/LastStand-windows-20261112T012736Z-f3d9c7",
+        "processId": 99252,
+        "testProfile": "skills-combat-1111",
+        "sourceSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+        "observation": "Actual corrected player selected through @oai/sky. Windows Security firewall prompt still overlaps player. No prompt interaction or blocked game clicks performed. Existing user handoff remains pending.",
+        "actualSkillsInputQualified": false,
+        "screenshot": {
+          "path": "campaign-unity/Evidence/last-stand-skills/native-refined-05-blocked.png",
+          "sha256": "ba5245899696994fea329044810b42416b59fb49e9edb1f51c4d3e1c2e2a944a"
+        }
+      },
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/native-input-block.json",
+        "sha256": "231dae17eb4f62859e078bc601b612e7d4b6c4781ade0f95ec0870a4391b7af7"
+      },
+      "actualSkillsInputQualified": false,
+      "basis": "Read-only security prompt observation; older/superseded handoff does not qualify the current candidate"
+    }
+  ],
+  "nativeIndependentReview": {
+    "receipt": {
+      "path": "campaign-unity/Evidence/last-stand-skills/native-independent-review-20261112.json",
+      "sha256": "c7e2b3b0ea019ac99191d220771bc84e10878178988fd58f470301ca879a4ebb"
+    },
+    "review": {
+      "schema": "last-stand-skills-native-independent-review/v1",
+      "reviewedUtc": "2026-11-12 02:24:58 UTC",
+      "verdict": "pass-with-scope-limits",
+      "disposition": "The previous HIGH finding for absent actual native Skills interaction is resolved for the demonstrated local Windows workflow. No new actionable blocker was found.",
+      "scope": "Independent read-only review of recorded Sky keyboard/pointer actions, three closed native player logs, durable production-codec saves, launch/build identities and representative actual screenshots. This is a bounded acceptance review, not a fixed-count test suite.",
+      "newFindings": [],
+      "evidence": {
+        "files": {
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/actions.json": "04a6d35a78754dc4069fc7835b7c919a27665bd9bd0e1563b309471dd2a3ab5e",
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/profile-before-close.json": "c571898b6cc6cba49e08735769425f916f404b3747617399982a7515fbe74770",
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/profile-future-build.json": "ce4d8fa10546739bce499bf31de4bf6605faa2b4cdfdb614e4fcf214ffb1b7c8",
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/reopened-launch.json": "bc9d988977ed3edba2d253de6feee9761eb310fa3eb89e582b2b2319bcd09773",
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/fresh-launch.json": "11ba99544013fe13cce55942ab5e4997b0ab52bb475926ac4b78e5f127c5eda7",
+          "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/native-integrity.json": "21be1c158f843f729b1573a0c7fc729dee0e7930230b080b3239dd2b964d275f"
+        },
+        "screenshots": [
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/01-garage-cleared.png",
+            "sha256": "259cf1862a07abb259e2b94e6f88b6592f743e43a36ed11b7f17611521ff1c17"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/02-native-draw.png",
+            "sha256": "9a03c989f723399e418c0c4866b0ebd42a297792a7b1a1a9d5f76bfb93c019b2"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/03-mixed-draft.png",
+            "sha256": "b7ebecf0a8aa0ebb3012a5b06cf3eb1c94a914c73dda2ef40027cf6d5e2d6251"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/04-modal-paused.png",
+            "sha256": "d48a13689c722f6c860ca9c2951e191311be374e3f23fa120e80ed7c647e73e1"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/05-overdrive-active.png",
+            "sha256": "9aeb5bdf955627392c03c9aef7d964a0e2c781f266951e7fa08804b439a8fd9f"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/06-minefield-armed.png",
+            "sha256": "d7c922b50d5342502d667f1a03211c977721c5876c4c163090751697200b4b80"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/07-repairs-spent.png",
+            "sha256": "2dc26429306fc58ee3ecea67f85e6a7ae05251dc1a78ed3913cb167dd290d4c6"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/08-confirmed-checkpoint-paused.png",
+            "sha256": "c0db54bcc22d5024d0b2e787d6532dce85b791837beaf6847214707bef883a0b"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/09-reopen-checkpoint-summary.png",
+            "sha256": "f18efd5f082806e897c805e177caaa919de27e2e864ae11e57145ca640947485"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/10-compact-skills-applied.png",
+            "sha256": "928b041826fc96ddff809dac2db29e733f79981fe91eac05f3a8d7fb914ee95f"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/11-compact-preset-preview.png",
+            "sha256": "8bcc93386b5ca92ebfdc31b302bdc2a067f43db7c35f802df61ad1d79859bebb"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/12-native-preset-applied.png",
+            "sha256": "6c99ae12255fae3fba3309768a476ce5cbfa6a026196edd6dfdef838cc3bd6b2"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/13-resumed-paused-spent.png",
+            "sha256": "0dbfd1e675542f9fe91beafee0ac55457af1324469aee2fc31af5c415db794db"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/14-passive-build-combat.png",
+            "sha256": "85505fc6cb84d8c0e2f77db096f088404c553e1ab4055ac0c2aa5873fd375b3b"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/15-fresh-draw-locked.png",
+            "sha256": "7159b2167096cc79b506583a88742d9ec7e5f83f3c8a767a41cdd7a62a42bc9a"
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/16-fresh-passive-footer.png",
+            "sha256": "d3177f03758b65dedbd9581e32791c57ba09c673dc4ccf46907cd15f2dd9a07b"
+          }
+        ],
+        "visuallyInspected": [
+          "02-native-draw.png",
+          "05-overdrive-active.png",
+          "08-confirmed-checkpoint-paused.png",
+          "10-compact-skills-applied.png",
+          "12-native-preset-applied.png",
+          "13-resumed-paused-spent.png",
+          "14-passive-build-combat.png",
+          "15-fresh-draw-locked.png",
+          "16-fresh-passive-footer.png"
+        ],
+        "checkpointEqual": true,
+        "checkpoint": {
+          "tick": 1525,
+          "hull": 1220,
+          "completedWave": 2
+        },
+        "beforeSelection": {
+          "loadout": [
+            "overdrive",
+            "minefield",
+            "emergencyRepairs"
+          ],
+          "primary": "repair",
+          "secondary": null
+        },
+        "futureSelection": {
+          "loadout": [
+            "reinforcedHull",
+            "ballistics",
+            "reactiveLining"
+          ],
+          "primary": "launcher",
+          "secondary": "repair"
+        },
+        "actionCount": 50,
+        "launches": [
+          {
+            "timeUtc": "2026-11-12T02:12:37.7763564Z",
+            "exe": "C:/w/st-bay/campaign-unity/Builds/LastStand-windows-20261112T012736Z-f3d9c7/LastStand.exe",
+            "args": [
+              "-screen-fullscreen",
+              "0",
+              "-screen-width",
+              "960",
+              "-screen-height",
+              "600",
+              "--last-stand-test-profile",
+              "skills-combat-1111",
+              "-logFile",
+              "C:/w/st-bay/campaign-unity/Evidence/last-stand-skills/native-actual-20261112/reopened-combat.log"
+            ],
+            "processId": 111828,
+            "executableSha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0"
+          },
+          {
+            "timeUtc": "2026-11-12T02:17:48.8413278Z",
+            "exe": "C:/w/st-bay/campaign-unity/Builds/LastStand-windows-20261112T012736Z-f3d9c7/LastStand.exe",
+            "args": [
+              "-screen-fullscreen",
+              "0",
+              "-screen-width",
+              "600",
+              "-screen-height",
+              "900",
+              "--last-stand-test-profile",
+              "skills-fresh-1111",
+              "-logFile",
+              "C:/w/st-bay/campaign-unity/Evidence/last-stand-skills/native-actual-20261112/fresh-native.log"
+            ],
+            "processId": 60468,
+            "executableSha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0"
+          }
+        ],
+        "logs": [
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-refined-05-combat.log",
+            "bytes": 203589335,
+            "sha256": "0307e5af138c51e5eddd839489270169db9098d1a4c31ea8c5b2d4118c0df088",
+            "unchangedDuringRead": true,
+            "technicalFailureMatches": [],
+            "skillCueEvents": {
+              "skill-overdrive": 1,
+              "skill-mines-armed": 1,
+              "skill-minefield": 1,
+              "skill-repairs": 1
+            },
+            "skillActivationReceipts": [
+              {
+                "byte": 141929695,
+                "tick": 360,
+                "hull": 1223,
+                "priorHull": 1223,
+                "notice": "Overdrive activated.",
+                "overdriveRemainingTicks": 240,
+                "used": [
+                  true,
+                  false,
+                  false
+                ],
+                "minefieldArmed": false
+              },
+              {
+                "byte": 158381383,
+                "tick": 666,
+                "hull": 1232,
+                "priorHull": 1232,
+                "notice": "Minefield activated.",
+                "overdriveRemainingTicks": 0,
+                "used": [
+                  true,
+                  false,
+                  true
+                ],
+                "minefieldArmed": true
+              },
+              {
+                "byte": 184248099,
+                "tick": 1261,
+                "hull": 1232,
+                "priorHull": 1232,
+                "notice": "Emergency Repairs activated.",
+                "overdriveRemainingTicks": 0,
+                "used": [
+                  true,
+                  true,
+                  true
+                ],
+                "minefieldArmed": false
+              }
+            ],
+            "overdriveTimerSamples": [
+              {
+                "tick": 360,
+                "remaining": 240
+              },
+              {
+                "tick": 361,
+                "remaining": 239
+              },
+              {
+                "tick": 362,
+                "remaining": 238
+              },
+              {
+                "tick": 600,
+                "remaining": 0,
+                "expired": true
+              }
+            ],
+            "drawReceipts": [
+              {
+                "byte": 75971722,
+                "intel": 2,
+                "copies": [
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "saveState": "ready",
+                "status": "COPY RECEIVED / Emergency Repairs \u00b7 Rank 1 \u00b7 2 / 6 copies. Saved."
+              }
+            ],
+            "statePacketCount": 2109,
+            "shutdownMarkers": [
+              {
+                "byte": 203588808,
+                "text": "Input System module state changed to: Shutdown."
+              },
+              {
+                "byte": 203588857,
+                "text": "PlayerConnection::Cleanup##utp:{\"type\":\"MemoryLeaks\",\"version\":2,\"phase\":\"Immediate\",\"time\":1794449533943,\"processId\":99"
+              }
+            ],
+            "freshCollectionStates": [],
+            "last": {
+              "action": "research",
+              "phase": "battle",
+              "runId": 2,
+              "tick": 1909,
+              "hull": 1232,
+              "checkpointWave": 2,
+              "skillIntel": 2,
+              "skillCopies": [
+                1,
+                2,
+                1,
+                1,
+                1,
+                1
+              ],
+              "selectedSkills": [
+                "overdrive",
+                "minefield",
+                "emergencyRepairs"
+              ],
+              "activeSkills": [
+                "overdrive",
+                "minefield",
+                "emergencyRepairs"
+              ]
+            }
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/reopened-combat.log",
+            "bytes": 219644622,
+            "sha256": "d9c4be07e48811beb6732f28f50c340d06f0c8e8c6c7c3641a8cff6106b468a1",
+            "unchangedDuringRead": true,
+            "technicalFailureMatches": [],
+            "skillCueEvents": {},
+            "skillActivationReceipts": [],
+            "overdriveTimerSamples": [],
+            "drawReceipts": [],
+            "statePacketCount": 1469,
+            "shutdownMarkers": [
+              {
+                "byte": 219644094,
+                "text": "Input System module state changed to: Shutdown."
+              },
+              {
+                "byte": 219644143,
+                "text": "PlayerConnection::Cleanup##utp:{\"type\":\"MemoryLeaks\",\"version\":2,\"phase\":\"Immediate\",\"time\":1794449854707,\"processId\":11"
+              }
+            ],
+            "freshCollectionStates": [],
+            "last": {
+              "action": "session",
+              "phase": "battle",
+              "runId": 3,
+              "tick": 1099,
+              "hull": 1355,
+              "checkpointWave": 1,
+              "skillIntel": 2,
+              "skillCopies": [
+                1,
+                2,
+                1,
+                1,
+                1,
+                1
+              ],
+              "selectedSkills": [
+                "reinforcedHull",
+                "ballistics",
+                "reactiveLining"
+              ],
+              "activeSkills": [
+                "reinforcedHull",
+                "ballistics",
+                "reactiveLining"
+              ]
+            }
+          },
+          {
+            "path": "campaign-unity/Evidence/last-stand-skills/native-actual-20261112/fresh-native.log",
+            "bytes": 35573144,
+            "sha256": "a645bc4d2d19e2848cceb12498e81d5ebfe4066da44fc55f7ab4c5c593ec7464",
+            "unchangedDuringRead": true,
+            "technicalFailureMatches": [],
+            "skillCueEvents": {},
+            "skillActivationReceipts": [],
+            "overdriveTimerSamples": [],
+            "drawReceipts": [],
+            "statePacketCount": 7,
+            "shutdownMarkers": [
+              {
+                "byte": 35572618,
+                "text": "Input System module state changed to: Shutdown."
+              },
+              {
+                "byte": 35572667,
+                "text": "PlayerConnection::Cleanup##utp:{\"type\":\"MemoryLeaks\",\"version\":2,\"phase\":\"Immediate\",\"time\":1794449944397,\"processId\":60"
+              }
+            ],
+            "freshCollectionStates": [
+              [
+                0,
+                0,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                []
+              ]
+            ],
+            "last": {
+              "action": "research",
+              "phase": "garage",
+              "runId": 0,
+              "tick": 0,
+              "hull": 120,
+              "checkpointWave": 0,
+              "skillIntel": 0,
+              "skillCopies": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "selectedSkills": [],
+              "activeSkills": []
+            }
+          }
+        ],
+        "bindings": {
+          "receiptPath": "campaign-unity/Evidence/last-stand-architecture/build-windows-20261112T012736Z-f3d9c7/result.json",
+          "receiptSha256": "d6426853ad078715c8cee2d3cbd50934de9219c41605e8c1d836477b7c49e149",
+          "sourceBeforeSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+          "sourceAfterSha256": "c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b",
+          "selectedArtifacts": {
+            "LastStand.exe": {
+              "sha256": "242cac5affae0cf9a30db6a45bd1e91d3ffa33b8d08b99cb7b7e2ccffe4738d0",
+              "matchesReceipt": true
+            },
+            "LastStand_Data/Managed/Assembly-CSharp.dll": {
+              "sha256": "3531b125644e7c0119e73afa2b673c321f3c8804795cbccac5bd7c6eebafe286",
+              "matchesReceipt": true
+            }
+          },
+          "normalProfileCount": 6,
+          "normalProfilesUnchanged": true,
+          "actionsSha256": "04a6d35a78754dc4069fc7835b7c919a27665bd9bd0e1563b309471dd2a3ab5e",
+          "actionsMatchIntegrity": true,
+          "screenshotsAllMatchIntegrity": true,
+          "nullPackets": [
+            {
+              "index": 0,
+              "label": "Open native menu",
+              "beforeNull": false,
+              "afterNull": true
+            },
+            {
+              "index": 1,
+              "label": "Open Skills collection",
+              "beforeNull": true,
+              "afterNull": true
+            },
+            {
+              "index": 2,
+              "label": "Draw one skill for one Intel",
+              "beforeNull": true,
+              "afterNull": true
+            },
+            {
+              "index": 3,
+              "label": "Remove Repairs in uncommitted draft",
+              "beforeNull": true,
+              "afterNull": true
+            },
+            {
+              "index": 19,
+              "label": "Close native player after committed wave two",
+              "beforeNull": false,
+              "afterNull": true
+            },
+            {
+              "index": 44,
+              "label": "Close passive test after real cleared-wave commit",
+              "beforeNull": false,
+              "afterNull": true
+            },
+            {
+              "index": 45,
+              "label": "Open fresh-player menu in tall native window",
+              "beforeNull": false,
+              "afterNull": true
+            },
+            {
+              "index": 47,
+              "label": "Locked zero-Intel draw refuses native pointer input",
+              "beforeNull": false,
+              "afterNull": true
+            },
+            {
+              "index": 49,
+              "label": "Close fresh-profile verification cleanly",
+              "beforeNull": false,
+              "afterNull": true
+            }
+          ]
+        }
+      },
+      "observedCoverage": [
+        {
+          "area": "Collection, draw and ownership",
+          "evidence": "Native log byte 75971722 and screenshot 02 record a confirmed draw: Intel 3 -> 2 and copies [1,1,1,1,1,1] -> [1,2,1,1,1,1], with the Saved receipt. Initial action packets are incomplete, so the actual log/screenshot supplies the outcome."
+        },
+        {
+          "area": "Shared capacity and Cancel",
+          "evidence": "Three equipped active slots show passive controls as SLOTS FULL. The recorded mixed draft removes Repairs and adds passive Hull; Cancel restores the original active selection. Later compact Apply saves the mixed future selection."
+        },
+        {
+          "area": "Active admission and refusal",
+          "evidence": "Full-hull R and a full-hull pointer attempt keep Repairs unused; Q/E/R during the menu pause leave tick183 and all uses unchanged. Actual Q, E and pointer input subsequently activate Overdrive, Minefield and Repairs. Repeated spent input does not grant another use."
+        },
+        {
+          "area": "Effects and cue admission",
+          "evidence": "Overdrive activates at tick 360 with 240 ticks remaining, decrements at 361/362, and reaches 0 at 600 (12 simulated seconds). Minefield arms at 666, then changes armed -> false at 1039 while kills 9 -> 10 and a detonation cue is logged. Ordinary Repair first heals 1220 -> 1223 at 1260; accepted Emergency Repairs at 1261 changes 1223 -> 1232 on that same tick. Exactly one each skill-overdrive, skill-mines-armed and skill-repairs activation cue occurs; skill-minefield is the separate later detonation. The reopened and fresh logs contain no skill cue events."
+        },
+        {
+          "area": "Named build and captured checkpoint",
+          "evidence": "Compact Armory applies the saved passive preset and launcher+repair selection. Checkpoint before close and after future-build application is equal both as objects and as the exact1898 serialized bytes (SHA2562d1f9a270bd6dbc3a5f0ad8e85bedc108777b48580dce981ed42b4e36dbcc79a). It retains repair-only equipment, original active skills, tick1525/hull1220/completedWave2/spentMask7."
+        },
+        {
+          "area": "Reopen and resume",
+          "evidence": "The same executable reopens at960x600. Actual Resume restores the captured active run paused at tick1525/hull1220, despite the passive future selection. Explicit simulation resume preserves spent uses, and Q cannot activate Overdrive again."
+        },
+        {
+          "area": "Passive new run",
+          "evidence": "Actual new-run confirmation creates isolated run3 with launcher+repair and Hull/Ballistics/Lining. Hull is1355 versus the prior active build maximum1232. Q and pointer input on the passive Hull card do not create an active use; the run subsequently confirms wave1. This native observation does not separately quantify every passive modifier."
+        },
+        {
+          "area": "Fresh locked state and compact navigation",
+          "evidence": "The same executable at600x900 shows Intel0, slots0 and no owned skills. All seven fresh state packets retain those values and no draw receipt is emitted. The disabled Draw pointer attempt has no immediate after-packet; later state, screenshot15 and the complete fresh log establish unchanged collection values. End reveals readable locked passive cards and footer controls in screenshot16."
+        },
+        {
+          "area": "Shutdown, isolation and binding",
+          "evidence": "All three closed logs retain normal Input System shutdown and PlayerConnection cleanup markers; no scanned technical-failure/exception/fatal signatures were found. PIDs99252/111828/60468 were absent at the read-only process check. The executable and Assembly-CSharp match the retained native build receipt; its source-before/after identity is c9069ab77c20894ed9d02be07dcc1cfc862ad4bb93f3b25ce6808f1862adcb2b. Normal six profile-file hashes independently remain unchanged."
+        }
+      ],
+      "visualReview": {
+        "inspected": [
+          "02-native-draw.png",
+          "05-overdrive-active.png",
+          "08-confirmed-checkpoint-paused.png",
+          "10-compact-skills-applied.png",
+          "12-native-preset-applied.png",
+          "13-resumed-paused-spent.png",
+          "14-passive-build-combat.png",
+          "15-fresh-draw-locked.png",
+          "16-fresh-passive-footer.png"
+        ],
+        "observation": "The representative1600x900,960x600 and600x900 captures show readable Skills state/explanations, shared-slot disabled controls, accessible compact footer actions, clear active/spent/passive HUD labels and Armory callouts outside the panel. No actionable visual obstruction was found in these inspected views.",
+        "limit": "Nine representative captures were inspected visually; all sixteen capture hashes were checked. No claim that every frame or viewport was inspected."
+      },
+      "actionRecordInterpretations": [
+        {
+          "indices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "interpretation": "The first four actions contain null before/after packets. They are not complete state-transition pairs; draw and initial collection outcomes use actual player log and screenshots."
+        },
+        {
+          "index": 12,
+          "label": "Return to manually paused battle",
+          "interpretation": "This is a menu Resume. Its after state is unpaused; it is not evidence that an explicit manual pause survives menu dismissal. The later actual manual pause and paused checkpoint restoration are separate observations."
+        },
+        {
+          "index": 14,
+          "label": "Pointer repairs natural combat damage",
+          "interpretation": "The hull was already full and Repairs remained unused. This is a valid full-hull refusal, not healing evidence. The later pointer action at index16 and same-tick log transition at1261 prove the actual heal."
+        },
+        {
+          "indices": [
+            19,
+            44,
+            49
+          ],
+          "interpretation": "Close actions naturally lack after state packets. Closure is supported separately by closed log shutdown markers and absent owned processes."
+        },
+        {
+          "indices": [
+            45,
+            47
+          ],
+          "interpretation": "Fresh menu-open and disabled Draw actions lack immediate after state packets. Subsequent authoritative fresh state plus actual captures supplies the bounded outcome; no synthetic packet is substituted."
+        }
+      ],
+      "limits": [
+        "The native cohort used explicit isolated development review profiles, including gifted progression/collection and Hull Capacity40, with normal Repair3HP/s retained. It is not earned-player balance proof.",
+        "Logged accepted audio cues establish dispatch/admission only. This review did not listen to audible audio.",
+        "Minefield exact target damage and every passive formula are not independently quantified by these native logs; domain and imported evidence remains their separate proof.",
+        "No owner concept-fidelity acceptance, universal visual perfection, device performance, Android qualification, real-duration endurance, hosted CI, publication or numeric coverage claim is made.",
+        "Action and capture counts identify retained evidence only; no fixed-count acceptance threshold was invented.",
+        "The native receipt's source identity was inspected, and executable/Assembly-CSharp bytes were independently matched. This follow-up did not recompute the entire Unity source closure or every native artifact.",
+        "Prior blocked observations and failed attempts remain intact; this follow-up supersedes only the missing-native-input conclusion."
+      ]
+    }
+  },
+  "normalProfilesHistory": [
+    {
+      "observedUtc": "2026-11-12T01:30:40.043754+00:00",
+      "normalProfileFileCount": 6,
+      "unchanged": true,
+      "changed": [],
+      "sha256": {
+        "ls-73696e67656454657272612e6c6173745374616e642e707265666572656e6365732e7631.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "ls-73696e67656454657272612e6c6173745374616e642e707265666572656e6365732e7631.slot0": "3a1c4ff14d1a3f8fe0041bf247beddfdbcab6a33a9df1ecdc727af7807196fda",
+        "ls-73696e67656454657272612e6c6173745374616e642e707265666572656e6365732e7631.slot1": "cb6d78599b42259f871392d072e36480209184f21d90413d2d20844177e47c45",
+        "ls-73696e67656454657272612e6c6173745374616e642e70726f746f747970652e7631.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "ls-73696e67656454657272612e6c6173745374616e642e70726f746f747970652e7631.slot0": "748bab634412219c7e00f7ed469f8f36e9a62c8d27794c48259bc1a4c093ef9c",
+        "ls-73696e67656454657272612e6c6173745374616e642e70726f746f747970652e7631.slot1": "d44cda6d2d99fbba8179afb0b59edbed818701f619cea7800a5391b21af395d3"
+      },
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/normal-profiles-check-20261112.json",
+        "sha256": "e0a5cf8d32ed3ff1ea82ee63e1dac162a53f7d66bba2cbdf77d99ae219ec28b9"
+      }
+    }
+  ],
+  "finalizedDocumentUtc": "2026-11-12T03:15:09.078713+00:00",
+  "finalSourceReview": {
+    "path": "campaign-unity/Evidence/last-stand-skills/final-source-review-20261112.json",
+    "sha256": "1639ec5fc33bee11ccedbb56aee6016241e0fe94c25d069481c95ea2bf968c38",
+    "verdict": "PASS for scoped local source/coverage readiness. No unresolved CRITICAL/HIGH or newly untested changed runtime input found. Commit/PR authority, exact-head hosted checks, merge/publication and owner concept-fidelity acceptance remain separate.",
+    "unresolvedCritical": 0,
+    "unresolvedHigh": 0,
+    "scope": "Combined retained equipment-bay/vehicle/battlefield UI work and Skills sprint on the same uncommitted branch; bounded current-input and critical-path review, not a new full reviewer fleet.",
+    "backgroundFinalEvidence": {
+      "Run": {
+        "invocation": {
+          "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-fix/Run-invocation.json",
+          "sha256": "fab51aeb5acebdd130cec582d4401b10324b431248d0c6f29ec3a11ff1a313d3",
+          "scope": "Actual Run invocation"
+        },
+        "result": {
+          "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-fix/result.json",
+          "sha256": "bd82996c36ef4e7f5ee6fd5f11ff432b24aa74ecc92b7c32941356482b6d06e4",
+          "scope": "Use method=Run entry only"
+        },
+        "exit": 0,
+        "markers": [
+          "ST_LS_BACKGROUND_PASS test_playable_blur_and_delayed_callbacks_continue",
+          "ST_LS_BACKGROUND_PASS test_legacy_review_retain_suspension",
+          "ST_LS_BACKGROUND_PASS test_terminal_and_failure_do_not_repeat"
+        ],
+        "sourceUnchangedDuringRun": true,
+        "currentRuntimeBindings": {
+          "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs": {
+            "expected": "438c0747f313bb459610ea44b3ffa56e7e1a99ad4abe0df0af412c0d0918f247",
+            "current": "438c0747f313bb459610ea44b3ffa56e7e1a99ad4abe0df0af412c0d0918f247",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs": {
+            "expected": "4a1316f8504220fff5b18b2e67bfcf1b8db1f71cf3dc90d8ced0a90e32728715",
+            "current": "4a1316f8504220fff5b18b2e67bfcf1b8db1f71cf3dc90d8ced0a90e32728715",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs": {
+            "expected": "b037a806cbb36096ff95a26ffc42f17cb6abc4e8ff611170f51db6b3c734e828",
+            "current": "b037a806cbb36096ff95a26ffc42f17cb6abc4e8ff611170f51db6b3c734e828",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs": {
+            "expected": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+            "current": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+            "matches": true
+          }
+        },
+        "testSourceDelta": {
+          "file": "campaign-unity/Unity/Assets/Editor/LastStandBackgroundChecks.cs",
+          "retainedHash": "e3eb1b056e7c802287d6aecddf34e6576ae054afb8fc9b5ef03905a39b8a34a4",
+          "currentHash": "a731f7abba71d7f44d15092209431ebaa9d635cdd516fda91c27f7e12fed5911",
+          "exactSingleChangeReconstructionMatchesRetained": true,
+          "change": "Only the later RunFeedback conflict-fixture expected saved version changed from5 to9. Replacing that one current expression recreates the exact retained whole-file SHA256. The Run group and assertions are unchanged."
+        }
+      },
+      "RunFeedback": {
+        "invocation": {
+          "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-feedback/editor-20261112T011744Z-e3a20b7b/invocation.json",
+          "sha256": "1e83dfc8a64c6e708b7833506065be2e84b18e85b0f712c01eb6d26fb496ee32",
+          "scope": "Actual final RunFeedback invocation"
+        },
+        "result": {
+          "path": "campaign-unity/Evidence/last-stand-skills/reconciliation-fixture-feedback/editor-20261112T011744Z-e3a20b7b/result.json",
+          "sha256": "50ac42de904b0745e27703a6df479fe930166b0ff2274fb90be8bb1b06e5ac2b",
+          "scope": "Actual final exit and source map"
+        },
+        "exit": 0,
+        "markers": [
+          "ST_LS_BACKGROUND_PASS test_background_defeat_settles_once",
+          "ST_LS_BACKGROUND_PASS test_pause_excludes_settling_time",
+          "ST_LS_BACKGROUND_PASS test_focus_restores_current_cues_without_replay",
+          "ST_LS_BACKGROUND_PASS test_mute_and_profile_lifecycle_remain_isolated"
+        ],
+        "sourceUnchangedDuringRun": true,
+        "currentRuntimeBindings": {
+          "campaign-unity/Unity/Assets/Scripts/EncounterSession.cs": {
+            "expected": "438c0747f313bb459610ea44b3ffa56e7e1a99ad4abe0df0af412c0d0918f247",
+            "current": "438c0747f313bb459610ea44b3ffa56e7e1a99ad4abe0df0af412c0d0918f247",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandLoopController.cs": {
+            "expected": "4a1316f8504220fff5b18b2e67bfcf1b8db1f71cf3dc90d8ced0a90e32728715",
+            "current": "4a1316f8504220fff5b18b2e67bfcf1b8db1f71cf3dc90d8ced0a90e32728715",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandAudio.cs": {
+            "expected": "b037a806cbb36096ff95a26ffc42f17cb6abc4e8ff611170f51db6b3c734e828",
+            "current": "b037a806cbb36096ff95a26ffc42f17cb6abc4e8ff611170f51db6b3c734e828",
+            "matches": true
+          },
+          "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs": {
+            "expected": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+            "current": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+            "matches": true
+          }
+        },
+        "testSourceHashMatchesCurrent": true
+      },
+      "RunCueAdmission": "Original reconciliation-background-RunCueAdmission.log remains the correct retained2/2 pointer; unchanged."
+    },
+    "reviewer": "/root/skills_combat, bounded coverage-auditor role; author of some combat/callout/wrapper changes, with independent prior integration/native reviews explicitly reused",
+    "currentQualification": "The unchanged runtime and prior focused evidence retain this review. New provenance tooling and replacement measurement bindings are covered by provenanceComplianceFollowup, including the superseded historical browser generator input."
+  },
+  "measuredReportsHistory": [
+    [
+      {
+        "path": "campaign-unity/docs/last-stand-skills/balance.json",
+        "sha256": "a2725190cbf0c9b07e4208fa364429c91248969cbddda83138bbb47d7966cb46"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-skills/acquisition.json",
+        "sha256": "b21ee9e9a4dde1dfcd45fe18b7a11755e5f43c202da6941b330de4231f4e9bfe"
+      },
+      {
+        "path": "campaign-unity/docs/last-stand-skills/guard-mutations.json",
+        "sha256": "a3cfb9fb3f1152a0920bf1bd0337e54cda0e0b7e4b99ee1725c9ad73cf631551"
+      }
+    ]
+  ],
+  "provenanceComplianceFollowup": {
+    "report": {
+      "path": "campaign-unity/Evidence/last-stand-skills/approved-provenance/parity-and-bindings.json",
+      "sha256": "9b07e78dce110e0a19dab703221c26d7c5434ab0a4d707c83123312ff665b129"
+    },
+    "securityReview": {
+      "path": "campaign-unity/Evidence/last-stand-skills/auth-crypto-remediation-review-20261111.md",
+      "sha256": "c9a2af3a7fa75013c71a089d6dfad4f2a25cf0f77fa1284c2e549e7abcc2ef9b",
+      "verdict": "PASS"
+    },
+    "focusedChecks": {
+      "adapter": 5,
+      "acquisition": 2,
+      "balanceRows": 18,
+      "guardBaselines": 4,
+      "killedMutants": 6,
+      "reviewFixtureGenerators": 2,
+      "inventoryModules": 125,
+      "inventoryCases": 747
+    },
+    "normalFixtureClockDeltas": [
+      {
+        "profile": "fresh",
+        "field": "research.lastObservedUtcMilliseconds",
+        "retained": 1794440122292,
+        "regenerated": 1794452068177,
+        "allOtherProfileBytesIdentical": true
+      },
+      {
+        "profile": "eligible",
+        "field": "research.lastObservedUtcMilliseconds",
+        "retained": 1794440122292,
+        "regenerated": 1794452068177,
+        "allOtherProfileBytesIdentical": true
+      },
+      {
+        "profile": "collection",
+        "field": "research.lastObservedUtcMilliseconds",
+        "retained": 1794440122292,
+        "regenerated": 1794452068177,
+        "allOtherProfileBytesIdentical": true
+      }
+    ],
+    "browserReuse": {
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-skills/browser/run-12/result.json",
+        "sha256": "0cea4ab75c74a0140ae7aca66f940b37a09e413c631728f62c4448386d11461f"
+      },
+      "historicalInputCount": 41,
+      "supersededInput": {
+        "campaign-unity/Tools/last_stand_skills/generate_review_profiles.py": {
+          "historical": "f098c169e0a1068e23aed4d35c2e8400a2d03ed5cb38a9c51ec646575e82fb8d",
+          "current": "5836c32d0505387ddd7a78b7163087cab70e86a3250fbf059f6e35ca6860476d"
+        }
+      },
+      "qualification": "Actual run12 remains a historical packaged-player result using its unchanged retained original fixtures. Generator source is superseded. Approved Node hashing reproduces every retained original fixture/profile digest; regenerated normal profiles differ only in the disclosed production wall-clock field, while combat profile bytes and preflight are exact. This is bounded tooling equivalence, not all 41 historical input hashes matching current source."
+    },
+    "qualification": "Current generator supersedes exactly one historical browser input. Original actual-player fixtures and runtime bytes remain untouched; normal regeneration varies only production timestamps, combat profile/preflight is exact. No new full browser/native run is claimed.",
+    "independentReview": {
+      "path": "campaign-unity/Evidence/last-stand-skills/provenance-independent-review-20261112.json",
+      "sha256": "c46482366b660c0efc36bf3c348e9eff313f5c36c2f9c87f2dfc64b0d365fbc2",
+      "verdict": "PASS with explicit historical-input and clock qualification; no remaining blocker in bounded scope"
+    },
+    "indexEquality": {
+      "path": "campaign-unity/Evidence/last-stand-skills/auth-reviewed-index-equality-20261112.json",
+      "sha256": "e22c5d0d9cfa18328330605433cf315a97372efc5aa1d134095d2668b7f550f0",
+      "reviewedPaths": 9,
+      "rawEqual": 8,
+      "existingCrLfNormalizationOnly": 1
+    }
+  },
+  "rootDocumentInspection": {
+    "observedUtc": "2026-11-12T03:13:09.016722+00:00",
+    "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+    "views": [
+      "desktop-provenance",
+      "portrait-provenance"
+    ],
+    "result": "Readable spacing, complete text wrapping, working images and no horizontal overflow."
+  }
+}

@@ -37,7 +37,7 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 import { lastStandJourneyTimeBudget } from './lastStandProcessSupervisor.mjs';
 import { assertWaveSavePreserved, assertIdleWaveSave, validateCheckpointResume, validateWaveAbandonSave } from './lastStandWaveGuards.mjs';
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACTS=[1,2,3,4,5,6].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
+const OBSERVATION_CONTRACTS=[1,2,3,4,5,6,7].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
@@ -63,6 +63,7 @@ export const SHOP_PLAYER_INPUTS = [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/last
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
@@ -154,7 +155,7 @@ export async function selectLastStandFitting({fitting,click,currentLayout,curren
   assert.ok(['repair','launcher','scattergun','mortar','railgun','arc','shield'].includes(fitting),'Known shipped player fitting required');
   assert.equal(currentState()?.menu,'','Inline fitting selection requires the actual garage');
   await waitFor(()=>Array.isArray(currentLayout()?.controls));
-  if(currentLayout().schema==='singedterra-last-stand-observation/v6'){
+  if(['singedterra-last-stand-observation/v6','singedterra-last-stand-observation/v7'].includes(currentLayout().schema)){
     const original=currentState().selectedPrimaryId,secondary=currentState().selectedSecondaryId;
     const order=['repair','launcher','scattergun','mortar','railgun','arc','shield'];
     assert.ok(order.includes(original)&&typeof secondary==='string','Observed committed loadout required');
@@ -1410,6 +1411,7 @@ export const LAST_STAND_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUT
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
@@ -1862,7 +1864,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
-    const garageBuildField=layouts.at(-1).schema==='singedterra-last-stand-observation/v6'?'/GarageFittingDescription':'/GarageFittingName';
+    const garageBuildField=['singedterra-last-stand-observation/v6','singedterra-last-stand-observation/v7'].includes(layouts.at(-1).schema)?'/GarageFittingDescription':'/GarageFittingName';
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith(garageBuildField)&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;const upgradedDeployment=await deployObservedJourney({gameClick,states,layouts});
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;

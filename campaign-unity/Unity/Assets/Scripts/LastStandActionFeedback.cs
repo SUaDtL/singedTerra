@@ -24,7 +24,11 @@ namespace SingedTerra.LastStand
             if (!button || !label || !outline) return;
             bool available = button.IsInteractable();
             outline.enabled = available && (selected || hovered || pressed);
-            label.fontStyle = !available ? FontStyle.Italic : pressed ? FontStyle.BoldAndItalic :
+            // The display face is already semibold; synthetic bold duplicates
+            // its narrow strokes. Focus remains explicit through the outline.
+            label.fontStyle = label.font==LastStandEquipmentArt.Display ?
+                (!available||pressed?FontStyle.Italic:FontStyle.Normal) :
+                !available ? FontStyle.Italic : pressed ? FontStyle.BoldAndItalic :
                 selected || hovered ? FontStyle.Bold : FontStyle.Normal;
             if (frame) frame.SetInteraction(available && (selected || hovered),available && pressed);
         }

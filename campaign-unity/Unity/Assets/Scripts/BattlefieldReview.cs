@@ -35,6 +35,7 @@ namespace SingedTerra.VisualReview
         bool ownsPipeline;
         bool ownsRenderSettings;
         RenderState previousRenderState, appliedRenderState;
+        readonly System.Collections.Generic.List<LastStandBattlefieldDressing> fieldDetails=new System.Collections.Generic.List<LastStandBattlefieldDressing>();
 
         struct RenderState
         {
@@ -66,9 +67,15 @@ namespace SingedTerra.VisualReview
                 QualitySettings.renderPipeline=reviewPipeline;ownsPipeline=true;
             }
             ApplyEnvironment();
+            foreach(var binding in Bindings)
+            {
+                if(binding?.root==null)continue;
+                var detail=LastStandBattlefieldDressing.Add(binding.root.transform,LastStandEnvironmentCatalog.Get(binding.environmentId).CameraPitch);if(detail!=null)fieldDetails.Add(detail);
+            }
         }
         void OnDestroy()
         {
+            foreach(var detail in fieldDetails)detail.Dispose();fieldDetails.Clear();
             if(ownsRenderSettings) appliedRenderState.RestoreOwned(previousRenderState);
             if(ownsPipeline&&QualitySettings.renderPipeline==reviewPipeline)
                 QualitySettings.renderPipeline=previousPipeline;
@@ -140,7 +147,9 @@ namespace SingedTerra.VisualReview
             foreach(var binding in Bindings) binding.root.SetActive(binding.environmentId==EnvironmentId);
             sun.color = environment.SunColor;
             sun.intensity = environment.SunIntensity;
-            sun.transform.rotation = Quaternion.Euler(environment.SunPitch, -38, 0);
+            // Side light separates silhouettes and exposes cover shadows from
+            // the -30 degree tactical camera instead of hiding them behind units.
+            sun.transform.rotation = Quaternion.Euler(environment.SunPitch, -105, 0);
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = environment.AmbientSky;
             RenderSettings.ambientEquatorColor = environment.AmbientEquator;

@@ -103,6 +103,13 @@ namespace SingedTerra.LastStand
                     "Armor Piercing, Area Control and Field Engineering apply on your next deployment. Resuming a checkpoint keeps its captured combat research. Game Speed and Salvage Recovery remain available to the current run.\n\n"+
                     "Switching or suspending saves elapsed research progress and refunds its paid cost. Resuming pays that cost again. Queued research is paid when queued; review the Lab's action details before changing it.",
                     "research","OPEN RESEARCH LAB"),
+                new LastStandHelpTopic("skills","Skills & limited interventions",
+                    "Skills unlock for drawing at Tier 1 waves 25, 100 and 300. A milestone adds skills to the draw pool; the first copy grants ownership. Further copies raise rank at 3 and 6 total copies. Maxed skills leave the pool. If the eligible collection is complete, no Intel is spent.\n\n"+
+                    "Earn Skill Intel at every 100th cleared wave in any tier, plus first clears of Tier 1 waves 25 and 50. Each draw costs 1 Intel and every unfinished eligible skill has the same chance.\n\n"+
+                    "In the garage, open Skills, choose active or passive skills, then Apply. They share one slot at Tier 1 wave 25, two at wave 100 and three at wave 500. Armory saves skills with your named equipment build.\n\n"+
+                    "During battle, Q, E and R activate the skill in that slot; you can also click its card. Each active has one use per run. Repairs require damaged hull. Overdrive lasts for simulation time; mines remain armed until enemies enter their ring. Passive skills need no activation.\n\n"+
+                    "Equipment and skills stay fixed during a run. Resume keeps captured ranks, spent uses and ongoing effects from the last completed wave. An unfinished wave and its skill uses roll back together. Drawing or upgrading a skill never refills a running build.",
+                    "skills","OPEN SKILLS"),
                 new LastStandHelpTopic("saves","Local saves & backups",
                     "Progress is saved on this device and does not sync with your account. Use one active game instance. Each confirmed wave checkpoint keeps your hull, Scrap and upgrades together.\n\n"+
                     "In Settings > Save, Export backup saves the last confirmed gameplay profile to a .laststand file. Keep that file somewhere you can find again. It contains campaign progress, research and your checkpoint; device preferences and account data are not included.\n\n"+

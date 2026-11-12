@@ -400,6 +400,7 @@ namespace SingedTerra.LastStand
 
         void Update()
         {
+            SkillHotkeys();
             UpdateResearch();
             RecordPausedTime();
             if (Phase != "settling") return;
@@ -559,6 +560,7 @@ namespace SingedTerra.LastStand
         {
             if(page=="appearance" && !CanCustomizeAppearance)return;
             if(page=="armory" && !CanCustomizeBuild)return;
+            if(page=="skills" && !CanCustomizeBuild)return;
             if(page=="wave" && !CanInspectWave)return;
             if((page=="tier" || page=="fitting") && (!CanSelectLoadout || Selection==null))return;
             if (!CanOpenMenu) return;
@@ -571,6 +573,7 @@ namespace SingedTerra.LastStand
             LeaveArmoryPage(page);
             if(page=="appearance" && MenuPage!="appearance")BeginAppearance();
             if(page=="armory" && MenuPage!="armory")BeginArmory();
+            if(page=="skills" && MenuPage!="skills")BeginSkills();
             MenuPage = page; Confirmation = "";
             Audio.UnlockFromGesture("menu"); Refresh("menu");
         }
@@ -679,6 +682,7 @@ namespace SingedTerra.LastStand
             RefreshGarageSelections();
             RefreshAppearance();
             RefreshArmory();
+            RefreshSkills();
             SyncAudioAdmission();
             hud.Refresh(); Changed?.Invoke();
             EmitState(action);

@@ -175,6 +175,46 @@ namespace SingedTerra.LastStand
 
         public static Projection Project(float width,float height,string phase,string[] activeControls,ShopPanelInput shop,bool waveReceipt)
         {
+            if(activeControls==null)throw new ArgumentNullException(nameof(activeControls));
+            var main=new List<string>();var skills=new List<string>();
+            foreach(string id in activeControls){if(LastStandSkillHudLayout.IsSkill(id))skills.Add(id);else main.Add(id);}
+            var projection=ProjectCore(width,height,phase,main.ToArray(),shop,waveReceipt);
+            if(skills.Count==0||shop!=null&&shop.Open)return projection;
+            var slots=new List<Slot>(projection.Slots);
+            bool concept=HasConceptCombat(width,height);
+            float dockTop=height;
+            foreach(var slot in slots)if(slot.Id=="LastStandDock"||slot.Id=="ShopEntry"||slot.Id=="WaveReceiptPanel"&&!concept)dockTop=Math.Min(dockTop,slot.Bounds.Y);
+            var bounds=LastStandSkillHudLayout.Slots(width,height,dockTop);
+            for(int i=0;i<Math.Min(3,skills.Count);i++)
+            {
+                var b=bounds[i];Control(slots,skills[i],null,b.X,b.Y,b.Width,b.Height,Math.Max(14,concept?16*height/900:14));
+            }
+            if(concept)
+            {
+                float sx=width/1600,sy=height/900,y=height-180*sy;
+                // Skills occupy the former speed section. Keep the rate and
+                // upgrade controls together on the right, at full target size.
+                float left=1338*sx,right=1570*sx,gap=4,small=44*Math.Max(1,Math.Min(sx,sy));
+                for(int i=0;i<slots.Count;i++)
+                {
+                    var slot=slots[i];
+                    if(slot.Id=="SpeedMinus")slots[i]=new Slot(slot.Id,slot.Parent,slot.Kind,new Bounds(left,y+14*sy,small,small),14);
+                    if(slot.Id=="SpeedRate")slots[i]=new Slot(slot.Id,slot.Parent,slot.Kind,new Bounds(left+small+gap,y+14*sy,right-left-2*small-2*gap,small),14);
+                    if(slot.Id=="SpeedPlus")slots[i]=new Slot(slot.Id,slot.Parent,slot.Kind,new Bounds(right-small,y+14*sy,small,small),14);
+                    if(slot.Id=="ShopEntry")slots[i]=new Slot(slot.Id,slot.Parent,slot.Kind,new Bounds(left,y+106*sy,right-left,Math.Max(44,42*sy)),Math.Max(14,16*sy));
+                }
+                foreach(string id in new[]{"SpeedMinus","SpeedRate","SpeedPlus","ShopEntry"})
+                {
+                    var control=slots.Find(s=>s.Id==id);if(control==null)continue;int label=slots.FindIndex(s=>s.Id==id+"Text");
+                    if(label>=0){var b=control.Bounds;slots[label]=new Slot(id+"Text",id,"text",new Bounds(b.X+4,b.Y+2,b.Width-8,b.Height-4),control.FontSize);}
+                }
+            }
+            return new Projection(width,height,slots,projection.ActionCount+skills.Count,projection.ShopOpen,
+                projection.BattleClearance,projection.ScrollOffset,projection.MaximumScrollOffset);
+        }
+
+        static Projection ProjectCore(float width,float height,string phase,string[] activeControls,ShopPanelInput shop,bool waveReceipt)
+        {
             if (float.IsNaN(width) || float.IsInfinity(width) || width <= 0 ||
                 float.IsNaN(height) || float.IsInfinity(height) || height <= 0)
                 throw new ArgumentOutOfRangeException("width", "Viewport dimensions must be finite and positive.");
@@ -222,21 +262,22 @@ namespace SingedTerra.LastStand
         static Projection WithFloatingMenu(Projection projection, bool visible, int actionCount)
         {
             var slots=new List<Slot>(projection.Slots);
+            float density=Math.Max(1,Math.Min(projection.Width/1600,projection.Height/900));
             // Large recovery cards may keep their full reading columns below
             // the header. Reserve the floating target in every intersecting
             // heading/text row rather than allowing it to cover live words.
             if(visible)for(int i=0;i<slots.Count;i++)
             {
-                var slot=slots[i];var b=slot.Bounds;float right=projection.Width-Edge-52-Gap;
-                if(slot.Kind=="text"&&b.Y<Edge+MinimumTargetSize&&b.Y+b.Height>Edge&&b.X<right&&b.X+b.Width>right)
+                var slot=slots[i];var b=slot.Bounds;float right=projection.Width-(Edge+52+Gap)*density;
+                if(slot.Kind=="text"&&b.Y<(Edge+MinimumTargetSize)*density&&b.Y+b.Height>Edge*density&&b.X<right&&b.X+b.Width>right)
                     slots[i]=new Slot(slot.Id,slot.Parent,slot.Kind,new Bounds(b.X,b.Y,right-b.X,b.Height),slot.FontSize);
             }
             if(visible)
             {
-                float x=projection.Width-Edge-52;
-                Add(slots,"Menu",null,"control",x,Edge,52,MinimumTargetSize);
-                Text(slots,"MenuText","Menu",x+4,Edge+20,44,22,MinimumTextSize);
-                for(int i=0;i<3;i++)Add(slots,"MenuBar"+i,"Menu","bar",x+16,Edge+4+i*4,20,2);
+                float x=projection.Width-(Edge+52)*density;
+                Add(slots,"Menu",null,"control",x,Edge*density,52*density,MinimumTargetSize*density);
+                Text(slots,"MenuText","Menu",x+4*density,(Edge+20)*density,44*density,22*density,MinimumTextSize*density);
+                for(int i=0;i<3;i++)Add(slots,"MenuBar"+i,"Menu","bar",x+16*density,(Edge+4+i*4)*density,20*density,2*density);
             }
             return new Projection(projection.Width,projection.Height,slots,actionCount,projection.ShopOpen,
                 projection.BattleClearance,projection.ScrollOffset,projection.MaximumScrollOffset);
@@ -260,6 +301,7 @@ namespace SingedTerra.LastStand
         // instrument card rather than another row of unrelated action buttons.
         static Projection Combat(float width,float height,string[] controls,int actionCount,bool floatingMenu,bool waveReceipt)
         {
+            if(HasConceptCombat(width,height))return ConceptCombat(width,height,controls,actionCount,waveReceipt);
             var slots=new List<Slot>();
             bool shortBattle=width>=PortraitBreakpoint && height*.2f<Edge+BattleCardHeight;
             float edge=shortBattle?ShortBattleEdge:Edge;
@@ -311,6 +353,35 @@ namespace SingedTerra.LastStand
             return new Projection(width,height,slots,actionCount);
         }
 
+        public static bool HasConceptCombat(float width,float height)=>width>=1024&&height>=720;
+        static Projection ConceptCombat(float width,float height,string[] controls,int actionCount,bool receipt)
+        {
+            float sx=width/1600,sy=height/900,y=height-180*sy,density=Math.Max(1,Math.Min(sx,sy));var slots=new List<Slot>();
+            Add(slots,"LastStandCard",null,"panel",16*sx,y,400*sx,164*sy);
+            Action<string,float,float,float,float,float> Row=(id,x,yy,w,h,font)=>Text(slots,id,"LastStandCard",x*sx,y+yy*sy,w*sx,h*sy,Math.Max(14,font*sy));
+            Row("PhaseHeading",32,12,368,24,18);Row("HullValue",32,41,368,27,23);
+            Add(slots,"HullBar","LastStandCard","bar",32*sx,y+72*sy,368*sx,7*sy);
+            Row("ElapsedTime",32,82,240,24,19);Row("DisabledCount",284,82,116,24,19);
+            Row("CannonDamage",32,110,368,20,14);Row("Fitting",32,132,368,20,14);
+            Add(slots,"LastStandDock",null,"panel",1048*sx,y,536*sx,164*sy);
+            Text(slots,"DockHeading","LastStandDock",1064*sx,y+15*sy,250*sx,24*sy,Math.Max(14,18*sy));
+            foreach(string id in controls)
+            {
+                float by=y+96*sy,bh=Math.Max(44,52*sy);
+                float type=Math.Max(14,18*sy);
+                if(id=="SpeedMinus")Control(slots,id,"LastStandDock",1064*sx,by,44*density,bh,type);
+                else if(id=="SpeedRate")Control(slots,id,"LastStandDock",1064*sx+48*density,by,100*sx,bh,type);
+                else if(id=="SpeedPlus")Control(slots,id,"LastStandDock",1064*sx+52*density+100*sx,by,44*density,bh,type);
+                else if(id=="ShopEntry")Control(slots,id,null,1354*sx,by,210*sx,bh,type);
+            }
+            if(receipt)
+            {
+                Add(slots,"WaveReceiptPanel",null,"panel",16*sx,260*sy,285*sx,86*sy);
+                Text(slots,"WaveReceipt","WaveReceiptPanel",28*sx,270*sy,261*sx,66*sy,Math.Max(14,14*sy));
+            }
+            return new Projection(width,height,slots,actionCount,false,new Bounds(320*sx,70*sy,width-400*sx,y-80*sy));
+        }
+
         static void InlineReceipt(List<Slot> slots)
         {
             var first=slots.Find(s=>s.Id=="PhaseHeading").Bounds;
@@ -336,12 +407,13 @@ namespace SingedTerra.LastStand
         // frame an open hero preview, and never join the field-action button row.
         static Projection Garage(float width, float height, string[] controls, int actionCount)
         {
+            if(HasEquipmentBay(width,height))return EquipmentBay(width,height,controls,actionCount);
             if(width>=PortraitBreakpoint && height<240)return ShortGarage(width,height,controls,actionCount);
             var slots=new List<Slot>();bool portrait=width<PortraitBreakpoint, shortWide=!portrait&&height<360;
             float tierWidth=portrait ? width-2*Edge : Math.Min(shortWide ? Math.Max(200,width-260) : 440,width-2*Edge);
             if(shortWide)tierWidth=Math.Min(380,tierWidth);
             float tierX=(width-tierWidth)/2, tierY=portrait || width<1100&&!shortWide ? 68 : Edge;
-            float tierHeight=shortWide?88:96;
+            float tierHeight=shortWide?94:96;
             float titleWidth=shortWide ? Math.Max(80,tierX-2*Edge) : portrait?width-88:width<1100?260:Math.Min(280,tierX-2*Edge);
             Add(slots,"LastStandCard",null,"panel",Edge,Edge,titleWidth,44);
             Text(slots,"PhaseHeading","LastStandCard",Edge,Edge,titleWidth,44,shortWide?18:24);
@@ -399,18 +471,52 @@ namespace SingedTerra.LastStand
             return new Projection(width,height,slots,actionCount);
         }
 
+        public static bool HasEquipmentBay(float width,float height)=>width>=1024&&height>=640;
+        static Projection EquipmentBay(float width,float height,string[] controls,int actionCount)
+        {
+            var slots=new List<Slot>();float sx=width/1600f,sy=height/900f;
+            Action<string,string,string,float,float,float,float,float> Slot=(id,parent,kind,x,y,w,h,font)=>
+                Add(slots,id,parent,kind,x*sx,y*sy,w*sx,h*sy,font*sy);
+            Action<string,string,float,float,float,float,float> TextSlot=(id,parent,x,y,w,h,font)=>
+                Add(slots,id,parent,"text",x*sx,y*sy,w*sx,h*sy,Math.Max(MinimumTextSize,font*sy));
+            Action<string,string,float,float,float,float> Button=(id,parent,x,y,w,h)=>{
+                float bw=Math.Max(MinimumTargetSize,w*sx),bh=Math.Max(MinimumTargetSize,h*sy);
+                Add(slots,id,parent,"control",x*sx,y*sy,bw,bh);
+                Text(slots,id+"Text",id,x*sx+8,y*sy+4,bw-16,bh-8,Math.Max(MinimumTextSize,(id=="Deploy"||id=="Redeploy"?36:18)*sy));
+            };
+            Slot("GarageTierCard",null,"panel",1294,110,288,165,0);
+            Button("TierPrevious","GarageTierCard",1302,121,50,50);
+            Button("TierNext","GarageTierCard",1524,121,50,50);
+            TextSlot("GarageTierName","GarageTierCard",1368,117,140,64,16);
+            TextSlot("GarageTierDetail","GarageTierCard",1310,190,256,74,15);
+            // The stock owner retains this panel and both text/control identities.
+            // Its descriptive content is carried by the new read-only installed-system cards.
+            Slot("GarageFittingCard",null,"panel",18,790,550,66,0);
+            Button("ArmoryEntry","GarageFittingCard",34,794,518,46);
+            Slot("LastStandDock",null,"panel",1294,722,272,118,0);
+            TextSlot("GarageSave",null,34,480,256,58,14);
+            foreach(string id in controls)
+            {
+                if(id=="Deploy"||id=="Redeploy")Button(id,"LastStandDock",1302,730,256,102);
+                else if(id=="ShopEntry")Button(id,null,598,754,209,52);
+                else if(id=="ResearchEntry")Button(id,null,823,754,209,52);
+            }
+            Slot("GaragePreview",null,"preview",328,144,944,495,0);
+            return new Projection(width,height,slots,actionCount);
+        }
+
         static Projection ShortGarage(float width, float height, string[] controls, int actionCount)
         {
             var slots=new List<Slot>();const float edge=4,gap=4;
             float cardWidth=Math.Min(244,width*.42f), right=cardWidth+3*edge, rightWidth=width-edge-right;
-            float tierHeight=88,fittingY=tierHeight,fittingHeight=height-edge-fittingY;
+            float tierHeight=Math.Min(94,height-52),fittingY=tierHeight,fittingHeight=height-edge-fittingY;
             Add(slots,"LastStandCard",null,"panel",right,edge,rightWidth-64,44);
             Text(slots,"PhaseHeading","LastStandCard",right,edge,rightWidth-64,44,18);
             Add(slots,"GarageTierCard",null,"panel",edge,0,cardWidth,tierHeight);
             Control(slots,"TierPrevious","GarageTierCard",edge+4,4,44,44);
             Control(slots,"TierNext","GarageTierCard",edge+cardWidth-48,4,44,44);
             Text(slots,"GarageTierName","GarageTierCard",edge+52,4,cardWidth-104,44,14);
-            Text(slots,"GarageTierDetail","GarageTierCard",edge+8,52,cardWidth-16,32,14);
+            Text(slots,"GarageTierDetail","GarageTierCard",edge+8,52,cardWidth-16,tierHeight-56,14);
             Add(slots,"GarageFittingCard",null,"panel",edge,fittingY,cardWidth,fittingHeight);
             Control(slots,"ArmoryEntry","GarageFittingCard",edge+4,fittingY+4,cardWidth-8,44);
             // The shortest canvas fits the Armory entry, but not another
@@ -510,6 +616,13 @@ namespace SingedTerra.LastStand
                 throw new ArgumentOutOfRangeException("height", "Shop space must reveal one complete purchase target below its fixed header and tabs.");
             float cardsHeight = 0;
             for (int i = 0; i < shop.CardKeys.Count; i++) cardsHeight += ShopCardHeight(shop,i) + (i == 0 ? 0 : Gap);
+            if(width>=1024 && height>=720)
+            {
+                // A short catalogue should not create an empty wall beside
+                // the vehicle. Longer categories retain the same bounded scroll.
+                panelHeight=Math.Min(panelHeight,Math.Max(360,cardsHeight+2*shopPadding+2*MinimumTargetSize+2*ShopGap));
+                viewportHeight=panelHeight-2*shopPadding-2*MinimumTargetSize-2*ShopGap;
+            }
             float contentHeight = Math.Max(viewportHeight, cardsHeight);
             float maximum = contentHeight - viewportHeight;
             float offset = Math.Max(0, Math.Min(maximum, shop.ScrollOffset));
@@ -595,11 +708,11 @@ namespace SingedTerra.LastStand
             Control(slots,id + "Buy",id,x + inner - buyWidth,y,buyWidth,MinimumTargetSize);
         }
 
-        static void Control(List<Slot> slots, string id, string parent, float x, float y, float width, float height)
+        static void Control(List<Slot> slots, string id, string parent, float x, float y, float width, float height,float fontSize=MinimumTextSize)
         {
             Add(slots, id, parent, "control", x, y, width, height);
             Text(slots, id + "Text", id, x + ActionHorizontalPadding, y + ActionVerticalPadding,
-                width - 2 * ActionHorizontalPadding, height - 2 * ActionVerticalPadding);
+                width - 2 * ActionHorizontalPadding, height - 2 * ActionVerticalPadding,fontSize);
         }
 
         static void Card(List<Slot> slots, float width, float height, float availableHeight = float.PositiveInfinity,bool floatingMenu=false)

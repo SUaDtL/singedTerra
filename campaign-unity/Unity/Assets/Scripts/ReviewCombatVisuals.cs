@@ -15,8 +15,10 @@ namespace SingedTerra.VisualReview
         {
             public Transform root;
             public GameObject close, ranged;
+            public Transform closeDetail,rangedDetail;
             public GameObject bruteArmor,eliteTurret,shieldProjector,repairCrane,commanderRig;
             public Transform supportIndicator;
+            public Transform hullIndicator,hullFill;
             public LineRenderer warning;
             public Vector3 closeScale,rangedScale;
             public Transform[] wheels;
@@ -33,7 +35,9 @@ namespace SingedTerra.VisualReview
             public Vector3 velocity;
             public Color color;
             public bool ground;
+            public float aspect,spin,rotation;
         }
+        sealed class Wreck { public Transform root;public float age,smokeClock; }
         readonly BattlefieldReview settings;
         readonly TankPresentation tank;
         readonly Transform root;
@@ -41,9 +45,14 @@ namespace SingedTerra.VisualReview
         readonly bool[] destructionPresented = new bool[EncounterModel.Capacity];
         readonly bool[] mortarPresented = new bool[EncounterModel.Capacity];
         readonly Mesh rolePlate;
-        readonly Puff[] puffs = new Puff[80];
+        readonly Material hullBack,hullSignal;
+        readonly Puff[] puffs = new Puff[256];
+        readonly Wreck[] wrecks=new Wreck[12];
+        readonly LastStandEnemyDetail enemyDetail;
+        readonly Material smokeMaterial,cloudMaterial,fireMaterial,flameMaterial,wreckMaterial,enemyArmor;
         readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
         int nextPuff;
+        int nextWreck;
         bool full = true;
         bool currentGeometry;
         public int Active { get; private set; }
@@ -51,6 +60,18 @@ namespace SingedTerra.VisualReview
         {
             this.settings=settings; this.tank=tank;
             rolePlate=LastStandModuleGeometry.Prism(true,"Enemy role");
+            enemyArmor=new Material(LastStandModuleGeometry.Material(tank,"Armor"));enemyArmor.name="Enemy worn ochre armor";
+            enemyArmor.SetColor("_BaseColor",new Color(.56f,.48f,.34f));enemyArmor.SetFloat("_Metallic",.3f);
+            enemyDetail=new LastStandEnemyDetail(enemyArmor,LastStandModuleGeometry.Material(tank,"Steel"));
+            smokeMaterial=Particle("Charcoal blast smoke",new Vector4(0,.5f,.5f,.5f));
+            cloudMaterial=Particle("Track and impact dust",new Vector4(.5f,.5f,.5f,.5f));
+            fireMaterial=Particle("Explosive flash",new Vector4(0,0,.5f,.5f));
+            flameMaterial=Particle("Burning wreck flame",new Vector4(.5f,0,.5f,.5f));
+            wreckMaterial=new Material(LastStandModuleGeometry.Material(tank,"Steel"));
+            wreckMaterial.name="Burnt vehicle steel";wreckMaterial.SetColor("_BaseColor",new Color(.19f,.17f,.14f));
+            wreckMaterial.SetFloat("_Smoothness",.08f);wreckMaterial.SetFloat("_Metallic",.22f);
+            hullBack=new Material(Shader.Find("Universal Render Pipeline/Unlit"));hullBack.SetColor("_BaseColor",new Color(.035f,.025f,.02f));hullBack.SetFloat("_Cull",0);
+            hullSignal=new Material(hullBack);hullSignal.SetColor("_BaseColor",new Color(.82f,.17f,.10f));
             root=new GameObject("Review combat visuals").transform; root.SetParent(parent,false);
             for(int i=0;i<vehicles.Length;i++)
             {
@@ -58,9 +79,10 @@ namespace SingedTerra.VisualReview
                 v.root=new GameObject("Review foe "+i).transform; v.root.SetParent(root,false);
                 v.close=UnityEngine.Object.Instantiate(settings.closeVehicle,v.root);
                 v.ranged=UnityEngine.Object.Instantiate(settings.rangedVehicle,v.root);
+                v.closeDetail=enemyDetail.Attach(v.root,false);v.rangedDetail=enemyDetail.Attach(v.root,true);
                 v.closeScale=v.close.transform.localScale;v.rangedScale=v.ranged.transform.localScale;
                 var steel=LastStandModuleGeometry.Material(tank,"Steel");
-                var armor=LastStandModuleGeometry.Material(tank,"Armor");
+                var armor=enemyArmor;
                 v.bruteArmor=new GameObject("Brute layered armor");v.bruteArmor.transform.SetParent(v.root,false);
                 for(int side=-1;side<=1;side+=2)
                     LastStandModuleGeometry.Part("Brute side armor "+side,v.bruteArmor.transform,new Vector3(side*1.22f,.78f,0),new Vector3(.30f,.72f,1.95f),rolePlate,armor);
@@ -87,6 +109,10 @@ namespace SingedTerra.VisualReview
                 v.supportIndicator=LastStandModuleGeometry.Part("Support reserve",v.root,new Vector3(0,2.55f,.1f),new Vector3(1.2f,.13f,.16f),rolePlate,brass);
                 v.wheels=v.root.GetComponentsInChildren<Transform>(true).Where(t=>t.name.StartsWith("Wheel_")).ToArray();
                 v.paint=v.root.GetComponentsInChildren<Renderer>(true);
+                v.hullIndicator=LastStandModuleGeometry.Part("Enemy hull backdrop",v.root,new Vector3(0,2.6f,0),new Vector3(1.7f,.18f,1),settings.effectQuad,hullBack);
+                v.hullFill=LastStandModuleGeometry.Part("Enemy hull fill",v.hullIndicator,Vector3.zero,new Vector3(.9f,.55f,1),settings.effectQuad,hullSignal);
+                foreach(var indicator in v.hullIndicator.GetComponentsInChildren<Renderer>())
+                {indicator.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;indicator.receiveShadows=false;}
                 v.warning=new GameObject("Elite attack warning").AddComponent<LineRenderer>();v.warning.transform.SetParent(v.root,false);
                 v.warning.useWorldSpace=false;v.warning.loop=true;v.warning.positionCount=16;
                 v.warning.startWidth=v.warning.endWidth=.14f;v.warning.sharedMaterial=settings.flashMaterial;
@@ -108,6 +134,23 @@ namespace SingedTerra.VisualReview
                 puffs[i]=new Puff{node=node.transform,renderer=renderer};
                 node.SetActive(false);
             }
+            for(int i=0;i<wrecks.Length;i++)
+            {
+                var node=new GameObject("Spent wreck "+i).transform;node.SetParent(root,false);
+                UnityEngine.Object.Instantiate(settings.closeVehicle,node);
+                var detail=enemyDetail.Attach(node,false);detail.localRotation=Quaternion.Euler(0,16,0);
+                foreach(var renderer in node.GetComponentsInChildren<Renderer>())
+                {
+                    var palette=renderer.sharedMaterials;for(int m=0;m<palette.Length;m++)palette[m]=wreckMaterial;
+                    renderer.sharedMaterials=palette;
+                }
+                wrecks[i]=new Wreck{root=node};node.gameObject.SetActive(false);
+            }
+        }
+        static Material Particle(string name,Vector4 tile)
+        {
+            var material=new Material(Shader.Find("SingedTerra/Combat Particle")){name=name};
+            material.SetTexture("_BaseMap",Resources.Load<Texture2D>("ArtDirection/CombatParticles"));material.SetVector("_Tile",tile);return material;
         }
         public Vector3 Position(EncounterFoe foe)
         {
@@ -142,6 +185,9 @@ namespace SingedTerra.VisualReview
                 v.root.gameObject.SetActive(true);
                 bool ranged=foe.Kind==FoeKind.Ranged||foe.Kind==FoeKind.SiegeElite||foe.Kind==FoeKind.SiegeCommander;
                 v.close.SetActive(!ranged);v.ranged.SetActive(ranged);
+                v.closeDetail.gameObject.SetActive(!ranged);v.rangedDetail.gameObject.SetActive(ranged);
+                v.closeDetail.localScale=foe.Kind==FoeKind.Swarmer?new Vector3(.67f,.52f,.75f):foe.Kind==FoeKind.ArmoredBrute?new Vector3(1.14f,1.12f,1.05f):Vector3.one;
+                v.rangedDetail.localScale=Vector3.one*(foe.Kind==FoeKind.SiegeCommander?1.28f:foe.Kind==FoeKind.SiegeElite?1.12f:1f);
                 v.close.transform.localScale=Vector3.Scale(v.closeScale,foe.Kind==FoeKind.Swarmer?new Vector3(.67f,.52f,.75f):
                     foe.Kind==FoeKind.ArmoredBrute?new Vector3(1.14f,1.12f,1.05f):Vector3.one);
                 v.ranged.transform.localScale=v.rangedScale*(foe.Kind==FoeKind.SiegeCommander?1.28f:foe.Kind==FoeKind.SiegeElite?1.12f:1f);
@@ -163,6 +209,9 @@ namespace SingedTerra.VisualReview
                     SingedTerra.LastStand.LastStandEnemyCatalog.Get(foe.Kind).TelegraphTicks);
                 Vector3 direction=Vector3.ProjectOnPlane(tank.tank.position-v.goal,Vector3.up);
                 if(direction.sqrMagnitude>.01f)v.root.rotation=Quaternion.LookRotation(-direction);
+                float fraction=Mathf.Clamp01(foe.Hull/(float)Mathf.Max(1,foe.MaximumHull));
+                v.hullIndicator.rotation=tank.view.transform.rotation;
+                v.hullFill.localScale=new Vector3(.9f*fraction,.55f,1);v.hullFill.localPosition=new Vector3(-.45f*(1-fraction),0,-.015f);
                 v.health=foe.Hull;
             }
         }
@@ -174,6 +223,14 @@ namespace SingedTerra.VisualReview
             foreach(var e in model.Events)
             {
                 if(e.Kind==EncounterEventKind.Repair)continue;
+                if(e.Kind==EncounterEventKind.Overdrive||e.Kind==EncounterEventKind.EmergencyRepairs||e.Kind==EncounterEventKind.MinefieldArmed)
+                {
+                    var color=e.Kind==EncounterEventKind.EmergencyRepairs?new Color(.3f,1f,.65f,.7f):new Color(1f,.68f,.23f,.7f);
+                    Emit(tank.tank.position+Vector3.up*.12f,.6f,full?.9f:.35f,e.Kind==EncounterEventKind.MinefieldArmed?20f:5.5f,
+                        color,settings.flashMaterial,true,Vector3.zero);
+                    if(full)for(int burst=0;burst<5;burst++)Emit(tank.tank.position+Vector3.up*(.6f+burst*.3f),.3f,.5f,.7f,color,settings.flashMaterial,false,Vector3.up*.7f);
+                    continue;
+                }
                 if(e.Kind==EncounterEventKind.ShieldAbsorb||e.Kind==EncounterEventKind.ShieldRecharge)
                 {
                     bool recharge=e.Kind==EncounterEventKind.ShieldRecharge;
@@ -182,7 +239,7 @@ namespace SingedTerra.VisualReview
                     continue; // Tank events have no enemy slot.
                 }
                 bool outgoing=e.Kind==EncounterEventKind.Cannon||e.Kind==EncounterEventKind.Launcher||e.Kind==EncounterEventKind.Scattergun||
-                    e.Kind==EncounterEventKind.Mortar||e.Kind==EncounterEventKind.Railgun||e.Kind==EncounterEventKind.Arc;
+                    e.Kind==EncounterEventKind.Mortar||e.Kind==EncounterEventKind.Railgun||e.Kind==EncounterEventKind.Arc||e.Kind==EncounterEventKind.Minefield;
                 var foe=model.Foes[e.Slot];Vector3 position=Position(foe)+Vector3.up*.7f;
                 if(e.Kind==EncounterEventKind.EnemyShield||e.Kind==EncounterEventKind.EnemyRepair)
                 {
@@ -196,13 +253,29 @@ namespace SingedTerra.VisualReview
                     vehicles[e.Slot].flash=full?.12f:0;
                     Emit(position,full?.18f:.14f,full?.25f:.12f,full?1.0f:.4f,
                         new Color(1f,.66f,.25f,full?1f:.6f),settings.flashMaterial,false,Vector3.zero);
+                    if(full)
+                    {
+                        // The event owns every impact. Sparks never imply an
+                        // extra hit, and all of them clear with reduced effects.
+                        for(int spark=0;spark<5;spark++)
+                        {
+                            float a=(spark*1.256f+e.Slot*.71f);
+                            Emit(position,.24f+spark*.035f,.075f,.018f,new Color(1f,.72f,.30f,.95f),settings.flashMaterial,false,
+                                new Vector3(Mathf.Cos(a)*3.2f,1.1f+spark*.22f,Mathf.Sin(a)*3.2f),3.8f);
+                        }
+                        Emit(position,.75f,.25f,1.45f,new Color(.82f,.74f,.62f,.48f),cloudMaterial,false,Vector3.up*.32f);
+                    }
                     if(e.Killed&&!destructionPresented[e.Slot])
                     {
                         destructionPresented[e.Slot]=true;
                         Destruction(position);
                     }
                     if(full&&e.Kind==EncounterEventKind.Cannon)
+                    {
                         Emit(tank.muzzle.position,.10f,.25f,.85f,new Color(1f,.82f,.43f),settings.flashMaterial,false,Vector3.zero);
+                        Emit(tank.muzzle.position,.12f,.48f,1.1f,new Color(3.1f,2.1f,1.35f,.88f),fireMaterial,false,Vector3.zero);
+                        Emit(tank.muzzle.position,.8f,.32f,1.35f,new Color(.75f,.74f,.69f,.38f),smokeMaterial,false,tank.muzzle.forward*.5f+Vector3.up*.3f);
+                    }
                     if(full&&e.Kind==EncounterEventKind.Scattergun)
                         Emit(tank.ScattergunMuzzle,.08f,.20f,.62f,new Color(1f,.70f,.40f),settings.flashMaterial,false,Vector3.zero);
                     if(e.Kind==EncounterEventKind.Mortar&&!mortarPresented[e.AimSlot])
@@ -231,28 +304,35 @@ namespace SingedTerra.VisualReview
             Emit(position,.28f,full?.55f:.2f,full?2.0f:.65f,
                 new Color(1f,.49f,.12f,full?1f:.65f),settings.flashMaterial,false,Vector3.zero);
             if(!full)return;
-            for(int i=0;i<4;i++)
+            Emit(position+Vector3.up*.8f,.6f,1.8f,4.2f,new Color(2.4f,1.8f,1.2f,.95f),fireMaterial,false,Vector3.up*.7f);
+            for(int i=0;i<6;i++)
             {
                 float angle=i*Mathf.PI*.5f;
-                Vector3 drift=new Vector3(Mathf.Cos(angle)*.35f,.65f,Mathf.Sin(angle)*.35f);
-                Emit(position+drift*.3f,1.6f,.55f,1.8f,new Color(.23f,.22f,.20f,.65f),settings.dustMaterial,false,drift);
+                Vector3 drift=new Vector3(Mathf.Cos(angle)*.45f,.55f+i*.08f,Mathf.Sin(angle)*.45f);
+                Emit(position+drift*.3f,3.2f+i*.25f,.65f,2.7f,new Color(.66f,.63f,.59f,.57f),smokeMaterial,false,drift,1.1f,.16f);
             }
+            var wreck=wrecks[nextWreck];nextWreck=(nextWreck+1)%wrecks.Length;
+            wreck.age=0;wreck.smokeClock=0;wreck.root.position=new Vector3(position.x,tank.tank.position.y-.08f,position.z);
+            wreck.root.rotation=Quaternion.LookRotation(Vector3.ProjectOnPlane(position-tank.tank.position,Vector3.up))*Quaternion.Euler(0,nextWreck*17%33-16,5);
+            wreck.root.localScale=new Vector3(1,.68f,1);wreck.root.gameObject.SetActive(true);
             position.y=tank.tank.position.y+.015f;
             Emit(position,5f,1.2f,1.9f,new Color(.11f,.10f,.085f,.5f),settings.scorchMaterial,true,Vector3.zero);
         }
-        void Emit(Vector3 position,float duration,float start,float end,Color color,Material material,bool ground,Vector3 velocity)
+        void Emit(Vector3 position,float duration,float start,float end,Color color,Material material,bool ground,Vector3 velocity,float aspect=1,float spin=0)
         {
             var puff=puffs[nextPuff];nextPuff=(nextPuff+1)%puffs.Length;
             puff.age=0;puff.duration=duration;puff.start=start;puff.end=end;
             puff.color=color;puff.velocity=velocity;puff.ground=ground;
-            puff.node.position=position;puff.node.localScale=Vector3.one*start;
+            puff.aspect=aspect;puff.spin=spin;puff.rotation=material==flameMaterial?0:nextPuff*2.39996f;
+            puff.node.position=position;puff.node.localScale=new Vector3(start,start*aspect,start);
             puff.renderer.sharedMaterial=material;
             puff.node.gameObject.SetActive(true);PaintPuff(puff);
         }
         void PaintPuff(Puff puff)
         {
             Color color=puff.color;color.a*=1-Mathf.Clamp01(puff.age/puff.duration);
-            block.Clear();block.SetColor("_BaseColor",color);puff.renderer.SetPropertyBlock(block);
+            if(puff.renderer.sharedMaterial==settings.flashMaterial){color.r*=2; color.g*=2; color.b*=2;}
+            block.Clear();block.SetColor("_BaseColor",color);block.SetFloat("_Spin",puff.rotation+puff.age*puff.spin);puff.renderer.SetPropertyBlock(block);
             puff.node.rotation=puff.ground?Quaternion.Euler(90,0,0):tank.view.transform.rotation;
         }
         public void Advance(float elapsed)
@@ -275,9 +355,21 @@ namespace SingedTerra.VisualReview
                     if(v.dustClock>=.24f)
                     {
                         v.dustClock=0;
-                        Emit(v.root.position+v.root.forward*1.2f+Vector3.up*.15f,1.0f,.22f,.9f,
-                            new Color(.39f,.34f,.27f,.23f),settings.dustMaterial,false,Vector3.up*.16f);
+                        Emit(v.root.position+v.root.forward*1.2f+Vector3.up*.15f,1.7f,.40f,1.7f,
+                            new Color(.80f,.73f,.61f,.29f),cloudMaterial,false,Vector3.up*.19f, .72f,.1f);
                     }
+                }
+            }
+            foreach(var wreck in wrecks)
+            {
+                if(!wreck.root.gameObject.activeSelf)continue;
+                wreck.age+=elapsed;wreck.smokeClock+=elapsed;
+                if(wreck.age>=30){wreck.root.gameObject.SetActive(false);continue;}
+                if(full&&wreck.age<8&&wreck.smokeClock>=.48f)
+                {
+                    wreck.smokeClock=0;var p=wreck.root.position+Vector3.up*1.35f;
+                    Emit(p,1.25f,1.45f,2.25f,new Color(2.2f,1.65f,1.0f,.85f*(1-wreck.age/9)),flameMaterial,false,Vector3.up*.3f,1.6f);
+                    Emit(p+Vector3.up,4.5f,1.4f,4.2f,new Color(.74f,.71f,.65f,.65f),smokeMaterial,false,new Vector3(.25f,.85f,.13f),1.2f,.12f);
                 }
             }
             foreach(var puff in puffs)
@@ -285,7 +377,7 @@ namespace SingedTerra.VisualReview
                 if(!puff.node.gameObject.activeSelf)continue;                puff.age+=elapsed;
                 if(puff.age>=puff.duration){puff.node.gameObject.SetActive(false);continue;}
                 puff.node.position+=puff.velocity*elapsed;
-                puff.node.localScale=Vector3.one*Mathf.Lerp(puff.start,puff.end,puff.age/puff.duration);
+                float scale=Mathf.Lerp(puff.start,puff.end,puff.age/puff.duration);puff.node.localScale=new Vector3(scale,scale*puff.aspect,scale);
                 PaintPuff(puff);
             }
         }
@@ -297,6 +389,7 @@ namespace SingedTerra.VisualReview
         {
             full=value;
             foreach(var puff in puffs)puff.node.gameObject.SetActive(false);
+            foreach(var wreck in wrecks)wreck.root.gameObject.SetActive(false);
             // The player may change effects while paused, before Advance runs.
             block.Clear();block.SetColor("_EmissionColor",Color.black);
             foreach(var v in vehicles)
@@ -307,14 +400,19 @@ namespace SingedTerra.VisualReview
         }
         public void Clear()
         {
-            Active=0;nextPuff=0;currentGeometry=false;
+            Active=0;nextPuff=nextWreck=0;currentGeometry=false;
             foreach(var v in vehicles){v.root.gameObject.SetActive(false);v.warning.gameObject.SetActive(false);v.id=0;v.flash=0;v.dustClock=0;}
             foreach(var puff in puffs)puff.node.gameObject.SetActive(false);
+            foreach(var wreck in wrecks)wreck.root.gameObject.SetActive(false);
         }
         public void Dispose()
         {
             if(root)UnityEngine.Object.Destroy(root.gameObject);
             LastStandModuleGeometry.Release(rolePlate);
+            enemyDetail.Dispose();
+            foreach(var material in new[]{smokeMaterial,cloudMaterial,fireMaterial,flameMaterial,wreckMaterial,enemyArmor})
+                if(material)UnityEngine.Object.Destroy(material);
+            if(hullBack)UnityEngine.Object.Destroy(hullBack);if(hullSignal)UnityEngine.Object.Destroy(hullSignal);
         }
     }
 }
