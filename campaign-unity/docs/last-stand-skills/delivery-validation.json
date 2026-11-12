@@ -2,13 +2,13 @@
   "schema": "singedterra-skills-delivery-review/v1",
   "canonicalArtifact": false,
   "preparedUtc": "2026-11-12T02:27:04.516865+00:00",
-  "status": "windows_and_web_verified_pr_open",
+  "status": "browser_ci_repair_committed_hosted_pending",
   "finalizationOwner": "root",
   "html": {
     "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
-    "sha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8"
+    "sha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087"
   },
-  "structuralValidation": {
+  "initialStructuralValidation": {
     "parsed": true,
     "uniqueIds": true,
     "localLinkTargetsPresent": true,
@@ -621,7 +621,7 @@
   "requiredFinalUpdates": [
     "Exact-head hosted CI and review remain prerequisites to any separately authorized merge or publication."
   ],
-  "reviewDocumentRenders": [
+  "initialReviewDocumentRenders": [
     {
       "path": "campaign-unity/Evidence/last-stand-skills/delivery-desktop.png",
       "sha256": "619c56ce177950624b1087b3183c5a37b561dc64de652ec857390456f88bbaf6",
@@ -1715,7 +1715,7 @@
       "existingCrLfNormalizationOnly": 1
     }
   },
-  "rootDocumentInspection": {
+  "initialRootDocumentInspection": {
     "observedUtc": "2026-11-12T03:32:20.184293+00:00",
     "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
     "views": [
@@ -1772,5 +1772,441 @@
     "runtimeChanges": false,
     "newHeadHostedCi": "pending",
     "boundary": "Local repair complete and independently reviewed. Final hosted readback is retained separately after push; this documentation commit does not claim its own future CI outcome."
+  },
+  "structuralValidation": {
+    "parsed": true,
+    "uniqueIds": true,
+    "localLinkTargetsPresent": true,
+    "linkCount": 83,
+    "anchorCount": 73,
+    "imageCount": 10,
+    "allImageAltTextPresent": true,
+    "linkCountIncludesImageSources": true,
+    "browserRenderedReviewHtml": true,
+    "imageDimensionsVerified": true,
+    "renderBoundary": "Exact current delivery HTML rendered at 1280x900 and 390x844; all 10 images decoded without horizontal overflow. Root visually inspected the desktop repair table and portrait header."
+  },
+  "reviewDocumentRenders": {
+    "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+    "views": [
+      {
+        "name": "desktop",
+        "width": 1280,
+        "height": 900,
+        "metrics": {
+          "documentWidth": 1280,
+          "documentHeight": 13080,
+          "images": 10
+        },
+        "full": {
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop.png",
+          "sha256": "4e6bae8e80c349230a098c59321bf1d8b10ee3e1956a67b22ce37ed64976c52d"
+        },
+        "top": {
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-desktop-top.png",
+          "sha256": "230c9c1a058e37864845ae26b95d97c5c81d816364b3419b7111e87ccc90dc7e"
+        }
+      },
+      {
+        "name": "portrait",
+        "width": 390,
+        "height": 844,
+        "metrics": {
+          "documentWidth": 390,
+          "documentHeight": 20733,
+          "images": 10
+        },
+        "full": {
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait.png",
+          "sha256": "bf24b5c9f49ff28a7ef4542bafc6301385588da8840dc6a307d0c8b9acc7b0e9"
+        },
+        "top": {
+          "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-committed-portrait-top.png",
+          "sha256": "5ffc089da58ef8f01fee564a8ace93a9590488f421c90aa7f60b901f6a349011"
+        }
+      }
+    ],
+    "status": "pass"
+  },
+  "rootDocumentInspection": {
+    "observedUtc": "2026-11-12T14:53:50.657Z",
+    "htmlSha256": "b2c90b6f7e399809d9addad63c769c936676ed7bc525ebb31eaaffd173a44087",
+    "views": [
+      "desktop-browser-ci-repair",
+      "portrait-top"
+    ],
+    "result": "Same verified responsive layout; approval and committed repair replace the pending gate. Current rendered widths and image decoding pass."
+  },
+  "browserCiRepair": {
+    "workId": "WORK-F0658F281A5FBD4A391C4F1CBD2346E6",
+    "failedHead": "0adefdc9a0ff8df0cf5f1e63bf2ff658e5789366",
+    "failedRun": "https://github.com/SUaDtL/singedTerra/actions/runs/43151236183",
+    "status": "locally_verified_committed_hosted_pending",
+    "causes": [
+      "Obsolete fixed runtime counts rejected the current receipt-bound 17-asset export.",
+      "Modal scroll telemetry omitted layout density, reporting internal units instead of CSS units on wide canvases."
+    ],
+    "localPolicy": {
+      "passed": 524,
+      "failed": 0,
+      "log": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-browser-producer-policy-final.log",
+        "sha256": "90d7ea4c00a872a099ee28c8717b606756406a601bfc7b77ef14c88db93a5857"
+      }
+    },
+    "importedRegression": {
+      "panes": 8,
+      "viewportSizes": 3,
+      "rootScales": 3,
+      "configurations": 72,
+      "captures": 144,
+      "additionalShapePackets": 11,
+      "red": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-modal-final-target-red.log",
+        "sha256": "163c071ce8afae00f139beb2b77cc8ae21ce652cbd5d30b4c407f88e86d6094a"
+      },
+      "green": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-modal-final-target-green.log",
+        "sha256": "847a80a47a53123297e4b8c44312c4294cb8e3a2649d5465a991a817a96cdcc3"
+      },
+      "result": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-modal-final-target-green/editor-20261112T141443Z-2ee7e37b/result.json",
+        "sha256": "b0606d3cec8cfcfe6a7b93f604a1c9a351f718114ec3108e831da23c14eda57b"
+      },
+      "scope": "Actual imported components, including Research Detail selection and alias. Configuration and capture counts are not test-case counts."
+    },
+    "independentReview": {
+      "path": "campaign-unity/Evidence/last-stand-skills/ci-browser-producer-independent-review.json",
+      "sha256": "e0f2ccdf9dea7da28123a13de34e87b6ab705a3c646fbe951502c0fb18194177"
+    },
+    "webBuild": {
+      "name": "Web-20261112T141542Z-cf81a0",
+      "receipt": {
+        "path": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261112T141542Z-cf81a0/result.json",
+        "sha256": "771fd988eb96f1dd73fd59a480d0951c169df19c98815db913abd44bc4bc0a7a"
+      },
+      "sourceClosureSha256": "f3b3bdad46f688b24cbac871ecbb32f77c65bc7a5f0b81250d1802b32ade249f",
+      "configuration": "development",
+      "status": "pass"
+    },
+    "actualBrowser": {
+      "result": {
+        "path": "campaign-unity/Evidence/last-stand-skills/ci-resize-probe-green.json",
+        "sha256": "405a337511901e013ea1868f85f88cc51c757bef27e076bb874729756e30702f"
+      },
+      "samples": 9,
+      "errors": 0,
+      "widths": [
+        1920,
+        1366,
+        1920
+      ],
+      "settingsBackFullyVisibleAfterEnd": true,
+      "scope": "Focused actual browser resize and keyboard verification using unchanged geometry checks. This probe does not contain the full hosted journey packaged-byte binding or a new full Skills journey."
+    },
+    "packageBinding": {
+      "path": "campaign-unity/Evidence/last-stand-skills/ci-browser-staged-binding.json",
+      "sha256": "2fee3ce0d8f680d29328f495edabc5c07a42b7d50baab95a987ba7559476c6d9"
+    },
+    "commitGate": {
+      "gate": "H-09b",
+      "status": "approved_scoped_binary_exception",
+      "reason": "Text-based secret and crypto review cannot inspect genuine Unity .data and .wasm binaries.",
+      "userReply": "yes you may",
+      "replyContext": "Direct answer to the question naming Web-20261112T141542Z-cf81a0.data and .wasm and explaining text review cannot inspect them.",
+      "overrideRecorded": true,
+      "auditPath": ".codearbiter/overrides.log",
+      "auditEntries": 2,
+      "repairCommitted": true,
+      "repairPushed": "not_claimed_by_this_pre_push_record",
+      "splitReason": "Old plus new binary blobs total 205781722 bytes, exceeding the official producer 200000000 byte bound. New blobs and predecessor removals each passed the same audited producer and commit hooks in separate commits."
+    },
+    "historicalEvidenceBoundary": "Top-level browser, native, buildCandidates, ciRepair and earlier full Skills screenshots describe their original retained candidates. They are not a current-source native/full-Skills rerun or parity claim. This browserCiRepair record describes the new source closure.",
+    "previousDocumentValidation": {
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8"
+      },
+      "structuralValidation": {
+        "parsed": true,
+        "uniqueIds": true,
+        "localLinkTargetsPresent": true,
+        "linkCount": 75,
+        "imageCount": 10,
+        "allImageAltTextPresent": true,
+        "imageDimensionsVerified": true,
+        "browserRenderedReviewHtml": true,
+        "renderBoundary": "Exact PR delivery HTML rendered at1280x900 and390x844; all10images decoded without horizontal overflow. Root visually inspected both top renders.",
+        "anchorCount": 65,
+        "linkCountIncludesImageSources": true
+      },
+      "reviewDocumentRenders": [
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-desktop.png",
+          "sha256": "619c56ce177950624b1087b3183c5a37b561dc64de652ec857390456f88bbaf6",
+          "viewport": [
+            1280,
+            900
+          ],
+          "imageDimensions": [
+            1280,
+            6198
+          ],
+          "result": "root-reported pass",
+          "proves": "Historical review document image loading/overflow only; no game input acceptance",
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-portrait.png",
+          "sha256": "fb7b8c1f2a8e4be4515208e8c9f9df9c06451023be6e756b268dfcc968f068e2",
+          "viewport": [
+            390,
+            844
+          ],
+          "imageDimensions": [
+            390,
+            10070
+          ],
+          "result": "root-reported pass",
+          "proves": "Historical review document image loading/overflow only; no game input acceptance",
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-desktop.png",
+          "sha256": "d279d28d7e90ce2ae79075eb0bc0f5668e6baa0259cdcfa158e2a9a7f996e0ee",
+          "viewport": [
+            1280,
+            900
+          ],
+          "imageDimensions": [
+            1280,
+            9450
+          ],
+          "result": "pass",
+          "htmlSha256": "1cf50576d2706f703438bfbfa4d1917b351f0a28fd133c9b561faea87c3d7973",
+          "proves": "Historical review document image loading/overflow only; no game input acceptance",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-desktop-top.png",
+            "sha256": "1fc95e9024ad96e5eaa4860b84731c9004a8151cf0bf50ee1b8c3dd82c1cd750"
+          },
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-portrait.png",
+          "sha256": "f350bc5bc359da9dbc21760bb44a9f227b1af9aa42d78e00e7b0ca847bc7286c",
+          "viewport": [
+            390,
+            844
+          ],
+          "imageDimensions": [
+            390,
+            14753
+          ],
+          "result": "pass",
+          "htmlSha256": "1cf50576d2706f703438bfbfa4d1917b351f0a28fd133c9b561faea87c3d7973",
+          "proves": "Historical review document image loading/overflow only; no game input acceptance",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-final-portrait-top.png",
+            "sha256": "588fdc0eeb73c9ef16abe4584cf917e9fd814de85df9c46a3b2c7a9559f4500f"
+          },
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-desktop.png",
+          "sha256": "3c04dce6d90fba1e829a15067ffc3f572061116e67225928ea5cb2dd4f92f528",
+          "viewport": [
+            1280,
+            900
+          ],
+          "imageDimensions": [
+            1280,
+            11833
+          ],
+          "htmlSha256": "fb8cc57c62dbc3ea1b1708bbe818119d25a80ff5ad29e875409f019db8b8b0e5",
+          "result": "pass",
+          "proves": "Current review document loading and overflow; game acceptance has separate actual-input evidence",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-desktop-top.png",
+            "sha256": "2a742473ac9da0a2ece7c7d35587f6f42e514a8df44542a12ac50483c1a7c031"
+          },
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-portrait.png",
+          "sha256": "69ca1c93f5d21c510417696f7943eea0bff40d210af966fc77eb46ed78c80df0",
+          "viewport": [
+            390,
+            844
+          ],
+          "imageDimensions": [
+            390,
+            17447
+          ],
+          "htmlSha256": "fb8cc57c62dbc3ea1b1708bbe818119d25a80ff5ad29e875409f019db8b8b0e5",
+          "result": "pass",
+          "proves": "Current review document loading and overflow; game acceptance has separate actual-input evidence",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-native-final-portrait-top.png",
+            "sha256": "ccd0b21b7623f6edd3a25dd2a46c850e46408ff03a765b8aa36cc88436ffe54b"
+          },
+          "currentHtml": false
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop.png",
+          "sha256": "bd06824bc891d85fa08a1b85bace1e2fed099418988592dd2bc3e82424c07ddc",
+          "viewport": [
+            1280,
+            900
+          ],
+          "imageDimensions": [
+            1280,
+            12088
+          ],
+          "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+          "result": "pass",
+          "proves": "Current supporting document render only; not new game input evidence",
+          "currentHtml": false,
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop-top.png",
+            "sha256": "2a742473ac9da0a2ece7c7d35587f6f42e514a8df44542a12ac50483c1a7c031"
+          },
+          "provenanceCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-desktop-provenance.png",
+            "sha256": "15c57f5aeef660e787fb5ba8744385a5e4ed194dc740f2890970f7e0aff4e44b"
+          }
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait.png",
+          "sha256": "a9da0aa5ae0a630bbf70addb4826765b7c6e4d009016d6c2e632516bbbaf69fb",
+          "viewport": [
+            390,
+            844
+          ],
+          "imageDimensions": [
+            390,
+            17958
+          ],
+          "htmlSha256": "ce0b0e3b6d9689be08235eaea19ba094a77db1f10898e0ea3047ab8e06d7068a",
+          "result": "pass",
+          "proves": "Current supporting document render only; not new game input evidence",
+          "currentHtml": false,
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-top.png",
+            "sha256": "ccd0b21b7623f6edd3a25dd2a46c850e46408ff03a765b8aa36cc88436ffe54b"
+          },
+          "provenanceCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-tooling-final-portrait-provenance.png",
+            "sha256": "29243cf4e2422d389d048f76a1fd729d211819d90694e63c55a260ee805eba8a"
+          }
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-desktop.png",
+          "sha256": "694afc67aa789a921c5278c161aa6e3d22a979b2c72b509460ab727d93b84788",
+          "viewport": [
+            1280,
+            900
+          ],
+          "imageDimensions": [
+            1280,
+            12113
+          ],
+          "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
+          "result": "pass",
+          "currentHtml": true,
+          "proves": "Current delivery document only; not new player input evidence",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-desktop-top.png",
+            "sha256": "6b05d8e4eaac5758bf4a802af148099296f97cd212b129bad3e883d7be078dd1"
+          }
+        },
+        {
+          "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-portrait.png",
+          "sha256": "95d487529d65f7e9d08acfb0637f1bd2b534e4354af4962fa517d8fd69028966",
+          "viewport": [
+            390,
+            844
+          ],
+          "imageDimensions": [
+            390,
+            17958
+          ],
+          "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
+          "result": "pass",
+          "currentHtml": true,
+          "proves": "Current delivery document only; not new player input evidence",
+          "topCapture": {
+            "path": "campaign-unity/Evidence/last-stand-skills/delivery-pr-final-portrait-top.png",
+            "sha256": "9a36585869b9ddcdc25ca99de735bc9bb954478449ccf3f91590e2803fe7730d"
+          }
+        }
+      ],
+      "rootDocumentInspection": {
+        "observedUtc": "2026-11-12T03:32:20.184293+00:00",
+        "htmlSha256": "e067f57d856ec396b5ec2b9378534a79af415b29e884fc7a70f233601518faa8",
+        "views": [
+          "desktop-top",
+          "portrait-top"
+        ],
+        "result": "Open PR and local verification status readable; spacing, line wrapping and image loading passed."
+      }
+    },
+    "hostedReplacement": "pending_exact_head_run_after_push",
+    "merge": false,
+    "publication": false,
+    "numericCoverage": "not_claimed",
+    "sourceCommit": "b64959bce1e09534f94b524ccb261b8c5cc42a6f",
+    "binaryPreparationCommit": "1490f9566b3e6248788590e8a0a6d50dc87e4bab",
+    "containment": {
+      "path": "campaign-unity/Evidence/last-stand-skills/ci-browser-commit-containment.json",
+      "sha256": "05b49d9e4536950d38ed770d9efe82e5b7873ca15332cfde9bccf5c6703324f7"
+    },
+    "priorPendingDocument": {
+      "html": {
+        "path": "campaign-unity/docs/last-stand-skills/delivery-review.html",
+        "sha256": "3831ee28e6e1dcd508c36a3b655f8164ffdc0451e84e536b18f30018c4fcb762"
+      },
+      "renders": {
+        "htmlSha256": "3831ee28e6e1dcd508c36a3b655f8164ffdc0451e84e536b18f30018c4fcb762",
+        "views": [
+          {
+            "name": "desktop",
+            "width": 1280,
+            "height": 900,
+            "metrics": {
+              "documentWidth": 1280,
+              "documentHeight": 13033,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-pending-desktop.png",
+              "sha256": "894631c1dc91ab7151b1672ffcb0e0c0bc6baab9a9087c0356dfab83d4619fb9"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-pending-desktop-top.png",
+              "sha256": "72c3551b59e698ab9d41c19e48f7a2f88f93d0486e05c61994403bc5fd762b4e"
+            }
+          },
+          {
+            "name": "portrait",
+            "width": 390,
+            "height": 844,
+            "metrics": {
+              "documentWidth": 390,
+              "documentHeight": 20132,
+              "images": 10
+            },
+            "full": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-pending-portrait.png",
+              "sha256": "470342090746d61a459efd4810c1c46c8df4f01ff351e4ecb1badf8a7eb0623c"
+            },
+            "top": {
+              "path": "C:\\w\\st-bay\\campaign-unity\\Evidence\\last-stand-skills\\delivery-browser-ci-pending-portrait-top.png",
+              "sha256": "187f3e62bf2df85762a95e57ba9d5972f92ed1f70c66facbb6bd18b8bd6642df"
+            }
+          }
+        ],
+        "status": "pass"
+      }
+    }
   }
 }

@@ -209,7 +209,7 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-0695865ae1f33106f343ed455e250640d033e241
   - Spec ID: ST-LS-SKILLS-SPEC
   - Plan ID: ST-LS-SKILLS-PLAN
-- [~] Repair current Last Stand browser CI admission  (from github:SUaDtL/singedTerra/actions/runs/43151236183/browser)  (started 2026-11-12)
+- [x] Repair current Last Stand browser CI admission  (from github:SUaDtL/singedTerra/actions/runs/43151236183/browser)  (done 2026-11-12)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/43151236183/browser
   - Desc: PR 559 browser jobs reject the complete current export using a historical fixed file count; qualify actual export membership, preserve final served-byte drift rejection, and resolve the observed tier geometry failure with current browser proof.
   - Work type: fix
