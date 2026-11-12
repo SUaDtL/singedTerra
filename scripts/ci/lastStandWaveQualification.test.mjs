@@ -118,9 +118,12 @@ function backgroundFixture(){
   after.loop={...after.loop,profileVersion:rules,contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,fittingId:'repair',cannonDamage:30,wallet:1};
   const checkpointState={...after.loop,t:220,action:'session',phase:'battle',saveState:'ready',paused:true,speed:0,
     pendingRunId:0,hasCheckpoint:true,checkpointBlocked:false,tick:3,wave:2,completedWave:1,checkpointWave:1,wallet:2};
-  const saved={...idleWaveFields({runId:19,profileVersion:8}),credits:2,pendingDefeat:null,checkpoint:{runId:19,
+  const saved={...idleWaveFields({runId:19,profileVersion:9}),credits:2,pendingDefeat:null,
+    skills:{intel:0,copies:[0,0,0,0,0,0],loadout:[],firstAwards:[]},checkpoint:{runId:19,
     contentVersion:CURRENT_WAVE_EDITION.contentVersion,shop:{version:3,tier:1,fitting:1,economyVersion:CURRENT_WAVE_EDITION.economyVersion},
     loadout:{primary:'repair',secondary:null},combatResearch:{armorPiercing:0,areaControl:0,fieldEngineering:0},
+    skills:{loadout:[],ranks:[0,0,0,0,0,0]},
+    skillState:{spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0},
     buildcraft:{arcShots:0,arcDamage:16,nextArcTick:1,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0},
     encounter:{tier:1,fitting:1,rulesVersion:rules,tick:2,wave:1,completedWave:1,committedCannonDamage:30,
       mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40}}};
@@ -130,6 +133,15 @@ test('saved background checkpoint wave must name its cleared cohort',()=>{
   const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
   const broken=clone(good);broken.saved.checkpoint.encounter.wave=999;
   assert.throws(()=>journey.validateBackgroundCheckpoint(broken));
+});
+
+test('current background checkpoint requires the complete neutral Skills edition',()=>{
+  const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  for(const change of [s=>s.version=8,s=>delete s.skills,s=>delete s.checkpoint.skills,
+    s=>delete s.checkpoint.skillState,s=>s.skills.copies[0]=1,s=>s.checkpoint.skillState.spentMask=1]){
+    const broken=clone(good);change(broken.saved);
+    assert.throws(()=>journey.validateBackgroundCheckpoint(broken),undefined,String(change));
+  }
 });
 test('background armament counts may advance beyond the durable cleared boundary',()=>{
   const value=backgroundFixture();
@@ -459,6 +471,26 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const backgroundRaw={states:[running,committed,background.checkpointState],encounters:[runningModel],layouts:[]};
   report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const field of ['arcShots','arcDamage','nextArcTick','shield','shieldCapacity','shieldRestored',
+    'shieldAbsorbed','nextShieldRechargeTick','lastShieldHitTick']){
+    await t.test('current checkpoint binds buildcraft oracle field '+field,()=>{
+      const forged=clone(background);forged.saved.checkpoint.buildcraft[field]++;
+      if(field==='shield')forged.saved.checkpoint.buildcraft.shieldCapacity++;
+      report.lifecycle=[forged];put('runtime-telemetry.json',backgroundRaw);
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/Saved buildcraft differs/);
+    });
+  }
+  for(const field of ['arcShots','arcDamage','shield','shieldCapacity'])for(const target of ['after','paused','committed']){
+    await t.test('current '+target+' observation binds buildcraft oracle field '+field,()=>{
+      const forged=clone(background),actual=clone(backgroundRaw);
+      if(target==='after'){forged.after.loop[field]++;actual.states[0][field]++;}
+      else if(target==='paused'){forged.checkpointState[field]++;actual.states[2][field]++;}
+      else actual.states[1][field]++;
+      report.lifecycle=[forged];put('runtime-telemetry.json',actual);
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/Observed buildcraft differs/);
+    });
+  }
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
   for(const field of ['mortarShots','railgunShots','mortarDamage','railgunDamage','nextMortarTick','nextRailgunTick']){
     const forged=clone(background),rawForged=clone(backgroundRaw);
     const value=++forged.saved.checkpoint.encounter[field];

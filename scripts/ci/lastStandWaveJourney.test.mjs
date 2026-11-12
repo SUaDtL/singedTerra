@@ -103,6 +103,34 @@ test('wave commits require sequential wave and actual durable reward/ledger chan
   }
 });
 
+for(const edition of [3,4])test('v'+edition+' wave commits preserve both captured fitting identities',()=>{
+  const after=fixture().saved,cp=after.checkpoint;
+  Object.assign(after,idleWaveFields({profileVersion:edition===4?9:8}));
+  cp.contentVersion='last-stand-content-v'+edition;
+  Object.assign(cp.encounter,{rulesVersion:'last-stand-waves-v'+edition,mortarShots:0,railgunShots:0,
+    nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40});
+  Object.assign(cp.shop,{version:3,tier:1,economyVersion:'buildcraft-economy-v5'});
+  cp.loadout={primary:'repair',secondary:null};
+  cp.combatResearch={armorPiercing:0,areaControl:0,fieldEngineering:0};
+  cp.buildcraft={arcShots:0,arcDamage:16,nextArcTick:1,shield:0,shieldCapacity:0,shieldRestored:0,
+    shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0};
+  if(edition===4){
+    after.skills={intel:0,copies:[0,0,0,0,0,0],loadout:[],firstAwards:[]};
+    cp.skills={loadout:[],ranks:[0,0,0,0,0,0]};
+    cp.skillState={spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0};
+  }
+  const before=clone(after);before.credits=0;before.checkpoint.encounter.completedWave=0;
+  before.checkpoint.encounter.kills=0;before.checkpoint.shop.uniqueKills=0;
+  const state={...fixture().afterResume,profileVersion:cp.encounter.rulesVersion,contentVersion:cp.contentVersion,
+    economyVersion:cp.shop.economyVersion,mortarShots:0,railgunShots:0,mortarDamage:18,railgunDamage:40,
+    arcShots:0,arcDamage:16,shield:0,shieldCapacity:0,activeSecondaryId:'',paused:false,speed:1};
+  const observation={before,after,state,repeatable:1,firstClear:0};
+  assert.doesNotThrow(()=>validateWaveCommit(observation));
+  const broken=clone(observation);broken.after.checkpoint.loadout.secondary='shield';
+  broken.state.activeSecondaryId='shield';
+  assert.throws(()=>validateWaveCommit(broken),/Cleared wave keeps both captured fitting identities/);
+});
+
 test('delayed pause still proves each individual committed cohort and rejects gaps or extra rewards',()=>{
   const first=fixture(),second=clone(first);
   second.saved.credits=2;Object.assign(second.saved.checkpoint.encounter,{wave:2,completedWave:2,kills:12});

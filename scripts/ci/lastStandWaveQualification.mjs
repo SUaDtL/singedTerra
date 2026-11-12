@@ -88,7 +88,7 @@ function assertOracleCheckpoint(checkpoint,row){
   if(e.rulesVersion!=='last-stand-waves-v1')for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
     ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage'],['nextMortarTick','nextMortarTick'],['nextRailgunTick','nextRailgunTick']])
     assert.equal(e[field],row[key],'Saved armament differs from actual source boundary: '+field);
-  if(e.rulesVersion==='last-stand-waves-v3')for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','nextArcTick','nextShieldRechargeTick','lastShieldHitTick'].map(key=>[key,key])])
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(e.rulesVersion))for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','nextArcTick','nextShieldRechargeTick','lastShieldHitTick'].map(key=>[key,key])])
     assert.equal(checkpoint.buildcraft[field],row[key],'Saved buildcraft differs from actual source boundary: '+field);
 }
 function assertOracleArmamentState(state,profile){
@@ -96,7 +96,7 @@ function assertOracleArmamentState(state,profile){
   for(const [field,key]of [['mortarShots','mortar'],['railgunShots','railgun'],
     ['mortarDamage','mortarDamage'],['railgunDamage','railgunDamage']])
     assert.equal(state[field],row[key],'Observed armament differs from actual source tick: '+field);
-  if(row.rulesVersion==='last-stand-waves-v3')for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity'].map(key=>[key,key])])
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(row.rulesVersion))for(const [field,key] of [['arcShots','arc'],...['arcDamage','shield','shieldCapacity'].map(key=>[key,key])])
     assert.equal(state[field],row[key],'Observed buildcraft differs from actual source tick: '+field);
 }
 function assertWaveIntervalClock(record){
@@ -116,7 +116,7 @@ export function assertWaveLifecycle(report) {
   assertIdleWaveSave(background.saved);assert.ok(cp&&cp.runId>resume.saved.checkpoint.runId);
   assert.ok(cp.encounter.completedWave>=1);assert.equal(background.saved.pendingDefeat,null);
   validateBackgroundCheckpoint(background);
-  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(cp.encounter.rulesVersion));assert.equal(cp.encounter.rulesVersion,background.after.loop.profileVersion);assert.equal(cp.encounter.tier,background.after.loop.activeTier);
+  assert.ok(['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3','last-stand-waves-v4'].includes(cp.encounter.rulesVersion));assert.equal(cp.encounter.rulesVersion,background.after.loop.profileVersion);assert.equal(cp.encounter.tier,background.after.loop.activeTier);
   assert.ok(background.interval?.begin<background.interval.recovered);
   assert.ok(background.after.t>=background.interval.recovered);assert.equal(background.after.load,background.interval.before.load);
   assert.equal(background.after.timeOrigin,background.interval.before.timeOrigin);

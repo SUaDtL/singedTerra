@@ -56,7 +56,7 @@ export function validateWaveCommit({before,after,state,repeatable,firstClear}) {
   assert.equal(e.wave,e.completedWave);assert.equal(e.rulesVersion,prior.encounter.rulesVersion);
   assertWaveRestoredState(state,after);
   assert.equal(e.tier,prior.encounter.tier);assert.equal(e.fitting,prior.encounter.fitting);
-  if(e.rulesVersion==='last-stand-waves-v3'){
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(e.rulesVersion)){
     assert.deepEqual(current.loadout,prior.loadout,'Cleared wave keeps both captured fitting identities');
     assert.deepEqual(current.combatResearch,prior.combatResearch,'Cleared wave keeps captured research ranks');
   }
