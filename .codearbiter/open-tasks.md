@@ -217,6 +217,14 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-c7c5591ce84a3181f900118c8b51b74adf21b733
   - Spec ID: ST-LS-SKILLS-SPEC
   - Plan ID: ST-LS-SKILLS-PLAN
+- [~] Repair browser runtime observation and renderer admission  (from github:SUaDtL/singedTerra/actions/runs/43242487483/browser)  (started 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43242487483/browser
+  - Desc: Hosted run 43242487483 reaches full runtime checks and exposes batched first-hit selection plus the concept renderer retaining an unsupported HDR debug shader. Preserve exact earliest-event validation, strip the unsupported reference from every shipped renderer only during Web build, restore native resources, and qualify the rebuilt full browser matrix.
+  - Work type: fix
+  - Work ID: WORK-034C12946EE855D073360E8C5C1995E2
+  - Work operation ID: work-0e24a4027193cd02c0441eed0e23c0875ae8d376
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

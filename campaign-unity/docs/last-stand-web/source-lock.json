@@ -455,7 +455,7 @@
       },
       "Unity/Assets/Editor/LastStandLoopBuild.cs": {
         "mode": "lf-text",
-        "sha256": "091e20376b373cfd011537c823b7ebf802b8508bb804740b2859dc2952d4e115"
+        "sha256": "d1b5e332f54fb0176208b090ac38e55be83f47b19a9396df0bf2c7cc0ac060a7"
       },
       "Unity/Assets/Editor/LastStandLoopBuild.cs.meta": {
         "mode": "lf-text",
@@ -588,6 +588,14 @@
       "Unity/Assets/Editor/LastStandWebDebugResourcesStripper.cs.meta": {
         "mode": "lf-text",
         "sha256": "39c0c270b9f20b00db07eb80843488473681363e5174b9ba21bcffbd5826c4da"
+      },
+      "Unity/Assets/Editor/LastStandWebRendererChecks.cs": {
+        "mode": "lf-text",
+        "sha256": "c32c91b4bd2c6f365aa28b7891c51446e98a0f1b8f1aa0ae1b32871375476d34"
+      },
+      "Unity/Assets/Editor/LastStandWebRendererChecks.cs.meta": {
+        "mode": "lf-text",
+        "sha256": "dc96e85827a55cac969df07e64b4649671ff2338fce55503881efb0f176287fc"
       },
       "Unity/Assets/Editor/PartsGalleryBuild.cs": {
         "mode": "lf-text",
@@ -15062,7 +15070,7 @@
         "sha256": "2973a6af930e142f62cde00076beda8a3cc3a66d9bfcde7a58ba7d4be2251c26"
       }
     },
-    "sha256": "f3b3bdad46f688b24cbac871ecbb32f77c65bc7a5f0b81250d1802b32ade249f"
+    "sha256": "2c275c86c477b9f6749204ea54e57641f2ea75508b570575196ee5bafb1ab91e"
   },
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
@@ -84505,7 +84513,7 @@
     },
     "sha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52"
   },
-  "receiptSha256": "930b49e51246dec01c74a1f7d12cf2b1bf98b3c7975181340c9dba4860a3a39e",
+  "receiptSha256": "f7da5dcedc46ade037d4a677d0ce79c7aba4fc7488e4a477b13f459a89c3cc9a",
   "vendor": {
     "path": "Unity/Packages/com.unity.render-pipelines.universal",
     "version": "17.3.0",

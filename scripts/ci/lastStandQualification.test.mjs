@@ -53,6 +53,74 @@ const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/l
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
+test('actual cleared-wave admission requires the complete current Skills save and matching durable state',()=>{
+  const block=source.match(/    assertIdleWaveSave\(savedWave\);\n    check\([\s\S]*?'cleared waves atomically bank rewards and complete checkpoints',savedWave\);/)?.[0];
+  assert.ok(block,'The actual cleared-wave admission block is present');
+  const admit=new Function('savedWave','savedState','assertIdleWaveSave','check',block);
+  const saved={...idleWaveFields({wave:2,profileVersion:9}),credits:2,pendingDefeat:null,
+    skills:{intel:0,copies:[0,0,0,0,0,0],loadout:[],firstAwards:[]},checkpoint:{runId:1,
+      contentVersion:'last-stand-content-v4',shop:{version:3,tier:1,fitting:1,economyVersion:'buildcraft-economy-v5'},
+      loadout:{primary:'repair',secondary:null},combatResearch:{armorPiercing:0,areaControl:0,fieldEngineering:0},
+      skills:{loadout:[],ranks:[0,0,0,0,0,0]},skillState:{spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0},
+      buildcraft:{arcShots:0,nextArcTick:1,arcDamage:16,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0},
+      encounter:{rulesVersion:'last-stand-waves-v4',tier:1,fitting:1,tick:900,wave:2,completedWave:2,cannonDamage:20,
+        mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40}}};
+  const state={wallet:2,checkpointWave:2},check=(condition,name)=>assert.ok(condition,name);
+  admit(saved,state,journey.assertIdleWaveSave,check);
+  for(const change of [s=>s.version=8,s=>s.version=10,s=>delete s.skills,s=>delete s.checkpoint,
+    s=>delete s.checkpoint.skills,s=>delete s.checkpoint.skillState,s=>s.checkpoint.skillState.spentMask=1,
+    s=>s.checkpoint.contentVersion='last-stand-content-v3',s=>s.pendingDefeat={},s=>s.credits++,
+    s=>s.checkpoint.encounter.completedWave=1,s=>s.checkpoint.encounter.completedWave=3]){
+    const broken=structuredClone(saved);change(broken);
+    assert.throws(()=>admit(broken,state,journey.assertIdleWaveSave,check),undefined,String(change));
+  }
+});
+
+function delayedRuntimePair({delay=2300,wallDelay=delay,inFlight=true}={}){
+  const identity={load:3,timeOrigin:100000,scope:'healthy'};
+  const encounter={...identity,action:'tick',run:1,tick:200,t:10100,status:'Running',hp:120,kills:4,paused:false};
+  const state={...identity,action:'session',sessionRun:1,runId:19,pendingRunId:0,tick:200,t:10101,hull:120,kills:4,paused:false};
+  const deployment={...encounter,action:'deploy',tick:0,t:1000,kills:0};
+  const deployedState={...state,action:'deploy',tick:0,t:1010,kills:0};
+  const encounters=[deployment,{...encounter,tick:180,t:9000}],states=[deployedState,{...state,tick:180,t:9001}];
+  const future={...encounter,tick:240,t:10000+delay+4};
+  let now=10000,wall=0,calls=0,waits=0;
+  const owner=journey.createRuntimeObservation({Date:{now:()=>wall}});
+  const run=()=>owner.observeRuntimePair({encounters,states,load:3,options:{run:1,minT:8000},
+    check:(condition,name)=>assert.ok(condition,name),
+    clock:async()=>{
+      if(calls++===1){now=10000+delay;wall=wallDelay;encounters.push(encounter);states.push(state);
+        if(inFlight)encounters.push(future);}
+      return {t:now,timeOrigin:100000};
+    },wait:async ms=>{waits++;now+=ms;wall+=ms;}});
+  return {run,encounter,state,deployment,deployedState,future,encounters,states,waits:()=>waits,elapsed:()=>now-10000};
+}
+
+test('runtime pair acquisition preserves a newly emitted pair through slow clock delivery and an in-flight newer packet',async()=>{
+  for(const options of [{},{delay:7999,inFlight:false}]){
+    const x=delayedRuntimePair(options),observed=await x.run();
+    assert.equal(observed.tick,200);assert.equal(observed.t,10100);
+    assert.equal(observed.loop,x.state);assert.equal(observed.loop.t,10101);
+    assert.equal(x.waits(),0,'A coherent pair emitted during this bounded request is already available');
+  }
+});
+
+test('runtime pair acquisition rejects stale, foreign, contradictory and overdue observations',async()=>{
+  for(const change of [x=>{x.encounter.t=9999;x.state.t=9999.5;},x=>x.encounter.load++,x=>x.encounter.timeOrigin++,
+    x=>x.encounter.run++,x=>x.state.sessionRun++,x=>x.state.runId++,x=>x.encounter.hp--,x=>x.state.kills++,
+    x=>x.state.paused=true,x=>x.state.t=10099,x=>x.deployedState.runId++,
+    x=>{x.encounter.t=50000;x.state.t=50001;}]){
+    const x=delayedRuntimePair();change(x);
+    await assert.rejects(x.run,/coherent actual loop\/session observation/);
+    assert.ok(x.elapsed()<=8040,'Rejected observations cannot extend the page-clock deadline');
+  }
+  for(const options of [{delay:8000,inFlight:false},{wallDelay:8000,inFlight:false}]){
+    const x=delayedRuntimePair(options);
+    await assert.rejects(x.run,/coherent actual loop\/session observation pair absent within bounded wait/);
+    assert.equal(x.waits(),0,'An overdue valid pair must be refused immediately');
+  }
+});
+
 function firstImpactFixture(damage=20){
   const identity={load:3,timeOrigin:1000,scope:'healthy'};
   const oracle=Object.fromEntries(Array.from({length:91},(_,tick)=>[tick,{tick,hp:120,kills:tick<60?0:tick<80?(damage===30?1:0):(damage===30?2:1),
@@ -73,11 +141,11 @@ function firstImpactFixture(damage=20){
   const cues=[{...identity,t:5001,text:'ST_LS_AUDIO event=cannon\n'},{...identity,t:5003,text:'ST_LS_AUDIO event=destruction\n'}];
   return {deployed,hits,encounters,callbackRecords,cues,oracle};
 }
-async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01}={}){
+async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01,until}={}){
   const measured=[],context={...x,start:0,player,check:(value,label)=>assert.ok(value,label),
     noCaptureStart:1010,page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
     measureFrames:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
-    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}};
+    until:until??(async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;})};
   if(upgraded){const result=await journey.observeUpgradedImpact(context);return {value:{hit:result.upgradedHit},measured};}
   const result=await journey.observeBaselineImpact(context);
   await journey.measureBaselineImpact({...context,firstSound:result.firstSound,battleLayouts:async()=>null,
@@ -93,6 +161,30 @@ test('actual first-hit callers reject a later reused foe slot and wrong deployme
       x=>x.hits[0].kills++,x=>x.callbackRecords[1].tick=59]){
       const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
     }
+  }
+});
+
+test('actual first-hit callers preserve the earliest impact when polling receives multiple hits',async()=>{
+  for(const damage of [20,30]){
+    const x=firstImpactFixture(damage),first=x.hits[0];
+    x.hits.push({...first,t:4001,tick:80,kills:x.oracle[80].kills,firstFoeHull:0});
+    x.callbackRecords=x.callbackRecords.slice(0,2);
+    Object.assign(x.callbackRecords[0],{timestamp:104.257,elapsed:1.507,pending:1.507});
+    Object.assign(x.callbackRecords[1],{timestamp:104.257,elapsed:1.507,tick:85,steps:30});
+    const until=journey.createJourneyActions({throwObserverFailure:()=>{},page:{waitForTimeout:async()=>assert.fail('Both impacts are already retained')}}).until;
+    const result=await firstImpactCaller(x,{upgraded:damage===30,until});
+    assert.equal(result.value.hit,first,'The first authoritative impact must survive later hits delivered before the poll');
+    x.hits.splice(1,0,{...first,t:4000.5});
+    await assert.rejects(()=>firstImpactCaller(x,{upgraded:damage===30,until}),/First authoritative impact cannot be duplicated/);
+  }
+});
+
+test('actual first-hit callers reject the earliest contradiction before a later matching impact',async()=>{
+  for(const damage of [20,30]){
+    const x=firstImpactFixture(damage);
+    x.hits.unshift({...x.hits[0],t:3999,tick:59});
+    const until=journey.createJourneyActions({throwObserverFailure:()=>{},page:{waitForTimeout:async()=>assert.fail('The contradictory impact is already retained')}}).until;
+    await assert.rejects(()=>firstImpactCaller(x,{upgraded:damage===30,until}),/First authoritative cannon impact differs from deployment\/oracle/);
   }
 });
 test('actual first-hit audio caller measures a fresh admitted cannon pair independently of suppressed impact time',async()=>{

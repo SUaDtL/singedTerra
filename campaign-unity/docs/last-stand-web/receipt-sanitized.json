@@ -2,11 +2,11 @@
   "schema": "singedterra-last-stand-export/v2",
   "complete": true,
   "status": "pass",
-  "build": "Web-20261112T141542Z-cf81a0",
+  "build": "Web-20261112T152213Z-94202e",
   "scene": "Assets/Scenes/LastStandPrototype.unity",
-  "sourceHead": "0adefdc9a0ff8df0cf5f1e63bf2ff658e5789366",
-  "sourceBeforeSha256": "f3b3bdad46f688b24cbac871ecbb32f77c65bc7a5f0b81250d1802b32ade249f",
-  "sourceAfterSha256": "f3b3bdad46f688b24cbac871ecbb32f77c65bc7a5f0b81250d1802b32ade249f",
+  "sourceHead": "58cd6da99cb079e49241e9d78176f5ffe72fcfd2",
+  "sourceBeforeSha256": "2c275c86c477b9f6749204ea54e57641f2ea75508b570575196ee5bafb1ab91e",
+  "sourceAfterSha256": "2c275c86c477b9f6749204ea54e57641f2ea75508b570575196ee5bafb1ab91e",
   "sourceFiles": {
     "Tools/build_web.py": {
       "mode": "lf-text",
@@ -450,7 +450,7 @@
     },
     "Unity/Assets/Editor/LastStandLoopBuild.cs": {
       "mode": "lf-text",
-      "sha256": "091e20376b373cfd011537c823b7ebf802b8508bb804740b2859dc2952d4e115"
+      "sha256": "d1b5e332f54fb0176208b090ac38e55be83f47b19a9396df0bf2c7cc0ac060a7"
     },
     "Unity/Assets/Editor/LastStandLoopBuild.cs.meta": {
       "mode": "lf-text",
@@ -583,6 +583,14 @@
     "Unity/Assets/Editor/LastStandWebDebugResourcesStripper.cs.meta": {
       "mode": "lf-text",
       "sha256": "39c0c270b9f20b00db07eb80843488473681363e5174b9ba21bcffbd5826c4da"
+    },
+    "Unity/Assets/Editor/LastStandWebRendererChecks.cs": {
+      "mode": "lf-text",
+      "sha256": "c32c91b4bd2c6f365aa28b7891c51446e98a0f1b8f1aa0ae1b32871375476d34"
+    },
+    "Unity/Assets/Editor/LastStandWebRendererChecks.cs.meta": {
+      "mode": "lf-text",
+      "sha256": "dc96e85827a55cac969df07e64b4649671ff2338fce55503881efb0f176287fc"
     },
     "Unity/Assets/Editor/PartsGalleryBuild.cs": {
       "mode": "lf-text",
@@ -84499,10 +84507,10 @@
     "sha256": "ccfe22f74de6fc71a41c05515ca5874af931068d66fd9796bfe62920edc9ef52"
   },
   "artifacts": {
-    "Build/Web-20261112T141542Z-cf81a0.data": "ec06c14ad1c5ab1f0b50e28f3f22a7050a3627fdb682274dbb622d555bbab360",
-    "Build/Web-20261112T141542Z-cf81a0.framework.js": "ef805364cf6dfffd543e281f026ff8411fcd115f96209197d5afa3f95d9c431e",
-    "Build/Web-20261112T141542Z-cf81a0.loader.js": "2792439f0066dfce6342573bfc03b6eba5770f37aacd74ccffa7de9740a93c5b",
-    "Build/Web-20261112T141542Z-cf81a0.wasm": "cea64cca31bf0045ebbb943003d9b8b6bb4848bf63da95feb32a789c03cea847",
+    "Build/Web-20261112T152213Z-94202e.data": "0c67e579c5fb833df115c118a67b94d8988708201452ef76c8da97a0675b142c",
+    "Build/Web-20261112T152213Z-94202e.framework.js": "ef805364cf6dfffd543e281f026ff8411fcd115f96209197d5afa3f95d9c431e",
+    "Build/Web-20261112T152213Z-94202e.loader.js": "2792439f0066dfce6342573bfc03b6eba5770f37aacd74ccffa7de9740a93c5b",
+    "Build/Web-20261112T152213Z-94202e.wasm": "cea64cca31bf0045ebbb943003d9b8b6bb4848bf63da95feb32a789c03cea847",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
@@ -84516,11 +84524,11 @@
     "TemplateData/unity-logo-light.png": "002990aea0d946833cadc1519d5b7e50a4570bd537a0517dd79a59d3eec84da7",
     "TemplateData/unity-logo-title-footer.png": "9e8b3bdb67c2446d16362fe59449d892100931dbbadfe6a9d923a4142b57a79f",
     "TemplateData/webmemd-icon.png": "c56f5494640cedda273aad38d58e6ab9da625d5b3f4d875c0ff92c6192a569c2",
-    "index.html": "68a3c473efe5dc89612b19f769d2487598a3570d00f892a5819e76b6ca989712"
+    "index.html": "36f1f1563d91236a955c08db5f14ccb320376593a440195314262af6b6cc907a"
   },
-  "wrapperSha256": "0bada653d63c7e170b672e3c76a6b10905e7a99f13e8bf1b361c336cdde94121",
-  "rawReceiptSha256": "771fd988eb96f1dd73fd59a480d0951c169df19c98815db913abd44bc4bc0a7a",
-  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261112T141542Z-cf81a0/result.json",
+  "wrapperSha256": "38d94230851f7348218fbe07391cd42f262533a72145c5c1f6875e37731fdf0b",
+  "rawReceiptSha256": "b5d9688669f304b839734fc40ad1202e96b64716ec0026c2e0512ade51f7728b",
+  "evidence": "campaign-unity/Evidence/last-stand-playable-loop/t05/build-20261112T152213Z-94202e/result.json",
   "approvedArtifacts": {
     "ST-LS-SKILLS-SPEC": {
       "revision": 1,
@@ -84528,9 +84536,9 @@
       "normative_sha256": "9c4fe1394cc8917f41b89ce4fafd405ff169956413fc1c4b08c220b057f7bca3"
     },
     "ST-LS-SKILLS-PLAN": {
-      "revision": 89,
-      "model_sha256": "90914d94e9b5d6a79d5212c2e5292f63a3666a25a84f9409839aec3de5137431",
-      "normative_sha256": "8ea87ed0e6bed3bc911f961fb0469b92816be00386c881a4f6d50b66af3dbb8a"
+      "revision": 91,
+      "model_sha256": "01dcdad07710ab90444a67eb9d7d3e536c1a41e8a86fb68eb0a4ae7faf4a41a5",
+      "normative_sha256": "bed6427f3198688988512cdd1a05811e35578c1178f25c91223461212ec561ab"
     }
   },
   "sceneBeforeSha256": "b614d4e6aed38285788c0da903570015ba23e2df4cf210bf9038e884a10a7983",

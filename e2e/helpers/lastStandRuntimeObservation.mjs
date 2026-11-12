@@ -40,7 +40,8 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
       'coherent observation document clock',{initial,now});
     const encounter=options.status || options.action ? encounters.findLast(item=>documentRecord(item) &&
       (options.status===undefined || item.status===options.status) && (options.action===undefined || item.action===options.action) &&
-      (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) : latest;
+      (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) :
+      encounters.findLast(item=>documentRecord(item) && item.run===latest?.run && item.t<=now.t);
     const deployment=encounters.findLast(item=>documentRecord(item) && item.run===encounter?.run && item.action==='deploy');
     const deployedState=deployment && states.find(item=>documentRecord(item) && item.sessionRun===deployment.run &&
       ['deploy','resume'].includes(item.action) && item.tick===deployment.tick && item.t>=deployment.t && item.runId>0);
@@ -52,20 +53,21 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
       (options.run===undefined || encounter.run===options.run) && encounter.t<=now.t && state.t<=now.t &&
       encounter.t>=(options.minT??0) && (options.action===undefined || encounter.action===options.action) &&
       (options.paused===undefined || encounter.paused===options.paused);
-    // Active streams report at second boundaries. An older active report must
-    // await a real new pair; immutable Pause/Fitting and requested action/terminal
-    // witness retain their actual event clock without inventing a fresh stamp.
-    const fresh=encounter && (options.action!==undefined || encounter.paused || encounter.status!=='Running' || now.t-encounter.t<=1000);
+    // A slow clock response may arrive after later console records. Use a pair
+    // within the sampled clock; an event emitted during this bounded request is
+    // fresh without rewriting its timestamp or extending pre-request staleness.
+    const fresh=encounter && (options.action!==undefined || encounter.paused || encounter.status!=='Running' ||
+      encounter.t>=initial.t || now.t-encounter.t<=1000);
     const runBound=encounter?.status==='Fitting' || (deployedState && loopRun(state)===deployedState.runId);
+    if(now.t-initial.t>=8000 || Date.now()>=deadline) {
+      check(false,'coherent actual loop/session observation pair absent within bounded wait',detail);
+      throw new Error('Actual runtime observation pair absent');
+    }
     if(identity && fresh && runBound) {
       check(encounter.hp===state.hull && encounter.kills===state.kills && encounter.paused===state.paused &&
         (options.status!==undefined || encounter.paused===current.paused),
         'coherent actual loop/session observation counters',detail);
       return {...encounter,hull:state.hull,loop:state};
-    }
-    if(now.t-initial.t>=8000 || Date.now()>=deadline) {
-      check(false,'coherent actual loop/session observation pair absent within bounded wait',detail);
-      throw new Error('Actual runtime observation pair absent');
     }
     await wait(40);
   }
@@ -190,7 +192,11 @@ async function implementation_observeFirstCannonImpact({deployed,start,hits,enco
   cannonDeployment(deployed,encounters,oracle);
   const expected=Object.values(oracle).find(row=>row.cannon>0);
   assert.ok(expected?.cannon===1 && oracle[expected.tick-1]?.cannon===0,'First cannon event absent from source-bound oracle');
-  const hit=await until(hits,start,item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t,45);
+  const current=item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t;
+  // Polling returns the newest matching record. A callback can emit several
+  // impacts before that poll; preserve the first without skipping contradictions.
+  await until(hits,start,current,45);
+  const hit=hits.slice(start).find(current);
   assert.ok(hit.tick===expected.tick && hit.cannonDamage===deployed.cannonDamage && hit.kills===expected.kills &&
     hit.firstFoeHull===Math.max(0,30-deployed.cannonDamage),'First authoritative cannon impact differs from deployment/oracle');
   await until(callbackRecords,0,item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&

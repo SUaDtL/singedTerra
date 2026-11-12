@@ -1473,6 +1473,15 @@
       ]
     },
     {
+      "path": "last_stand_ui/test_web_renderer_resources.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported renderer assets and Editor process; verifies temporary Web shader omission and exact native restoration",
+      "cases": [
+        "WebRendererResourcesTests.test_scene_and_resources_renderers_restore_after_success_and_failure"
+      ]
+    },
+    {
       "path": "last_stand_waves/test_armament_presentation.py",
       "lane": "unity-editor",
       "owner": "Qualified Unity host: named unittest entrypoint",
