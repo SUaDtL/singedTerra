@@ -12,7 +12,7 @@ import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs'
 import {WAVE_ORACLE_SOURCES,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION,waveOracleProfileKeys} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {lastStandViewportPartition,LAST_STAND_ENTRY_ROUTES} from '../../e2e/helpers/lastStandMatrix.mjs';
 import {assertLastStandWaveMatrix,WAVE_ENTRY_ACTIONS} from './lastStandWaveMatrixResult.mjs';
-import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
+import {assertCombinedWaveQualification,assertWaveBinding,assertWaveLifecycle,assertWaveTerminals,verifyWaveFiles,currentWaveExpected,WAVE_CONTRACT,WAVE_RUNTIME_KEYS,
   WAVE_LIFECYCLE_CHECKS,WAVE_ENTRY_CHECKS,WAVE_RECOVERY_CHECKS,WAVE_ERROR_CHECK} from './lastStandWaveQualification.mjs';
 
 // Inert contract fixtures only. They are never browser reports or acceptance.
@@ -22,6 +22,47 @@ const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',impor
 const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/lastStandTierJourney.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
+
+test('current wave reader admits the complete packaged inventory and rejects missing, extra or changed served leaves',()=>{
+  const expected={...expectedFixture(),...currentWaveExpected()},report=baseReport(expected);
+  const check=value=>assertWaveBinding(value,expected,'linux','linux-functional','viewport-section-pass');
+  assert.doesNotThrow(()=>check(report));
+  for(const key of ['served','served_after'])for(const fault of ['missing','extra','changed']){
+    const broken=clone(report),files=broken.binding[key],path=Object.keys(files)[0];
+    if(fault==='missing')delete files[path];
+    else if(fault==='extra')files['TemplateData/unexpected.png']={sha256:hash,bytes:1};
+    else files[path]={...files[path],sha256:'0'.repeat(64)};
+    assert.throws(()=>check(broken),undefined,key+':'+fault);
+  }
+});
+
+test('journey preflight admits only the complete genuine export instead of a historical file count',()=>{
+  const statement=source.match(/^    check\(.+,'complete .* public runtime inventory'\);$/m)?.[0];
+  assert.ok(statement,'Actual journey inventory assertion is present');
+  const check=(condition,message)=>assert.ok(condition,message);
+  const admit=new Function('manifest','receipt','check','assert',statement);
+  const manifest=JSON.parse(readFileSync('client/public/last-stand/asset-manifest.json','utf8'));
+  const receipt=JSON.parse(readFileSync(manifest.source.receipt,'utf8'));
+  assert.doesNotThrow(()=>admit(manifest,receipt,check,assert));
+  for(const fault of ['missing','extra','changed']){
+    const broken=clone(manifest),path=Object.keys(broken.files)[0];
+    if(fault==='missing')delete broken.files[path];
+    else if(fault==='extra')broken.files['TemplateData/unexpected.png']=hash;
+    else broken.files[path]='0'.repeat(64);
+    assert.throws(()=>admit(broken,receipt,check,assert),undefined,fault);
+  }
+});
+
+test('journey cleanup checks drift for every admitted current runtime leaf',()=>{
+  const statement=source.match(/        if\(Object.keys\(report.binding.served\).length===[\s\S]+?else report.served_recheck_scope=[^\n]+/)?.[0];
+  assert.ok(statement,'Actual final served-byte comparison is present');
+  const verify=new Function('report','manifest','assert',statement);
+  const manifest=JSON.parse(readFileSync('client/public/last-stand/asset-manifest.json','utf8'));
+  const served=currentWaveExpected().served,report={binding:{served,served_after:clone(served)}};
+  verify(report,manifest,assert);assert.equal(report.served_recheck_scope,undefined);
+  report.binding.served_after[Object.keys(served)[0]].sha256='0'.repeat(64);
+  assert.throws(()=>verify(report,manifest,assert),/Served runtime bytes drifted/);
+});
 
 for(const path of controlInputPaths)test('source closure: wave producer binds actual '+path,()=>{
   const recorded=hashWaveJourneyInputs();
@@ -46,8 +87,8 @@ test('source closure: current wave reader rejects omitted or changed control inp
 // Reduced from the failed native checkpoint-reload capture: wallet 6, workshop,
 // inactive Deploy and active Redeploy both labelled RESUME RUN. Inert guards only.
 function deploymentFixture(phase='workshop',hasCheckpoint=true){
-  const state={load:19,timeOrigin:1792728632683.2,scope:'healthy',phase,saveState:'ready',wallet:6,hasCheckpoint};
-  const layout={load:state.load,timeOrigin:state.timeOrigin,scope:state.scope,phase,
+  const state={load:19,timeOrigin:1792728632683.2,scope:'healthy',phase,saveState:'ready',wallet:6,hasCheckpoint,t:100};
+  const layout={load:state.load,timeOrigin:state.timeOrigin,scope:state.scope,phase,t:110,
     controls:['Deploy','Redeploy'].map(name=>({name,label:hasCheckpoint?'RESUME RUN':'DEPLOY',
       active:name===(phase==='garage'?'Deploy':'Redeploy'),interactable:true}))};
   return {state,layout};
@@ -80,6 +121,44 @@ test('actual earned checkpoint, purchase and terminal reload callers choose the 
     }
   }
 });
+test('native Return resumes through the current phase control after resize and rejects invalid observations',async()=>{
+  for(const phase of ['workshop','garage']){
+    const value=deploymentFixture(phase),states=[],layouts=[],report={},actions=[];
+    await journey.resumeReturnedJourney({captureViewport:{width:1280,height:720},states,layouts,report,
+      resize:async()=>{states.push(value.state);layouts.push(value.layout);},
+      gameClick:async(...args)=>actions.push(args)});
+    assert.deepEqual(actions,[[phase==='garage'?'Deploy':'Redeploy','resume']]);
+    assert.deepEqual(report.return_resume,value);
+  }
+  for(const mutate of [v=>v.layout.phase='garage',v=>v.layout.load++,v=>v.layout.controls[1].interactable=false,
+    v=>v.layout.controls.forEach(c=>c.active=true),v=>v.state.hasCheckpoint=false]){
+    const value=deploymentFixture();mutate(value);
+    await assert.rejects(journey.resumeReturnedJourney({captureViewport:{width:1280,height:720},
+      states:[value.state],layouts:[value.layout],report:{},resize:async()=>{},
+      gameClick:async()=>assert.fail('Invalid Return state must refuse pointer input')}));
+  }
+});
+
+test('entry aggregate binds the resume action to its observed phase and preserved checkpoint',()=>{
+  for(const phase of ['workshop','garage']){
+    const {reports,expected}=matrixFixture(),entry=reports[11],observed=deploymentFixture(phase);
+    observed.state.wallet=phase==='garage'?0:2;observed.state.runId=1;
+    entry.return_resume=observed;
+    const saved=JSON.parse(entry.lifecycle[0].saved);saved.credits=observed.state.wallet;entry.lifecycle[0].saved=JSON.stringify(saved);
+    entry.actions[2].name=phase==='garage'?'Deploy':'Redeploy';
+    entry.actions[2].resolved_layout={load:observed.state.load,timeOrigin:observed.state.timeOrigin,phase,t:120};
+    assert.doesNotThrow(()=>assertLastStandWaveMatrix(reports,expected));
+    for(const mutate of [e=>delete e.return_resume,e=>e.actions[2].name=phase==='garage'?'Redeploy':'Deploy',
+      e=>e.return_resume.state.wallet++,e=>e.return_resume.state.runId++,e=>e.return_resume.layout.timeOrigin++,
+      e=>{e.return_resume.state.load++;e.return_resume.layout.load++;},
+      e=>{e.return_resume.state.timeOrigin++;e.return_resume.layout.timeOrigin++;},
+      e=>e.return_resume.layout.t=121,
+      e=>e.return_resume.layout.controls.forEach(c=>c.active=false)]){
+      const broken=clone(reports);mutate(broken[11]);assert.throws(()=>assertLastStandWaveMatrix(broken,expected));
+    }
+  }
+});
+
 test('wave matrix requires exact resume control and keeps earned post-abandon garage distinct',()=>{
   const {reports,expected}=matrixFixture();assert.doesNotThrow(()=>assertLastStandWaveMatrix(reports,expected));
   const resume=rows=>rows.flatMap(r=>r.screenshots).find(s=>s.file.startsWith('resume-ready-'));
@@ -118,9 +197,12 @@ function backgroundFixture(){
   after.loop={...after.loop,profileVersion:rules,contentVersion:CURRENT_WAVE_EDITION.contentVersion,economyVersion:CURRENT_WAVE_EDITION.economyVersion,fittingId:'repair',cannonDamage:30,wallet:1};
   const checkpointState={...after.loop,t:220,action:'session',phase:'battle',saveState:'ready',paused:true,speed:0,
     pendingRunId:0,hasCheckpoint:true,checkpointBlocked:false,tick:3,wave:2,completedWave:1,checkpointWave:1,wallet:2};
-  const saved={...idleWaveFields({runId:19,profileVersion:8}),credits:2,pendingDefeat:null,checkpoint:{runId:19,
+  const saved={...idleWaveFields({runId:19,profileVersion:9}),credits:2,pendingDefeat:null,
+    skills:{intel:0,copies:[0,0,0,0,0,0],loadout:[],firstAwards:[]},checkpoint:{runId:19,
     contentVersion:CURRENT_WAVE_EDITION.contentVersion,shop:{version:3,tier:1,fitting:1,economyVersion:CURRENT_WAVE_EDITION.economyVersion},
     loadout:{primary:'repair',secondary:null},combatResearch:{armorPiercing:0,areaControl:0,fieldEngineering:0},
+    skills:{loadout:[],ranks:[0,0,0,0,0,0]},
+    skillState:{spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0},
     buildcraft:{arcShots:0,arcDamage:16,nextArcTick:1,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0},
     encounter:{tier:1,fitting:1,rulesVersion:rules,tick:2,wave:1,completedWave:1,committedCannonDamage:30,
       mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40}}};
@@ -130,6 +212,15 @@ test('saved background checkpoint wave must name its cleared cohort',()=>{
   const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
   const broken=clone(good);broken.saved.checkpoint.encounter.wave=999;
   assert.throws(()=>journey.validateBackgroundCheckpoint(broken));
+});
+
+test('current background checkpoint requires the complete neutral Skills edition',()=>{
+  const good=backgroundFixture();assert.equal(journey.validateBackgroundCheckpoint(good),true);
+  for(const change of [s=>s.version=8,s=>delete s.skills,s=>delete s.checkpoint.skills,
+    s=>delete s.checkpoint.skillState,s=>s.skills.copies[0]=1,s=>s.checkpoint.skillState.spentMask=1]){
+    const broken=clone(good);change(broken.saved);
+    assert.throws(()=>journey.validateBackgroundCheckpoint(broken),undefined,String(change));
+  }
 });
 test('background armament counts may advance beyond the durable cleared boundary',()=>{
   const value=backgroundFixture();
@@ -344,6 +435,10 @@ function matrixFixture(){
     }
     if(section==='entry'){
       report.actions=WAVE_ENTRY_ACTIONS.map(([name,action])=>({name,action,x:10,y:20}));
+      report.return_resume=deploymentFixture();
+      Object.assign(report.return_resume.state,{wallet:2,runId:1});
+      report.actions[2].name='Redeploy';
+      report.actions[2].resolved_layout={load:report.return_resume.state.load,timeOrigin:report.return_resume.state.timeOrigin,phase:'workshop',t:120};
       report.input_trace={matched:true,actions:WAVE_ENTRY_ACTIONS.length,observed_edges:WAVE_ENTRY_ACTIONS.length*2,outer_keyboard_edges:2};
       report.retired_campaign_preservation={before_sha256:hash,after_launch_sha256:hash,native_return:'observed unchanged',retirement:'observed Last Stand only'};
       report.routes=clone(LAST_STAND_ENTRY_ROUTES);report.campaign_entry=p.entryViewports.map(viewport=>({viewport,order:['last-stand'],bounds:{x:0,y:0,width:44,height:44}}));
@@ -393,10 +488,13 @@ test('current entry producer includes a verified pause and current aggregate rej
   const actions=[];
   for(const match of block.matchAll(/await (gameClick\('([^']+)','([^']+)'|resumeReturnedJourney\()/g)){
     if(match[2])actions.push([match[2],match[3]]);
-    else await journey.resumeReturnedJourney({resize:async()=>{},captureViewport:{width:1280,height:720},
+    else {const value=deploymentFixture();await journey.resumeReturnedJourney({resize:async()=>{},captureViewport:{width:1280,height:720},
+      states:[value.state],layouts:[value.layout],report:{},
       gameClick:async(...action)=>actions.push(action)});
+    }
   }
-  assert.deepEqual(actions,WAVE_ENTRY_ACTIONS);
+  assert.match(block,/resumeReturnedJourney\(\{resize,captureViewport,gameClick,states,layouts,report\}\)/);
+  assert.deepEqual(actions,WAVE_ENTRY_ACTIONS.map((row,index)=>index===2?['Redeploy','resume']:row));
   for(const mutate of [r=>r.actions.splice(1,1),r=>r.actions.push(clone(r.actions[0])),r=>r.actions[1].action='deploy',r=>r.lifecycle[0].layout.selection='ConfirmProceed']){
     const {reports,expected}=matrixFixture();mutate(reports[11]);assert.throws(()=>assertLastStandWaveMatrix(reports,expected));
   }
@@ -449,6 +547,30 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   put('wave-model-oracle/compile.stdout',empty);put('wave-model-oracle/compile.stderr',empty);put('wave-model-oracle/run.stdout',raw);put('wave-model-oracle/run.stderr',empty);
   put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});put('input-trace.json',[]);report.input_trace.outer_keyboard_edges=0;
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  const returned=deploymentFixture();
+  Object.assign(returned.state,{action:'research',t:180});returned.layout.t=181;
+  const returnedRaw={states:[returned.state],encounters:[],layouts:[returned.layout]};
+  report.actions=[{name:'Deploy',action:'deploy'},{name:'SpeedRate',action:'session'},{name:'Redeploy',action:'resume'}]
+    .map(action=>({...action,x:10,y:20}));
+  const returnEdges=report.actions.flatMap((action,i)=>['pointerdown','pointerup'].map((kind,n)=>({kind,area:'gameplay',
+    load:returned.state.load,timeOrigin:returned.state.timeOrigin,scope:'healthy',t:184+i*2+n,
+    target:'unity-canvas',button:0,x:10,y:20,focused:true,hidden:false})));
+  report.input_trace={matched:true,actions:3,observed_edges:6,outer_keyboard_edges:0};put('input-trace.json',returnEdges);
+  report.return_resume=clone(returned);put('runtime-telemetry.json',returnedRaw);
+  assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const mutate of [r=>r.state.wallet++,r=>r.state.load++,r=>r.layout.controls[1].interactable=false,r=>r.layout.t++]){
+    report.return_resume=clone(returned);mutate(report.return_resume);
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/differs from actual runtime telemetry/);
+  }
+  for(const mutate of [r=>{r.state.load++;r.layout.load++;},r=>{r.state.timeOrigin++;r.layout.timeOrigin++;},
+    r=>r.state.t=190,r=>r.layout.t=190]){
+    const foreign=clone(returned);mutate(foreign);report.return_resume=foreign;
+    put('runtime-telemetry.json',{states:[foreign.state],encounters:[],layouts:[foreign.layout]});
+    assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/Return resume pointer/);
+  }
+  delete report.return_resume;report.actions=[];
+  report.input_trace={matched:true,actions:0,observed_edges:0,outer_keyboard_edges:0};put('input-trace.json',[]);
+  put('runtime-telemetry.json',{states:[],encounters:[],layouts:[]});
   for(const name of ['Program.cs','WaveOracle.exe','compile.stdout','compile.stderr','run.stdout','run.stderr']){
     const path='wave-model-oracle/'+name,original=readFileSync(join(root,path));put(path,Buffer.from('changed'));
     assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report));put(path,original);
@@ -459,6 +581,26 @@ test('raw wave verifier binds compiler streams, every native edge, oracle member
   const backgroundRaw={states:[running,committed,background.checkpointState],encounters:[runningModel],layouts:[]};
   report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
   assert.doesNotThrow(()=>verifyWaveFiles(join(root,'result.json'),report));
+  for(const field of ['arcShots','arcDamage','nextArcTick','shield','shieldCapacity','shieldRestored',
+    'shieldAbsorbed','nextShieldRechargeTick','lastShieldHitTick']){
+    await t.test('current checkpoint binds buildcraft oracle field '+field,()=>{
+      const forged=clone(background);forged.saved.checkpoint.buildcraft[field]++;
+      if(field==='shield')forged.saved.checkpoint.buildcraft.shieldCapacity++;
+      report.lifecycle=[forged];put('runtime-telemetry.json',backgroundRaw);
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/Saved buildcraft differs/);
+    });
+  }
+  for(const field of ['arcShots','arcDamage','shield','shieldCapacity'])for(const target of ['after','paused','committed']){
+    await t.test('current '+target+' observation binds buildcraft oracle field '+field,()=>{
+      const forged=clone(background),actual=clone(backgroundRaw);
+      if(target==='after'){forged.after.loop[field]++;actual.states[0][field]++;}
+      else if(target==='paused'){forged.checkpointState[field]++;actual.states[2][field]++;}
+      else actual.states[1][field]++;
+      report.lifecycle=[forged];put('runtime-telemetry.json',actual);
+      assert.throws(()=>verifyWaveFiles(join(root,'result.json'),report),/Observed buildcraft differs/);
+    });
+  }
+  report.lifecycle=[background];put('runtime-telemetry.json',backgroundRaw);
   for(const field of ['mortarShots','railgunShots','mortarDamage','railgunDamage','nextMortarTick','nextRailgunTick']){
     const forged=clone(background),rawForged=clone(backgroundRaw);
     const value=++forged.saved.checkpoint.encounter[field];

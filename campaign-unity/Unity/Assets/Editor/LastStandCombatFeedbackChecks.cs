@@ -85,14 +85,27 @@ public static class LastStandCombatFeedbackChecks
                 events.Clear(); events.Add(shots[0]); f.View.Present(model);
                 Require(!f.Feedback.Any(r => r.sharedMaterial == f.Review.scorchMaterial),
                     "nonlethal event must not claim the later event's destruction");
+                Require(!f.Pool.Cast<Transform>().Any(t=>t.name.StartsWith("Spent wreck ")&&t.gameObject.activeSelf),"nonlethal impact cannot create a wreck");
                 f.View.Clear(); events.Clear(); events.Add(shots[1]); f.View.Present(model);
                 Require(f.Feedback.Count(r => r.sharedMaterial == f.Review.scorchMaterial) == 1,
                     "lethal event owns one destruction");
+                var wreck=f.Pool.Cast<Transform>().Single(t=>t.name.StartsWith("Spent wreck ")&&t.gameObject.activeSelf);
+                var origin=wreck.position;var smoke=f.Feedback.Select(r=>r.transform.position).ToArray();
+                f.View.Advance(0);
+                Require(wreck.position==origin&&smoke.SequenceEqual(f.Feedback.Select(r=>r.transform.position)),"zero elapsed time freezes wreck and particles");
+                f.View.ToggleEffects();
+                Require(!wreck.gameObject.activeSelf&&f.Feedback.Length==0,"reduced effects immediately clears destruction and wreck emissions");
+                f.View.ToggleEffects();f.View.Advance(1);
+                Require(!wreck.gameObject.activeSelf&&f.Feedback.Length==0,"returning to full effects does not replay old destruction");
             }
             finally { events.Clear(); events.AddRange(original); }
             f.View.Clear(); f.View.Present(model);
             Require(f.Feedback.Count(r => r.sharedMaterial == f.Review.scorchMaterial) == 1,
                 "complete real event batch has one destruction");
+            for(int i=0;i<30;i++)f.View.Present(model);
+            Require(f.Pool.Cast<Transform>().Count(t=>t.name.StartsWith("Spent wreck ")&&t.gameObject.activeSelf)==12,"wreck capacity is bounded under sustained genuine kill traffic");
+            f.View.Advance(31);
+            Require(!f.Pool.Cast<Transform>().Any(t=>t.name.StartsWith("Spent wreck ")&&t.gameObject.activeSelf),"old wrecks expire without growing the scene");
         }
     }
 
@@ -344,6 +357,25 @@ public static class LastStandCombatFeedbackChecks
         }
     }
 
+    static void ActualEnemyHullIndicators()
+    {
+        using(var f=new Fixture())
+        {
+            var model=BoundModel(LastStandFitting.Repair);SetFoe(model.Foes[0],100,FoeKind.Close,0,12000);
+            string before=model.Snapshot();f.View.Render(model);
+            var indicator=f.Pool.Find("Review foe 0/Enemy hull backdrop");var fill=indicator.Find("Enemy hull fill");
+            Require(indicator.gameObject.activeInHierarchy&&fill.gameObject.activeInHierarchy,"living opponent exposes hull information");
+            float full=fill.localScale.x;Require(full>0&&full<1,"hull fill stays within its backing");
+            Require(Quaternion.Angle(indicator.rotation,f.Art.view.transform.rotation)<.1f,"hull indicator faces the current camera");
+            Require(model.Snapshot()==before,"hull presentation preserves the model");
+            typeof(EncounterFoe).GetProperty("Hull").SetValue(model.Foes[0],250);before=model.Snapshot();f.View.Render(model);
+            Require(fill.localScale.x>0&&fill.localScale.x<full*.3f,"actual remaining hull reduces the visible fill");
+            f.View.ToggleEffects();f.Art.SetEncounterPaused(true);f.View.Render(model);
+            Require(indicator.gameObject.activeInHierarchy&&model.Snapshot()==before,"pause and reduced effects retain truthful hull information");
+            typeof(EncounterFoe).GetProperty("Hull").SetValue(model.Foes[0],0);f.View.Render(model);
+            Require(!indicator.gameObject.activeInHierarchy,"destroyed opponent removes its hull indicator");
+        }
+    }
     public static void Run()
     {
         bool failed = false;
@@ -359,7 +391,8 @@ public static class LastStandCombatFeedbackChecks
                 ("test_current_geometry_and_retained_position",CurrentGeometryAndRetainedPosition),
                 ("test_campaign_weapon_feedback",CampaignWeaponFeedback),
                 ("test_role_silhouettes_and_persistent_warning",RoleSilhouettesAndPersistentWarning),
-                ("test_arc_chain_and_shield_feedback",ArcChainAndShieldFeedback) })
+                ("test_arc_chain_and_shield_feedback",ArcChainAndShieldFeedback),
+                ("test_actual_enemy_hull_indicators",ActualEnemyHullIndicators) })
             {
                 try { test.Item2(); Debug.Log("ST_LS_COMBAT_PASS " + test.Item1); }
                 catch (Exception error) { failed = true; Debug.LogError("ST_LS_COMBAT_FAIL " + test.Item1 + " " + error); }

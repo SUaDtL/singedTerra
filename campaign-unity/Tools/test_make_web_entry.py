@@ -69,6 +69,62 @@ class WebEntryTests(unittest.TestCase):
         self.assertNotIn('window.confirm', html)
         self.assertNotIn('localStorage', html)
 
+    def test_pointer_refocus_preserves_selection_then_keyboard_entry_resumes(self):
+        """Generated wrapper bridge messages exercise the run11 focus sequence.
+
+        jsdom does not synthesize pointer default focus, so the test performs
+        that browser step explicitly after pointerdown. Actual Unity control
+        geometry and trusted input remain the packaged journey's responsibility.
+        """
+        html = self.render('last-stand')
+        script = r'''
+const assert = require('node:assert/strict');
+const {JSDOM} = require('jsdom');
+(async () => {
+  const dom = new JSDOM(process.argv[1], {runScripts: 'outside-only', url: 'http://localhost/last-stand/'});
+  try {
+    const {window} = dom, document = window.document;
+    const canvas = document.querySelector('#unity-canvas');
+    const outside = document.querySelector('#last-stand-return');
+    const messages = [], pointerEvents = [], focusOptions = [];
+    const nativeFocus = canvas.focus.bind(canvas);
+    canvas.focus = options => {focusOptions.push(options);nativeFocus(options);};
+    window.console.info = () => {};
+    window.createUnityInstance = () => Promise.resolve({SendMessage: (...args) => messages.push(args)});
+    window.eval(document.querySelector('script:not([src])').textContent);
+    await new Promise(resolve => setImmediate(resolve));
+    const commands = () => messages.filter(args => args[1] === 'NavigateKeyboard').map(args => args[2]);
+    assert.deepEqual(commands(), ['enter-first'], 'Ready bootstrap retains initial keyboard entry');
+    for (const type of ['pointerdown', 'pointerup']) document.addEventListener(type, event => {
+      pointerEvents.push([event.type, event.defaultPrevented, document.activeElement === canvas]);
+    });
+    for (const pointerType of ['mouse', 'touch', 'pen']) {
+      outside.focus();messages.length = 0;focusOptions.length = 0;pointerEvents.length = 0;
+      const down = new window.Event('pointerdown', {bubbles: true, cancelable: true});
+      Object.defineProperty(down, 'pointerType', {value: pointerType});
+      canvas.dispatchEvent(down);
+      // Default pointer focus follows pointerdown unless capture already focused.
+      canvas.focus();
+      canvas.dispatchEvent(new window.Event('pointerup', {bubbles: true, cancelable: true}));
+      assert.deepEqual(commands(), [], pointerType + ': pointer refocus must not reset Unity selection or scroll');
+      assert.equal(focusOptions[0]?.preventScroll, true, 'Pointer focus preserves browser scroll too');
+      assert.deepEqual(pointerEvents, [['pointerdown', false, true], ['pointerup', false, true]],
+        'Unity still receives the complete uncancelled pointer gesture after focus');
+      canvas.dispatchEvent(new window.KeyboardEvent('keydown', {key: 'Tab', bubbles: true, cancelable: true}));
+      canvas.dispatchEvent(new window.KeyboardEvent('keydown', {key: 'Tab', shiftKey: true, bubbles: true, cancelable: true}));
+      assert.deepEqual(commands(), ['next', 'previous'], 'Tab after pointer use still navigates immediately');
+      outside.focus();messages.length = 0;
+      canvas.focus();
+      assert.deepEqual(commands(), ['enter-first'], 'Subsequent keyboard/programmatic entry is not suppressed by stale pointer modality');
+    }
+    console.log('Generated wrapper focus proof: mouse, touch, pen, later Tab and fresh keyboard entry');
+  } finally {dom.window.close();}
+})().catch(error => {console.error(error);process.exitCode = 1;});
+'''
+        result = subprocess.run(['node', '-e', script, html], cwd=TOOLS.parents[1],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_generated_wrapper_preserves_native_tab_traversal(self):
         """Generated owner keeps browser defaults despite a handled native return.
 

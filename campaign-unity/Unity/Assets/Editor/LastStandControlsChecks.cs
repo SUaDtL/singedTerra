@@ -621,8 +621,10 @@ public static class LastStandControlsChecks
                     profile+" combat shows only the compact rate controls, floating Menu and separate Run Upgrades");
                 var speed=ScreenBounds(f,f.Button("SpeedRate").GetComponent<RectTransform>());
                 var shop=ScreenBounds(f,f.Button("ShopEntry").GetComponent<RectTransform>());
-                Require(Math.Abs(speed.center.x-profile.x/2f)<1&&speed.yMax<profile.y*.3f&&shop.xMax>profile.x-13,
-                    profile+" rate stays bottom center and Run Upgrades stays at the lower corner");
+                bool concept=LastStandHudLayout.HasConceptCombat(profile.x,profile.y);
+                Require((concept?speed.xMin>profile.x*.65f&&shop.xMin>speed.xMax:Math.Abs(speed.center.x-profile.x/2f)<1)&&
+                    speed.yMax<profile.y*.3f&&(concept?shop.xMax<profile.x-12&&shop.xMax>profile.x*.95f:shop.xMax>profile.x-13),
+                    profile+" rate and Run Upgrades occupy their field-control area with separate targets and edge clearance");
                 Require(f.Button("ShopEntry").GetComponentInChildren<Text>().text=="RUN\nUPGRADES",profile+" shop entry names its run scope");
                 f.Click("SpeedRate");AssertVisibleGeometry(f,profile,"paused combat");
                 Require(f.Loop.Session.ManualPaused&&f.Button("SpeedRate").GetComponentInChildren<Text>().text=="0x\nPAUSED",

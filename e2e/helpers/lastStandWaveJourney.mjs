@@ -19,6 +19,7 @@ export const WAVE_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUTS,'e2e
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs','e2e/last-stand-playable-loop.spec.ts',
   'scripts/last-stand-first-session.mjs']);
 export const hashWaveJourneyInputs=()=>Object.fromEntries(WAVE_JOURNEY_INPUTS.map(path=>[path,createHash('sha256').update(readFileSync(resolve(path))).digest('hex')]));
@@ -55,7 +56,7 @@ export function validateWaveCommit({before,after,state,repeatable,firstClear}) {
   assert.equal(e.wave,e.completedWave);assert.equal(e.rulesVersion,prior.encounter.rulesVersion);
   assertWaveRestoredState(state,after);
   assert.equal(e.tier,prior.encounter.tier);assert.equal(e.fitting,prior.encounter.fitting);
-  if(e.rulesVersion==='last-stand-waves-v3'){
+  if(['last-stand-waves-v3','last-stand-waves-v4'].includes(e.rulesVersion)){
     assert.deepEqual(current.loadout,prior.loadout,'Cleared wave keeps both captured fitting identities');
     assert.deepEqual(current.combatResearch,prior.combatResearch,'Cleared wave keeps captured research ranks');
   }

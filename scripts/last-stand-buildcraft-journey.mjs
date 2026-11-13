@@ -20,7 +20,7 @@ admitFixtures(fixtures,fixturePath);assert.equal(fixtures.schema,'last-stand-com
 const inputs=[...new Set(['scripts/last-stand-buildcraft-journey.mjs','scripts/last-stand-combat-depth-journey.mjs',
   'e2e/helpers/lastStandBrowserActor.mjs','e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandWaveJourney.mjs',
   'e2e/helpers/lastStandEvidenceDirectory.mjs',...LAST_STAND_HELPER_INPUTS,
-  ...[1,2,3,4,5,6].map(v=>'campaign-unity/Tools/contracts/last-stand-observation-v'+v+'.json')])];
+  ...[1,2,3,4,5,6,7].map(v=>'campaign-unity/Tools/contracts/last-stand-observation-v'+v+'.json')])];
 const inputHashes=()=>Object.fromEntries(inputs.map(path=>[path,hash(readFileSync(resolve(root,path)))]));
 const beforeInputs=inputHashes(),base=admitJourneyBase(process.env.E2E_LIVE_URL??'http://127.0.0.1:4174/singedTerra/');
 assert.ok(['127.0.0.1','localhost'].includes(base.hostname)&&base.port==='4174');

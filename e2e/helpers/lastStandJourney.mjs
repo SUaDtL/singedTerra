@@ -37,7 +37,7 @@ import { buildWaveOracle } from './lastStandWaveOracle.mjs';
 import { lastStandJourneyTimeBudget } from './lastStandProcessSupervisor.mjs';
 import { assertWaveSavePreserved, assertIdleWaveSave, validateCheckpointResume, validateWaveAbandonSave } from './lastStandWaveGuards.mjs';
 // Versioned diagnostics contract; player actions and state remain in production owners.
-const OBSERVATION_CONTRACTS=[1,2,3,4,5,6].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
+const OBSERVATION_CONTRACTS=[1,2,3,4,5,6,7].map(version=>JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json',import.meta.url),'utf8')));
 
 // T-21 uses the existing real controls and passive game observations. It has a
 // distinct entry so the original full classic/background journey stays intact.
@@ -63,6 +63,7 @@ export const SHOP_PLAYER_INPUTS = [...LAST_STAND_HELPER_INPUTS,'e2e/helpers/last
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
 // Full graphics observations exceed V8's single-string limit during the complete
@@ -154,7 +155,7 @@ export async function selectLastStandFitting({fitting,click,currentLayout,curren
   assert.ok(['repair','launcher','scattergun','mortar','railgun','arc','shield'].includes(fitting),'Known shipped player fitting required');
   assert.equal(currentState()?.menu,'','Inline fitting selection requires the actual garage');
   await waitFor(()=>Array.isArray(currentLayout()?.controls));
-  if(currentLayout().schema==='singedterra-last-stand-observation/v6'){
+  if(['singedterra-last-stand-observation/v6','singedterra-last-stand-observation/v7'].includes(currentLayout().schema)){
     const original=currentState().selectedPrimaryId,secondary=currentState().selectedSecondaryId;
     const order=['repair','launcher','scattergun','mortar','railgun','arc','shield'];
     assert.ok(order.includes(original)&&typeof secondary==='string','Observed committed loadout required');
@@ -1410,6 +1411,7 @@ export const LAST_STAND_JOURNEY_INPUTS=Object.freeze([...LAST_STAND_HELPER_INPUT
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json',
   'scripts/last-stand-playable-loop.mjs','campaign-unity/Tools/verify_last_stand_loop.py',
   '.github/workflows/ci.yml','scripts/ci/ciWorkflow.test.mjs','scripts/ci/lastStandQualification.mjs',
@@ -1525,7 +1527,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
       'exact source lock admitted');
     check(receipt.build===manifest.source.build && receipt.sourceAfterSha256===manifest.source.sourceInventorySha256,
       'runtime and current source receipt agree');
-    check(Object.keys(manifest.files).length===16,'complete sixteen-leaf public runtime inventory');
+    check(Object.keys(manifest.files).length>0 && Object.keys(manifest.files).length===Object.keys(receipt.artifacts).length-1 && Object.entries(receipt.artifacts).filter(([path])=>path!=='index.html').every(([path,sha256])=>manifest.files[path]===sha256),'complete exported public runtime inventory');
     report.binding={manifest_sha256:fileHash(manifestPath), receipt_sha256:fileHash(receiptPath),
       source_lock_sha256:manifest.source.sourceLockSha256, source_inventory_sha256:receipt.sourceAfterSha256,
       build:receipt.build, sourceHead:receipt.sourceHead, wrapper_sha256:manifest.wrapperSha256,
@@ -1735,7 +1737,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     restored=await until(states,start,item=>item.action==='ready',60);
     check(validateSavedRunReady({state:restored,saved:JSON.parse(returnSave),expectedRunId:returnBefore.runId}),
       'unfinished Return offers explicit saved-run resume',restored);
-    await resumeReturnedJourney({resize,captureViewport,gameClick});
+    await resumeReturnedJourney({resize,captureViewport,gameClick,states,layouts,report});
     const checkpoint=JSON.parse(returnSave).checkpoint;
     await page.waitForTimeout(1200);
     check(states.at(-1).paused && states.at(-1).tick===checkpoint.encounter.tick,'Return resume waits paused at saved state');
@@ -1787,14 +1789,13 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     const hiddenStart=awayWindows[0][1],hiddenEnd=awayWindows.at(-1)[2],postFocus=await mark();
     // First qualify a short earned boundary before the later natural terminal.
     // The separate 10–12-hour endurance obligation is not implied by this run.
-    await page.waitForTimeout(16000);
     await until(states,0,item=>item.load===load && item.completedWave>=2 && item.saveState==='ready',90);
     const captureEnd=await mark();
     await gameKey('SpeedRate','session',item=>item.paused);
     const savedWave=JSON.parse(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY));
     const savedState=states.at(-1);
     assertIdleWaveSave(savedWave);
-    check(savedWave.version===8 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
+    check(savedWave.version===9 && savedWave.checkpoint?.encounter.completedWave>=2 && savedWave.pendingDefeat===null &&
       savedWave.credits===savedState.wallet && savedState.checkpointWave===savedWave.checkpoint.encounter.completedWave,
       'cleared waves atomically bank rewards and complete checkpoints',savedWave);
     check(!layouts.at(-1).controls.some(item=>item.name==='Claim' && item.active && item.interactable),
@@ -1862,7 +1863,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
     start=states.length;load++;await page.reload({waitUntil:'domcontentloaded'});await focused('purchase reload');
     const again=await until(states,start,item=>item.action==='ready',60);
     check(again.level===1 && again.wallet===savedWave.credits-2 && again.pendingRunId===0 && !again.hasCheckpoint,'purchase reload retains permanent level and spent balance',again);
-    const garageBuildField=layouts.at(-1).schema==='singedterra-last-stand-observation/v6'?'/GarageFittingDescription':'/GarageFittingName';
+    const garageBuildField=['singedterra-last-stand-observation/v6','singedterra-last-stand-observation/v7'].includes(layouts.at(-1).schema)?'/GarageFittingDescription':'/GarageFittingName';
     check(states.at(-1).fittingId==='repair'&&layouts.at(-1).graphics.some(item=>item.active&&item.path.endsWith(garageBuildField)&&item.text.toUpperCase().includes('FIELD REPAIR')),'same repair fitting retained after upgrade in its visible garage card');
     await resize(captureViewport);const hitStart=hits.length;const upgradedDeployment=await deployObservedJourney({gameClick,states,layouts});
     const noCaptureStart=player?await page.evaluate('window.__stFrameProbe.start()'):null;
@@ -2005,7 +2006,7 @@ export async function runLastStandJourney({ baseURL, chromium, retiredCampaignRe
           const response=await fetchBoundRuntime(base,path);assertServedBytes(response,expected);
           report.binding.served_after[path]={sha256:hash(response.bytes),bytes:response.bytes.length};
         }
-        if(Object.keys(report.binding.served).length===17)
+        if(Object.keys(report.binding.served).length===Object.keys(manifest.files).length+1)
           assert.deepEqual(report.binding.served_after,report.binding.served,'Served runtime bytes drifted during journey');
         else report.served_recheck_scope='Preflight admission was incomplete; original failure retained, after bytes checked against the manifest';
       }
@@ -2101,14 +2102,14 @@ export function persistJourneyFinalEvidence({report,observations,write,output,lo
 export function createJourneyCheck({report,resultPath,throwObserverFailure,
   writeSnapshot=writeShopPresentationJson,append=appendFileSync,now=Date.now}) {
   let lastResultWrite=-Infinity;
-  return (condition, name, detail) => {
+  return (condition, name, detail, {snapshot=true}={}) => {
     throwObserverFailure();
     const observation={name,pass:Boolean(condition),detail};
     report.checks.push(observation);
     // Keep every assertion durable without repeatedly rewriting accumulated
     // screenshots/layouts. Failure and the existing finally retain full state.
     append(resultPath+'.checks.ndjson',JSON.stringify(observation)+'\n');
-    if(!condition || now()-lastResultWrite>=1000) {
+    if(!condition || snapshot && now()-lastResultWrite>=1000) {
       writeSnapshot(resultPath,report);lastResultWrite=now();
     }
     assert.ok(condition,name);

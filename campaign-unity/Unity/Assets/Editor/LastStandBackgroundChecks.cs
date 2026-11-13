@@ -52,7 +52,11 @@ public static class LastStandBackgroundChecks
         public void Advance(double next)
         {
             var advance = Session.GetType().GetMethod("AdvanceAt");
-            if (advance != null && Session.Model.Profile.IsPlayable) advance.Invoke(Session, new object[] { next });
+            // Match Update's scheduling owner, including the retained finite
+            // review cohort hosted by the dedicated loop scene. Profile kind
+            // does not decide whether the session owns a timestamp clock.
+            bool background = (bool?)Session.GetType().GetProperty("BackgroundContinuation")?.GetValue(Session) ?? false;
+            if (advance != null && background) advance.Invoke(Session, new object[] { next });
             else
             {
                 // Honest old scheduling seam: the original Update consumes its
@@ -711,7 +715,7 @@ public static class LastStandBackgroundChecks
         {
             var store = new FeedbackStorage { Value = WorkshopSave };
             var f = new FeedbackFixture(false, store);
-            Require(f.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(store.Value)["version"])==5,
+            Require(f.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(store.Value)["version"])==9,
                 "historical workshop migration finishes before the purchase fault is injected");
             int initialWrites=store.Writes;store.FailWrite=true;
             f.Loop.Audio.UnlockFromGesture("test-current-failed-purchase");
@@ -761,7 +765,7 @@ public static class LastStandBackgroundChecks
 
             var blockedStore = new FeedbackStorage { Value = WorkshopSave };
             var blocked = new FeedbackFixture(false, blockedStore);
-            Require(blocked.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(blockedStore.Value)["version"])==5,
+            Require(blocked.Loop.Progression.SaveState=="ready" && Convert.ToInt32(SaveFields(blockedStore.Value)["version"])==9,
                 "conflict fixture begins with a confirmed current workshop save");
             int blockedInitialWrites=blockedStore.Writes;string blockedCommitted=blockedStore.Value;
             blockedStore.FailWrite=true;

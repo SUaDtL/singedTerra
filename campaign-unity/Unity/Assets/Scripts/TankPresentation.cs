@@ -51,7 +51,7 @@ namespace SingedTerra.Art
         Vector3 turretUp;
         float phase, recoilTime, flashTime;
         float peakRecoilWorld;
-        const float InspectionRadius=13.5f, InspectionHeight=6.7f, OrbitStep=45f;
+        const float InspectionRadius=13.5f, InspectionHeight=5.4f, OrbitStep=45f;
         Vector3 inspectionForward;
         public float InspectionYaw { get; private set; }
         public bool ShowPartCallouts { get; private set; }=true;
@@ -110,11 +110,63 @@ namespace SingedTerra.Art
         LastStandFitting garageFitting;
         Renderer[] garageMeshes;
         readonly Dictionary<Mesh,Vector3[]> garageVertices=new Dictionary<Mesh,Vector3[]>();
+        bool bayGrounded;
+        Vector3 bayGround;
+        Rect bayMatte;
+        float bayFieldOfView;
+        const float BayDistance=13.1f,BayPitch=18f;
+        bool bayFitValid;
+        Rect bayFitViewport,bayFitMatte;
+        float bayFitYaw,bayFitAspect;
+        Vector3 BayDirection => Quaternion.AngleAxis(InspectionYaw+58f,Vector3.up)*inspectionForward*Mathf.Cos(BayPitch*Mathf.Deg2Rad)+Vector3.up*Mathf.Sin(BayPitch*Mathf.Deg2Rad);
+        // A parked vehicle uses a fixed lens and floor mark. Fitting a different
+        // gun must not move the whole chassis across a photographed floor.
+        internal void SetBayGrounding(bool enabled,Vector3 ground=default(Vector3),Rect matte=default(Rect))
+        {
+            // Native shutdown may destroy the camera before the HUD owner.
+            if(!view){bayGrounded=false;return;}
+            if(enabled&&!bayGrounded)bayFieldOfView=view.fieldOfView;
+            if(!enabled&&bayGrounded){view.fieldOfView=bayFieldOfView;view.ResetProjectionMatrix();}
+            bool changed=bayGrounded!=enabled||bayGround!=ground||bayMatte!=matte;
+            bayGrounded=enabled;bayGround=ground;bayMatte=matte;
+            if(!changed||!tank)return;
+            if(enabled)view.fieldOfView=2*Mathf.Atan(Mathf.Tan(bayFieldOfView*Mathf.Deg2Rad*.5f)*matte.height)*Mathf.Rad2Deg;
+            UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);
+        }
+        internal Rect FitBayMatte(Rect viewport,float photoAspect)
+        {
+            if(bayFitValid&&bayFitViewport==viewport&&bayFitYaw==InspectionYaw&&Mathf.Approximately(bayFitAspect,view.aspect))return bayFitMatte;
+            var rotation=Quaternion.LookRotation(-BayDirection);var inverse=Quaternion.Inverse(rotation);
+            float vertical=Mathf.Tan(bayFieldOfView*Mathf.Deg2Rad*.5f),horizontal=vertical*photoAspect;
+            var camera=bayGround+BayDirection*BayDistance;
+            if(garageMeshes==null)garageMeshes=tank.GetComponentsInChildren<Renderer>(true);
+            var min=new Vector2(float.PositiveInfinity,float.PositiveInfinity);var max=new Vector2(float.NegativeInfinity,float.NegativeInfinity);
+            foreach(var renderer in garageMeshes)
+            {
+                if(!VisibleGarageMesh(renderer))continue;
+                var filter=renderer.GetComponent<MeshFilter>();Vector3[] vertices=null;
+                if(filter&&filter.sharedMesh&&filter.sharedMesh.isReadable&&!garageVertices.TryGetValue(filter.sharedMesh,out vertices))
+                {vertices=filter.sharedMesh.vertices;garageVertices.Add(filter.sharedMesh,vertices);}
+                var bounds=renderer.localBounds;
+                for(int i=0;i<(vertices?.Length??8);i++)
+                {
+                    var local=vertices!=null?vertices[i]:bounds.center+Vector3.Scale(bounds.extents,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1));
+                    var p=inverse*(renderer.transform.TransformPoint(local)-camera);
+                    var uv=new Vector2(.5f+p.x/(2*horizontal*p.z),.405f+p.y/(2*vertical*p.z));
+                    min=Vector2.Min(min,uv);max=Vector2.Max(max,uv);
+                }
+            }
+            float ratio=view.aspect/photoAspect;
+            float height=Mathf.Max((max.x-min.x)/(viewport.width*ratio),(max.y-min.y)/viewport.height)/.88f;
+            float width=height*ratio;var centre=(min+max)*.5f;
+            bayFitMatte=new Rect(centre.x-viewport.center.x*width,centre.y-viewport.center.y*height,width,height);
+            bayFitViewport=viewport;bayFitYaw=InspectionYaw;bayFitAspect=view.aspect;bayFitValid=true;return bayFitMatte;
+        }
         public bool ApplyAppearance(LastStandTankAppearance appearance)
         {EnsureInitialized();return TankVisuals && TankVisuals.Apply(appearance);}
         public void InvalidateGarageFraming()
         {
-            garageMeshes=null;
+            garageMeshes=null;bayFitValid=false;
             if(garageFraming && !EncounterActive && !battlefield && view)
             {UpdateCameraGoal();view.transform.position=cameraGoal;view.transform.LookAt(lookGoal);}
             garageFraming=false;
@@ -123,7 +175,7 @@ namespace SingedTerra.Art
         // cropping the world camera or changing the active encounter framing.
         public void SetGarageFraming(Rect normalizedViewport)
         {
-            if(EncounterActive || battlefield || !view || !tank ||
+            if(bayGrounded || EncounterActive || battlefield || !view || !tank ||
                 float.IsNaN(normalizedViewport.x) || float.IsNaN(normalizedViewport.y) ||
                 float.IsNaN(normalizedViewport.width) || float.IsNaN(normalizedViewport.height) ||
                 float.IsInfinity(normalizedViewport.x) || float.IsInfinity(normalizedViewport.y) ||
@@ -156,10 +208,22 @@ namespace SingedTerra.Art
             if(review&&battlefield)
             {
                 float radius=SingedTerra.VisualReview.BattlefieldReview.FramingRadius;
-                view.orthographicSize=Mathf.Max(radius*Mathf.Sin(review.CameraPitch*Mathf.Deg2Rad)/.70f,
+                view.orthographicSize=Mathf.Max(radius*Mathf.Sin(review.CameraPitch*Mathf.Deg2Rad)/.88f,
                     radius/(Mathf.Max(.2f,view.aspect)*.90f));
                 cameraGoal=lookGoal+Quaternion.Euler(review.CameraPitch,-30f,0)*Vector3.back*75f;
                 reviewWidth=Screen.width;reviewHeight=Screen.height;return;
+            }
+            if(bayGrounded&&!battlefield)
+            {
+                float distance=BayDistance;var direction=BayDirection;
+                var rotation=Quaternion.LookRotation(-direction);
+                var anchor=new Vector2((.50f-bayMatte.x)/bayMatte.width,(.405f-bayMatte.y)/bayMatte.height);
+                // Shift the lens, not the physical camera: cropping the matte
+                // cannot introduce a second perspective or slide the tank over it.
+                var projection=Matrix4x4.Perspective(view.fieldOfView,view.aspect,view.nearClipPlane,view.farClipPlane);
+                projection.m02=1-2*anchor.x;projection.m12=1-2*anchor.y;view.projectionMatrix=projection;
+                lookGoal=bayGround;
+                cameraGoal=lookGoal+direction*distance;return;
             }
             if(garageFraming && !battlefield)
             {
@@ -172,7 +236,7 @@ namespace SingedTerra.Art
                 }
                 if(found)
                 {
-                    var direction=(Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius+Vector3.up*InspectionHeight).normalized;
+                    var direction=(Quaternion.AngleAxis(InspectionYaw+58f,Vector3.up)*inspectionForward*InspectionRadius+Vector3.up*InspectionHeight).normalized;
                     var rotation=Quaternion.LookRotation(-direction);
                     float vertical=Mathf.Tan(view.fieldOfView*.5f*Mathf.Deg2Rad),horizontal=vertical*Mathf.Max(.2f,view.aspect);
                     Vector2 centre=garageViewport.center-new Vector2(.5f,.5f);
@@ -182,7 +246,7 @@ namespace SingedTerra.Art
                 }
             }
             cameraGoal=tank.position+(battlefield?new Vector3(17,23,19):
-                Quaternion.AngleAxis(InspectionYaw+38f,Vector3.up)*inspectionForward*InspectionRadius
+                Quaternion.AngleAxis(InspectionYaw+58f,Vector3.up)*inspectionForward*InspectionRadius
                 +Vector3.up*InspectionHeight);
         }
         bool VisibleGarageMesh(Renderer mesh)=>mesh && mesh.enabled && !mesh.forceRenderingOff &&

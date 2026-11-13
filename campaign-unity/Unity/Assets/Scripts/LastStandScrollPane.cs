@@ -19,7 +19,7 @@ namespace SingedTerra.LastStand
             // A separate scroll host prevents the two sibling panes from handling
             // one wheel event twice through an ancestor ScrollRect.
             Viewport=LastStandModal.Node(name+"Viewport",parent);
-            LastStandConsoleChrome.Surface(Viewport,surface,false).color=new Color(.09f,.11f,.10f);
+            LastStandConsoleChrome.Surface(Viewport,surface,false).color=new Color(.10f,.095f,.08f,.18f);
             Viewport.gameObject.AddComponent<RectMask2D>();Content=LastStandModal.Node(name+"Content",Viewport);
             scroll=Viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=Viewport;scroll.content=Content;
             scroll.horizontal=false;scroll.vertical=true;scroll.inertia=false;scroll.movementType=ScrollRect.MovementType.Clamped;

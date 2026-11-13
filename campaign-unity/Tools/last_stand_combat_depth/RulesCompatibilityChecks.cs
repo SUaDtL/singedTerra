@@ -32,7 +32,7 @@ static class RulesCompatibilityChecks
     static bool Ready(LastStandProgression p)=>p.SaveState=="ready";
     static Dictionary<string,object> Obj(object value)=>LastStandSaveJson.Object(value);
     static string Part(string raw,string key)=>LastStandSaveJson.Write(LastStandSaveJson.Read(raw)[key]);
-    static void CurrentEnvelope(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==8,"Expected atomic v8 envelope");
+    static void CurrentEnvelope(Store store)=>Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"])==9,"Expected atomic v9 envelope");
     static Dictionary<string,object> OriginalResearch(object value)
     {
         var research=Obj(value);research["catalogVersion"]=LastStandResearchCatalog.LegacyVersion;
@@ -153,7 +153,7 @@ static class RulesCompatibilityChecks
     {
         var store=new Store{Raw=File.ReadAllText(path)};Check(Ready(Load(store)),"Known input");CurrentEnvelope(store);
         foreach(string field in new[]{"version","rulesVersion","contentVersion","economyVersion"}){
-            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=9;
+            var root=LastStandSaveJson.Read(store.Raw);if(field=="version")root[field]=10;
             else {var cp=Obj(root["checkpoint"]);if(field=="contentVersion")cp[field]="future-content";
                 else Obj(cp[field=="rulesVersion"?"encounter":"shop"])[field]="future-rules";}
             var bad=new Store{Raw=LastStandSaveJson.Write(root)};string bytes=bad.Raw;

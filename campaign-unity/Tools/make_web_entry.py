@@ -49,7 +49,15 @@ document.querySelector('#last-stand-return').addEventListener('click',event=>{
   if(lastStandInstance){event.preventDefault();canvas.focus();lastStandInstance.SendMessage('LastStandBrowserBridge','RequestReturn','');}
 });
 function navigateCanvas(direction){if(lastStandInstance&&typeof lastStandInstance.SendMessage==='function')lastStandInstance.SendMessage('LastStandLoopHud','NavigateKeyboard',direction)}
-canvas.addEventListener('focus',()=>navigateCanvas('enter-first'));
+// A pointer must keep the revealed Unity target stationary between down/up.
+// Focus synchronously before Unity sees down; only this focus event suppresses
+// keyboard entry, so later Tab/programmatic focus retains normal navigation.
+let pointerFocus=false;
+canvas.addEventListener('pointerdown',()=>{
+  pointerFocus=true;
+  try{canvas.focus({preventScroll:true})}finally{pointerFocus=false}
+},true);
+canvas.addEventListener('focus',()=>{if(!pointerFocus)navigateCanvas('enter-first')});
 canvas.addEventListener('blur',()=>navigateCanvas('leave'));
 window.addEventListener('st-last-stand-keyboard-exit',()=>document.querySelector('#last-stand-return').focus());
 function keepWrapperKeyboard(event){

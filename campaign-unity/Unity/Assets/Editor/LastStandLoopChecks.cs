@@ -77,7 +77,15 @@ public static class LastStandLoopChecks
                 var panel = root.Find("SettingsModal/SettingsPanel");
                 Require(panel && panel.Find("ConsoleFrame"),page + " uses shared panel chrome");
                 CheckChromeGraphic(panel.GetComponent<Image>(),false);
-                CheckChromeGraphic(panel.Find("ConsoleFrame").GetComponent<Graphic>(),false);
+                var authored=panel.Find("AuthoredPanel");
+                if(authored)
+                {
+                    CheckChromeGraphic(authored.GetComponent<Graphic>(),false);
+                    using var overlay=new VertexHelper();var frame=panel.Find("ConsoleFrame").GetComponent<Graphic>();
+                    frame.GetType().GetMethod("OnPopulateMesh",BindingFlags.Instance|BindingFlags.NonPublic,null,new[]{typeof(VertexHelper)},null).Invoke(frame,new object[]{overlay});
+                    Require(overlay.currentVertCount==0,"authored panels never carry a second procedural border");
+                }
+                else CheckChromeGraphic(panel.Find("ConsoleFrame").GetComponent<Graphic>(),false);
                 foreach (var button in panel.GetComponentsInChildren<Button>(true)) CheckChromeButton(button);
             }
             Debug.Log("ST_LS_CHROME_PASS test_all_menu_consumers_use_shared_chrome");
@@ -106,6 +114,14 @@ public static class LastStandLoopChecks
     }
     static void CheckChromeButton(Button button)
     {
+        if(button.name=="WaveInfo")
+        {
+            Require(button.GetComponent<Image>().color.a==0&&button.GetComponent<Image>().raycastTarget,
+                "wave instrument keeps a transparent pointer target");
+            Require(button.targetGraphic is Text&&!button.transform.Find("ConsoleFrame"),
+                "wave instrument highlights its live readout without opaque chrome");
+            return;
+        }
         var rect = (RectTransform)button.transform;
         var savedSize = rect.sizeDelta;
         bool wasActive = button.gameObject.activeSelf, wasAvailable = button.interactable;
@@ -135,7 +151,7 @@ public static class LastStandLoopChecks
     {
         Require(graphic,"chrome graphic exists");
         var rect = graphic.rectTransform.rect;
-        float cut = Mathf.Min(action ? 6 : rect.height <= 52 ? 2 : 9,Mathf.Min(rect.width,rect.height)/2);
+        float cut = graphic.name=="AuthoredPanel"?0:Mathf.Min(action ? 6 : rect.height <= 52 ? 2 : 9,Mathf.Min(rect.width,rect.height)/2);
         using var mesh = new VertexHelper();
         var populate = graphic.GetType().GetMethod("OnPopulateMesh",BindingFlags.Instance|BindingFlags.NonPublic,
             null,new[] { typeof(VertexHelper) },null);

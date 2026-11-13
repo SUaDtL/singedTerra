@@ -52,8 +52,20 @@ namespace SingedTerra.LastStand
                 activeSecondaryId=loop.Session.Model?.Loadout.SecondaryId??loop.Progression.Checkpoint?.Loadout.SecondaryId??"",
                 arcShots=loop.Session.Model?.ArcShots??0,arcDamage=loop.Session.Model?.CurrentArcDamage??LastStandUpgradeCatalog.BaseArcDamage,
                 shield=loop.Session.Model?.Shield??0,shieldCapacity=loop.Session.Model?.CurrentShieldCapacity??0,
-                equipmentBayCount=loop.Progression.EquipmentBayCount,researchLabCount=loop.Progression.UnlockedResearchLabCount }));
+                equipmentBayCount=loop.Progression.EquipmentBayCount,researchLabCount=loop.Progression.UnlockedResearchLabCount,
+                skillIntel=loop.Progression.SkillIntel,skillSlots=loop.Progression.SkillSlotCount,
+                selectedSkills=SkillKeys(loop.Progression.SelectedSkills),skillDraft=SkillKeys(loop.SkillDraft),
+                activeSkills=SkillKeys(loop.Session.Model?.Skills.Loadout??LastStandSkillLoadout.Empty),
+                skillCopies=SkillCopies(loop.Progression),skillsStatus=loop.SkillsStatus,
+                overdriveUsed=loop.Session.Model?.SkillUsed(LastStandSkillId.Overdrive)??false,
+                repairsUsed=loop.Session.Model?.SkillUsed(LastStandSkillId.EmergencyRepairs)??false,
+                minefieldUsed=loop.Session.Model?.SkillUsed(LastStandSkillId.Minefield)??false,
+                overdriveRemainingTicks=loop.Session.Model?.OverdriveRemainingTicks??0,minefieldArmed=loop.Session.Model?.MinefieldArmed??false }));
         }
+        static string[] SkillKeys(LastStandSkillLoadout loadout)
+        {var keys=new string[loadout.Count];for(int i=0;i<keys.Length;i++)keys[i]=LastStandSkillCatalog.Get(loadout.Ids[i]).Key;return keys;}
+        static int[] SkillCopies(LastStandProgression progression)
+        {var copies=new int[LastStandSkillCatalog.Count];foreach(var skill in LastStandSkillCatalog.All)copies[(int)skill.Id]=progression.SkillCopies(skill.Id);return copies;}
         static AppearanceState Appearance(LastStandTankAppearance value)=>new AppearanceState{
             treads=value.Treads,hull=value.Hull,turret=value.Turret,barrel=value.Barrel,paint=value.Paint};
         [Serializable] sealed class AppearanceState {public string treads,hull,turret,barrel,paint;}
@@ -86,6 +98,11 @@ namespace SingedTerra.LastStand
             public string armoryDraftPrimaryId,armoryDraftSecondaryId,armoryStatus,selectedPrimaryId,selectedSecondaryId,activeSecondaryId;
             public bool armoryCanApply;
             public int armoryPresetSlot,arcShots,arcDamage,shield,shieldCapacity,equipmentBayCount,researchLabCount;
+            public int skillIntel,skillSlots,overdriveRemainingTicks;
+            public string[] selectedSkills,skillDraft,activeSkills;
+            public int[] skillCopies;
+            public string skillsStatus;
+            public bool overdriveUsed,repairsUsed,minefieldUsed,minefieldArmed;
         }
         [Serializable] sealed class HitState { public int tick, cannonDamage, firstFoeHull, kills; }
     }

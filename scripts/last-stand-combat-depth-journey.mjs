@@ -1,3 +1,4 @@
+import {assertSkillProfile} from '../e2e/helpers/lastStandWaveGuards.mjs';
 import {LAST_STAND_HELPER_INPUTS} from '../e2e/helpers/lastStandJourney.mjs';
 // Declared development profiles reach late content; all player actions use
 // normal input in disposable contexts. This is not earned progression proof.
@@ -21,11 +22,12 @@ const inputs=['scripts/last-stand-combat-depth-journey.mjs','e2e/helpers/lastSta
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
-'campaign-unity/Tools/contracts/last-stand-observation-v6.json'];
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json'];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,sha(readFileSync(resolve(root,p)))]));
 export const PRESENTATION_FIXTURE_SOURCES=Object.freeze([
   ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
-  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandProgressionSkills','LastStandProgressionSkillsSave','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
     'LastStandSaveJson','LastStandProgressionAppearance','Content/LastStandTankAppearance','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
     'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
     .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
@@ -58,10 +60,10 @@ export function admitFixtures(manifest,path,sourceRoot=root){
     assert.equal(row.savePath,row.id+'.json');const file=resolve(directory,row.savePath);
     assert.equal(dirname(file),directory,'Fixture must be a direct sibling of its manifest');
     assert.equal(realpathSync(file),file);assert.equal(sha(readFileSync(file)),row.saveSha256);
-    const value=JSON.parse(readFileSync(file));assert.equal(value.version,row.version);
+    const value=JSON.parse(readFileSync(file));assert.equal(value.version,row.version);if(value.version===9)assertSkillProfile(value.skills);
     if(row.id==='legacy-v4')assert.equal(value.version,4);
     if(row.id!=='legacy-v4'){
-      assert.equal(value.version,current?8:7);assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
+      assert.ok(current?[8,9].includes(value.version):value.version===7,'Supported presentation save edition');assert.ok(Number.isSafeInteger(row.createdUtcMilliseconds)&&row.createdUtcMilliseconds<=Date.now()+1000);
       assert.equal(value.research.lastObservedUtcMilliseconds,row.createdUtcMilliseconds);
     }
     if(row.id==='tier5-before-commander'){
@@ -124,7 +126,7 @@ async function main(){
     await seed.close();return createLastStandBrowserActor({context,id,report,output,base,persist});
   }
   async function selectFit(a,fit,touch=false){
-    if(a.layout().schema==='singedterra-last-stand-observation/v6'){
+    if(['singedterra-last-stand-observation/v6','singedterra-last-stand-observation/v7'].includes(a.layout().schema)){
       await selectLastStandFitting({fitting:fit,click:(name)=>a.click(name,{touch}),currentLayout:()=>a.layout(),currentState:()=>a.state(),waitFor:(condition)=>a.until(condition)});return;
     }
     for(let n=0;a.state().fittingId!==fit&&n<5;n++){

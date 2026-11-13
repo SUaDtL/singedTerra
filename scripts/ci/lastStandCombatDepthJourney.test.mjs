@@ -46,14 +46,19 @@ test('current Commander admission requires the fourth identity and actual wave99
     writeFileSync(file,bytes);bad.cases[2].saveSha256=sha(bytes);assert.throws(()=>admitFixtures(bad,f.path,f.root));
   }
 });
-test('current presentation requires exact source closure and explicit profile8 while retaining v1 profile7',t=>{
+test('current presentation requires exact source closure and valid profile8 or profile9 while retaining v1 profile7',t=>{
   const f=fixture(t,true);assert.doesNotThrow(()=>admitFixtures(f.value,f.path,f.root));
+  const current=structuredClone(f.value),first=current.cases[0],saved={...JSON.parse(f.raw),version:9,
+    skills:{intel:2,copies:[1,0,0,0,0,0],loadout:['overdrive'],firstAwards:[]}};
+  const raw=JSON.stringify(saved);writeFileSync(join(f.dir,first.savePath),raw);first.version=9;first.saveSha256=sha(raw);
+  assert.doesNotThrow(()=>admitFixtures(current,f.path,f.root));
+  writeFileSync(join(f.dir,f.value.cases[0].savePath),f.raw);
   for(const mutate of [m=>delete m.sourceSha256[PRESENTATION_FIXTURE_SOURCES[0]],
     m=>m.sourceSha256.unknown=sha('inert'),m=>m.schema='last-stand-combat-depth-presentation-fixtures/v3',
     m=>m.schema='last-stand-combat-depth-presentation-fixtures/v1']){
     const bad=structuredClone(f.value);mutate(bad);assert.throws(()=>admitFixtures(bad,f.path,f.root));
   }
-  for(const version of [7,9]){
+  for(const version of [7,9,10]){
     const bad=structuredClone(f.value),row=bad.cases[0],raw=JSON.stringify({...JSON.parse(f.raw),version});
     writeFileSync(join(f.dir,row.savePath),raw);row.version=version;row.saveSha256=sha(raw);
     assert.throws(()=>admitFixtures(bad,f.path,f.root));

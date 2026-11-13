@@ -1,5 +1,18 @@
 # Third-Party Notices
 
+## Barlow 1.422
+
+The Last Stand native UI bundles unmodified Barlow Regular and Barlow Condensed
+SemiBold from the Barlow project, version 1.422, commit
+`697600fcece1685b0ba409eb82868546def9a84e`.
+
+Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow).
+Licensed under the SIL Open Font License 1.1. The complete copyright and license
+are distributed with the fonts at
+`campaign-unity/Unity/Assets/Resources/ArtDirection/Barlow-OFL.txt` and included
+in the native player's Resources. No font modifications or renamed derivatives
+are distributed.
+
 ## PixiJS
 
 singedTerra uses PixiJS 8.22.0 as a client-side visual compositor for the

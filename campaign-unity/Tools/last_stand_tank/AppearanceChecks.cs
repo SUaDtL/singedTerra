@@ -64,7 +64,7 @@ static class AppearanceChecks
     {
         var s=new Store();var p=Load(s);Need(p.Appearance.Equals(LastStandTankAppearance.Default),"fresh default");
         Need(p.TryApplyAppearance(Mixed,p.Revision),"apply");Need(Load(s).Appearance.Equals(Mixed),"reload confirmed value");
-        Need(LastStandSaveJson.Integer(LastStandSaveJson.Read(s.Raw)["version"])==8,"new profile edition");
+        Need(LastStandSaveJson.Integer(LastStandSaveJson.Read(s.Raw)["version"])==9,"new profile edition");
     }
     static void Legacy(string tools)
     {
@@ -79,7 +79,7 @@ static class AppearanceChecks
     static void V6(string tools)
     {
         var s=new Store{Raw=Retained(tools)};Load(s);string before=Gameplay(s.Raw);var map=LastStandSaveJson.Read(s.Raw);
-        map.Remove("appearance");map.Remove("secondaryFitting");map.Remove("loadoutPresets");map["version"]=6;
+        map.Remove("appearance");map.Remove("secondaryFitting");map.Remove("loadoutPresets");map.Remove("skills");map["version"]=6;
         var levels=LastStandSaveJson.Object(map["permanentLevels"]);levels.Remove("arcOutput");levels.Remove("shieldCapacity");
         var tiers=LastStandSaveJson.Object(map["tierRecords"]);for(int tier=5;tier<=9;tier++)tiers.Remove("tier-"+tier);
         var research=LastStandSaveJson.Object(map["research"]);research["catalogVersion"]=LastStandResearchCatalog.LegacyVersion;
@@ -103,7 +103,7 @@ static class AppearanceChecks
     }
     static void Future()
     {
-        var s=new Store();Load(s);var map=LastStandSaveJson.Read(s.Raw);map["version"]=9;s.Raw=LastStandSaveJson.Write(map);int writes=s.Writes;
+        var s=new Store();Load(s);var map=LastStandSaveJson.Read(s.Raw);map["version"]=10;s.Raw=LastStandSaveJson.Write(map);int writes=s.Writes;
         var p=Load(s);Need(p.SaveState!="ready"&&p.SaveHealth==LastStandSaveHealth.UnsupportedVersion&&!p.CanPreviewBackup&&s.Writes==writes,"future schema is never repaired/overwritten");
     }
     static void GameplayOnly(string tools)

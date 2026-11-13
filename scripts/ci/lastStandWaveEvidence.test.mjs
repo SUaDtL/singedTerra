@@ -5,11 +5,58 @@ import * as journey from '../../e2e/helpers/lastStandJourney.mjs';
 import {parseWaveOracleCsv} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveTerminal,validateCheckpointResume} from '../../e2e/helpers/lastStandJourney.mjs';
 import {idleWaveFields,abandonedWaveSave} from './lastStandWaveSaveFixtures.mjs';
-import {assertProfilePreservedExceptResearchClock} from '../../e2e/helpers/lastStandWaveGuards.mjs';
+import {assertProfilePreservedExceptResearchClock,assertSkillProfile,assertSkillCheckpoint} from '../../e2e/helpers/lastStandWaveGuards.mjs';
 
 // Inert observations test rejection. They never qualify a browser or grant saves.
 const clone=x=>structuredClone(x);
 const source=readFileSync(new URL('../../e2e/helpers/lastStandJourney.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+
+test('skills profile admission rejects unknown, duplicated, unowned and unbounded collection values',()=>{
+ const good={intel:3,copies:[1,0,0,0,0,0],loadout:['overdrive'],firstAwards:['tier-1:skills-25']};
+ assert.equal(assertSkillProfile(good),true);
+ for(const change of [s=>s.intel=-1,s=>s.intel=2147483648,s=>s.copies[0]=7,s=>s.copies.pop(),
+  s=>s.loadout=['minefield'],s=>s.loadout=['overdrive','overdrive'],s=>s.firstAwards=['unknown'],
+  s=>s.firstAwards.push('tier-1:skills-25'),s=>s.unknown=true]){
+  const bad=clone(good);change(bad);assert.throws(()=>assertSkillProfile(bad));
+ }
+});
+test('skills checkpoint admission preserves spent uses and refuses impossible effects',()=>{
+ const good={encounter:{tick:300,cannonDamage:20},skills:{loadout:['overdrive','minefield'],ranks:[1,0,1,0,0,0]},
+  skillState:{spentMask:5,overdriveUntilTick:400,minefieldArmed:true,minefieldDamage:80}};
+ assert.equal(assertSkillCheckpoint(good),true);
+ for(const change of [s=>s.skills.ranks[0]=4,s=>s.skills.ranks[1]=1,s=>s.skills.loadout.push('overdrive'),
+  s=>s.skillState.spentMask=7,s=>s.skillState.overdriveUntilTick=541,s=>s.skillState.minefieldDamage=81,
+  s=>s.skillState.spentMask=1,s=>s.encounter.tick=0,s=>delete s.skillState.minefieldArmed]){
+  const bad=clone(good);change(bad);assert.throws(()=>assertSkillCheckpoint(bad));
+ }
+});
+test('v9 idle wave profile permits earned Intel but forbids unexplained skill ownership',()=>{
+ const good={...idleWaveFields({profileVersion:9}),skills:{intel:1,copies:[0,0,0,0,0,0],loadout:[],firstAwards:['tier-1:skills-25']}};
+ assert.doesNotThrow(()=>journey.assertIdleWaveSave(good));
+ const bad=clone(good);bad.skills.copies[0]=1;assert.throws(()=>journey.assertIdleWaveSave(bad),/grants no skill ownership/);
+});
+test('v4 background clock admission preserves exact ticks and rejects unknown editions',()=>{
+ const owner=journey.createRuntimeObservation();
+ const before={load:1,timeOrigin:1000,scope:'healthy',run:1,t:100,tick:20,wave:1,
+  rules:'last-stand-waves-v4:1',status:'Running',paused:false,catchingUp:false,failed:false,
+  selectedSpeed:1,effectiveSpeed:1,clockTimestamp:5,clockPending:0,callbackSteps:1};
+ const after={...before,t:1100,tick:40,clockTimestamp:6};
+ assert.equal(owner.isWaveObservation({rules:before.rules}),true);
+ assert.equal(owner.elapsedTicks(before,after).ticks,20);
+ for(const patch of [{rules:'last-stand-waves-v5:1'},{tick:41},{clockPending:.05},{selectedSpeed:5}])
+  assert.throws(()=>owner.elapsedTicks(before,{...after,...patch}));
+});
+test('v4 native audio boundary accepts current rules and refuses mixed or unknown editions',()=>{
+ const id={load:1,timeOrigin:1000,scope:'healthy'};
+ const value={kind:'blur',before:{...id,run:1,t:0,rules:'last-stand-waves-v4:1',loop:{profileVersion:'last-stand-waves-v4'}},
+  begin:2,recovered:1100,ms:500,cues:[],states:[],encounters:[],callbackRecords:[],oracle:{},events:[
+   {...id,t:1,kind:'blur',focused:false,hidden:false,globalTarget:true},
+   {...id,t:1000,kind:'focus',focused:true,hidden:false,globalTarget:true}]};
+ assert.equal(journey.validateAwayAudioReturn(value).boundary.callbacks.length,0);
+ for(const rules of ['last-stand-waves-v5:1','playable-prototype-v1']){
+  const bad=clone(value);bad.before.rules=rules;assert.throws(()=>journey.validateAwayAudioReturn(bad),/wave profile and model rules disagree/);
+ }
+});
 
 test('earned-research preview preserves every field except monotonic clock metadata',()=>{
  const before={...idleWaveFields(),credits:29,selectedFitting:'arc',secondaryFitting:'shield',loadoutPresets:[{name:'Storm Guard'}]};

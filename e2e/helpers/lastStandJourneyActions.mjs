@@ -59,24 +59,26 @@ export function createJourneyActions(runtime) {
       raw:'ST_LS_HUD_LAYOUT '+JSON.stringify({graphics:layout.graphics})},canvas));
 
   const measureControls=context.measureControls??(async()=>{
-      const {canvas,pixels}=await context.page.locator('#unity-canvas').evaluate(element=>{
+      const {canvas,pixels,documentState}=await context.page.locator('#unity-canvas').evaluate(element=>{
         const box=element.getBoundingClientRect(),visible=getComputedStyle(element).visibility==='visible' && box.width>0 && box.height>0;
         return {canvas:visible?{x:box.x,y:box.y,width:box.width,height:box.height}:null,
-          pixels:{width:element.width,height:element.height}};
+          pixels:{width:element.width,height:element.height},
+          documentState:{timeOrigin:performance.timeOrigin,t:performance.now(),
+            focused:!document.hidden && document.hasFocus() && document.activeElement===element}};
       });
       context.assert.ok(canvas);
       const layout=context.layouts.at(-1);context.check(layout?.coordinates==='top-left','real HUD top-left convention');
       context.check(Math.abs(layout.width-pixels.width)<=1 && Math.abs(layout.height-pixels.height)<=1,'HUD dimensions use actual canvas backing pixels',{canvas,pixels,layout});
       const projected=projectedControls(layout,canvas);
-      return {canvas,layout,projected};
+      return {canvas,layout,projected,documentState};
     });
 
   const geometry=context.geometry??(async(name,{reveal=false,requireFull=true}={})=>{
-      const {canvas,layout,projected}=reveal?await revealObservedLastStandControl({name,page:context.page,geometry:measureControls,
+      const {canvas,layout,projected,documentState}=reveal?await revealObservedLastStandControl({name,page:context.page,geometry:measureControls,
         trace:context.trace,readLoad:()=>context.load}):await measureControls();
       if(requireFull)context.check(projected.some(item=>item.name===name && item.full),`real HUD ${name} is completely visible inside its actual viewport`);
       const control=hudControls(layout).filter(item=>item.name===name && item.active && item.interactable);
-      context.check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0]};
+      context.check(control.length===1,`operable real HUD ${name}`);return{canvas,layout,item:control[0],documentState};
     });
 
   const resize=context.resize??(async(viewport,{capture=true}={})=>{
@@ -155,13 +157,21 @@ export function createJourneyActions(runtime) {
   const gameClick=context.gameClick??(async(...args)=>(await armGameClick(...args))());
 
   const gameKey=context.gameKey??(async(name,action,predicate=()=>true)=>{
-      const {layout:prepared}=await geometry(name,{requireFull:false}),navigationStart=context.trace.length;
+      // Preparation needs the retained phase/identity, not a redundant DOM
+      // measurement. The final snapshot still admits the actual full target.
+      const initial=context.layouts.at(-1),navigationStart=context.trace.length;
+      context.check(!!initial && hudControls(initial).filter(item=>item.name===name && item.active && item.interactable).length===1,
+        `operable real HUD ${name}`);
+      const prepared={...initial};
+      const captureAfterPause=name==='SpeedRate'&&context.states.at(-1)?.phase==='battle'&&context.states.at(-1)?.paused===false;
       await keyboardFocus(context.page.locator('#last-stand-return'));
       await context.page.keyboard.press('Tab');
-      context.check(await context.page.locator('#unity-canvas').evaluate(element=>document.activeElement===element),'native Tab enters actual Unity controls');
+      context.check(await context.page.locator('#unity-canvas').evaluate(element=>{
+        const active=document.activeElement===element;
+        if(active)window.__stInputArea='gameplay-keyboard';return active;
+      }),'native Tab enters actual Unity controls');
       const ordered=hudControls(context.layouts.at(-1)).filter(item=>item.active && item.interactable).sort((a,b)=>Math.abs(a.y-b.y)>.5?a.y-b.y:a.x-b.x);
       const index=ordered.findIndex(item=>item.name===name);context.check(index>=0,'keyboard target is actually enabled');
-      await context.page.evaluate("window.__stInputArea='gameplay-keyboard'");
       const keys=[];for(let i=0;i<index;i++){await context.page.keyboard.press('Tab');keys.push('Tab');}
       const navigation=context.trace.slice(navigationStart).findLast(item=>item.kind==='keydown' && item.code==='Tab');
       context.check(navigation && Number.isFinite(navigation.t),'actual final keyboard navigation edge is observed');
@@ -169,10 +179,11 @@ export function createJourneyActions(runtime) {
       // selection to become the requested target. The exact owner is checked below.
       await until(context.layouts,0,item=>item.load===navigation.load && item.timeOrigin===navigation.timeOrigin &&
         item.scope===navigation.scope && item.t>=navigation.t,8);
-      await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
-      const {canvas:keyboardCanvas}=await geometry(name);
-      const documentState=await context.page.evaluate(()=>({timeOrigin:performance.timeOrigin,t:performance.now(),
-        focused:!document.hidden && document.hasFocus() && document.activeElement===document.getElementById('unity-canvas')}));
+      // A software-rendered screenshot can outlast the remaining live run.
+      // Keep the fresh input guards below before Enter; capture a live Pause
+      // only after its single activation has been observed.
+      if(!captureAfterPause)await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
+      const {canvas:keyboardCanvas,documentState}=await geometry(name);
       context.validateKeyboardSubmit({name,prepared,state:context.states.at(-1),layout:context.layouts.at(-1),documentState,navigation});
       context.check(projectedControls(context.layouts.at(-1),keyboardCanvas).some(item=>item.name===name&&item.full),
         'Keyboard submit requires the complete target in its current actual viewport');
@@ -183,6 +194,7 @@ export function createJourneyActions(runtime) {
       const activations=name==='SpeedRate'?context.encounters.slice(encStart).filter(item=>item.action==='pause'):
         context.states.slice(start).filter(item=>item.action===action);
       context.check(activations.length===1,'one actual owner receives each keyboard activation',activations);
+      if(captureAfterPause)await context.screenshot(`keyboard-focus-${name}-${context.report.screenshots.length}`);
       await context.page.evaluate("window.__stInputArea='outer'");return observed;
     });
 

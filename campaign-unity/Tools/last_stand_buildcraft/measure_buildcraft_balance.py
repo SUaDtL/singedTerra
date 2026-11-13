@@ -29,12 +29,14 @@ def hashes(paths):
 
 
 def validate_report(report):
-    if report["schema"] != 1 or report["policy"] != "buildcraft-earned-pairs-v1" or report["rulesVersion"] != "last-stand-waves-v3" or report["economyVersion"] != "buildcraft-economy-v5":
+    if report["schema"] != 1 or report["policy"] != "buildcraft-earned-pairs-v1" or report["rulesVersion"] not in ("last-stand-waves-v3", "last-stand-waves-v4") or report["economyVersion"] != "buildcraft-economy-v5":
         raise ValueError("Unknown measurement identity")
     seed = report["seed"]
     if hashlib.sha256(seed["profileJson"].encode()).hexdigest() != seed["profileSha256"]:
         raise ValueError("Earned seed bytes changed")
     profile = json.loads(seed["profileJson"])
+    if report["rulesVersion"] == "last-stand-waves-v4" and profile.get("skills", {}).get("loadout") != []:
+        raise ValueError("Buildcraft baseline requires a neutral skill loadout")
     if seed["grossSalvage"] != seed["wallet"] + seed["permanentSpent"] + seed["researchSpent"] or profile["credits"] != seed["wallet"]:
         raise ValueError("Seed investment is not earned")
     if sum(row["cost"] for row in report["researchPurchases"]) != seed["researchSpent"]:

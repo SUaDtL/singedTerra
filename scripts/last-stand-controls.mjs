@@ -31,7 +31,8 @@ const inputHashes=()=>Object.fromEntries(['scripts/last-stand-controls.mjs',
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
-'campaign-unity/Tools/contracts/last-stand-observation-v6.json','e2e/helpers/lastStandTierJourney.mjs',
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json','e2e/helpers/lastStandTierJourney.mjs',
   'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs']
   .map(path=>[path,createHash('sha256').update(readFileSync(path)).digest('hex')]));
 const report = {status:'running',scope:'source-bound headless Web controls and recorded audio; owner listening and native acceptance separate',

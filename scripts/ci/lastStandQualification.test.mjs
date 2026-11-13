@@ -53,6 +53,114 @@ const controlInputPaths=['e2e/helpers/lastStandControlReveal.mjs','e2e/helpers/l
   'campaign-unity/Tools/contracts/last-stand-observation-v1.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json'];
 
+test('actual cleared-wave admission requires the complete current Skills save and matching durable state',()=>{
+  const block=source.match(/    assertIdleWaveSave\(savedWave\);\n    check\([\s\S]*?'cleared waves atomically bank rewards and complete checkpoints',savedWave\);/)?.[0];
+  assert.ok(block,'The actual cleared-wave admission block is present');
+  const admit=new Function('savedWave','savedState','assertIdleWaveSave','check',block);
+  const saved={...idleWaveFields({wave:2,profileVersion:9}),credits:2,pendingDefeat:null,
+    skills:{intel:0,copies:[0,0,0,0,0,0],loadout:[],firstAwards:[]},checkpoint:{runId:1,
+      contentVersion:'last-stand-content-v4',shop:{version:3,tier:1,fitting:1,economyVersion:'buildcraft-economy-v5'},
+      loadout:{primary:'repair',secondary:null},combatResearch:{armorPiercing:0,areaControl:0,fieldEngineering:0},
+      skills:{loadout:[],ranks:[0,0,0,0,0,0]},skillState:{spentMask:0,overdriveUntilTick:0,minefieldArmed:false,minefieldDamage:0},
+      buildcraft:{arcShots:0,nextArcTick:1,arcDamage:16,shield:0,shieldCapacity:0,shieldRestored:0,shieldAbsorbed:0,nextShieldRechargeTick:20,lastShieldHitTick:0},
+      encounter:{rulesVersion:'last-stand-waves-v4',tier:1,fitting:1,tick:900,wave:2,completedWave:2,cannonDamage:20,
+        mortarShots:0,railgunShots:0,nextMortarTick:1,nextRailgunTick:1,mortarDamage:18,railgunDamage:40}}};
+  const state={wallet:2,checkpointWave:2},check=(condition,name)=>assert.ok(condition,name);
+  admit(saved,state,journey.assertIdleWaveSave,check);
+  for(const change of [s=>s.version=8,s=>s.version=10,s=>delete s.skills,s=>delete s.checkpoint,
+    s=>delete s.checkpoint.skills,s=>delete s.checkpoint.skillState,s=>s.checkpoint.skillState.spentMask=1,
+    s=>s.checkpoint.contentVersion='last-stand-content-v3',s=>s.pendingDefeat={},s=>s.credits++,
+    s=>s.checkpoint.encounter.completedWave=1,s=>s.checkpoint.encounter.completedWave=3]){
+    const broken=structuredClone(saved);change(broken);
+    assert.throws(()=>admit(broken,state,journey.assertIdleWaveSave,check),undefined,String(change));
+  }
+});
+
+function delayedRuntimePair({delay=2300,wallDelay=delay,inFlight=true}={}){
+  const identity={load:3,timeOrigin:100000,scope:'healthy'};
+  const encounter={...identity,action:'tick',run:1,tick:200,t:10100,status:'Running',hp:120,kills:4,paused:false};
+  const state={...identity,action:'session',sessionRun:1,runId:19,pendingRunId:0,tick:200,t:10101,hull:120,kills:4,paused:false};
+  const deployment={...encounter,action:'deploy',tick:0,t:1000,kills:0};
+  const deployedState={...state,action:'deploy',tick:0,t:1010,kills:0};
+  const encounters=[deployment,{...encounter,tick:180,t:8999}],states=[deployedState,{...state,tick:180,t:9000}];
+  const future={...encounter,tick:240,t:10000+delay+4};
+  let now=10000,wall=0,calls=0,waits=0;
+  const owner=journey.createRuntimeObservation({Date:{now:()=>wall}});
+  const run=()=>owner.observeRuntimePair({encounters,states,load:3,options:{run:1,minT:8000},
+    check:(condition,name)=>assert.ok(condition,name),
+    clock:async()=>{
+      if(calls++===1){now=10000+delay;wall=wallDelay;encounters.push(encounter);states.push(state);
+        if(inFlight)encounters.push(future);}
+      return {t:now,timeOrigin:100000};
+    },wait:async ms=>{waits++;now+=ms;wall+=ms;}});
+  return {run,encounter,state,deployment,deployedState,future,encounters,states,waits:()=>waits,elapsed:()=>now-10000};
+}
+
+test('runtime pair acquisition preserves a newly emitted pair through slow clock delivery and an in-flight newer packet',async()=>{
+  for(const options of [{},{delay:7999,inFlight:false}]){
+    const x=delayedRuntimePair(options),observed=await x.run();
+    assert.equal(observed.tick,200);assert.equal(observed.t,10100);
+    assert.equal(observed.loop,x.state);assert.equal(observed.loop.t,10101);
+    assert.equal(x.waits(),1,'Only the initial sample lacked a fresh pair; the delayed response needs no further wait');
+  }
+});
+
+test('runtime pair acquisition uses the first sampled clock when its current pair is already coherent',async()=>{
+  const x=delayedRuntimePair({delay:9000,wallDelay:9000,inFlight:false});
+  x.encounters.push({...x.encounter,t:9953.3});
+  const current={...x.state,t:9972.8};x.states.push(current);
+  const observed=await x.run();
+  assert.equal(observed.tick,200);assert.equal(observed.t,9953.3);
+  assert.equal(observed.loop,current);
+  assert.equal(x.waits(),0,'A fresh complete pair needs no second remote clock request');
+  assert.equal(x.elapsed(),0,'Use the existing sample without extending either deadline');
+});
+
+test('runtime observer journals polling checks without full snapshots consuming its deadline',async()=>{
+  // Actual run43290726426/load6 had a stale first pair, then a coherent pair
+  // within4578.7ms of page time. Full54.7MB report writes also consumed wall time.
+  const identity={load:6,timeOrigin:1794515393776.7,scope:'healthy'};
+  const deploy={...identity,action:'deploy',run:1,tick:0,t:67851.8,status:'Running',hp:120,kills:0,paused:false};
+  const deployed={...identity,action:'deploy',sessionRun:1,runId:3,pendingRunId:0,tick:0,t:68048.8,phase:'battle',hull:120,kills:0,paused:false};
+  const encounters=[deploy,{...deploy,action:'tick',tick:41,t:69937.8,kills:1}];
+  const states=[deployed,{...deployed,action:'session',tick:41,t:70104.3,kills:1}];
+  const current={...deployed,action:'session',tick:132,t:74612.8,kills:3};
+  const report={checks:[]},journal=[],snapshots=[];let wall=0,calls=0;
+  const check=journey.createJourneyCheck({report,resultPath:'inert-result',throwObserverFailure:()=>{},now:()=>wall,
+    append:(_path,line)=>journal.push(JSON.parse(line)),
+    writeSnapshot:()=>{snapshots.push(report.checks.at(-1).name);wall+=2500;}});
+  const owner=journey.createRuntimeObservation({Date:{now:()=>wall}});
+  const observed=await owner.observeRuntimePair({encounters,states,load:6,check,
+    clock:async()=>{
+      if(calls++===0)return {timeOrigin:identity.timeOrigin,t:72768.1};
+      wall+=4578.7;encounters.push({...deploy,action:'tick',tick:132,t:74458.5,kills:3});states.push(current);
+      return {timeOrigin:identity.timeOrigin,t:77346.8};
+    },wait:async ms=>{wall+=ms;}});
+  assert.equal(observed.tick,132);assert.equal(observed.loop,current);
+  assert.deepEqual(journal.map(row=>[row.name,row.pass]),[
+    ['coherent observation document clock',true],['coherent observation document clock',true],
+    ['coherent actual loop/session observation counters',true]]);
+  assert.deepEqual(snapshots,['coherent actual loop/session observation counters']);
+  assert.deepEqual(report.checks,journal,'Every admitted check remains durable before return');
+  assert.ok(wall<8000,'Evidence polling must not spend the acquisition deadline on repeated full snapshots');
+});
+
+test('runtime pair acquisition rejects stale, foreign, contradictory and overdue observations',async()=>{
+  for(const change of [x=>{x.encounter.t=9999;x.state.t=9999.5;},x=>x.encounter.load++,x=>x.encounter.timeOrigin++,
+    x=>x.encounter.run++,x=>x.state.sessionRun++,x=>x.state.runId++,x=>x.encounter.hp--,x=>x.state.kills++,
+    x=>x.state.paused=true,x=>x.state.t=10099,x=>x.deployedState.runId++,
+    x=>{x.encounter.t=50000;x.state.t=50001;}]){
+    const x=delayedRuntimePair();change(x);
+    await assert.rejects(x.run,/coherent actual loop\/session observation/);
+    assert.ok(x.elapsed()<=8040,'Rejected observations cannot extend the page-clock deadline');
+  }
+  for(const options of [{delay:8000,inFlight:false},{wallDelay:8000,inFlight:false}]){
+    const x=delayedRuntimePair(options);
+    await assert.rejects(x.run,/coherent actual loop\/session observation pair absent within bounded wait/);
+    assert.equal(x.waits(),1,'An overdue response must be refused without another wait after the initial incomplete sample');
+  }
+});
+
 function firstImpactFixture(damage=20){
   const identity={load:3,timeOrigin:1000,scope:'healthy'};
   const oracle=Object.fromEntries(Array.from({length:91},(_,tick)=>[tick,{tick,hp:120,kills:tick<60?0:tick<80?(damage===30?1:0):(damage===30?2:1),
@@ -73,11 +181,11 @@ function firstImpactFixture(damage=20){
   const cues=[{...identity,t:5001,text:'ST_LS_AUDIO event=cannon\n'},{...identity,t:5003,text:'ST_LS_AUDIO event=destruction\n'}];
   return {deployed,hits,encounters,callbackRecords,cues,oracle};
 }
-async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01}={}){
+async function firstImpactCaller(x,{upgraded=false,player=false,rms=.01,until}={}){
   const measured=[],context={...x,start:0,player,check:(value,label)=>assert.ok(value,label),
     noCaptureStart:1010,page:{waitForTimeout:async()=>{},evaluate:async()=>[]},write:()=>{},
     measureFrames:()=>({p95_ms:10}),report:{frame_timing:{capture_active:{'first-foe-before-impact':{p95_ms:10}}}},
-    until:async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;}};
+    until:until??(async(items,start,predicate)=>{const item=items.slice(start).find(predicate);assert.ok(item,'required actual observation absent');return item;})};
   if(upgraded){const result=await journey.observeUpgradedImpact(context);return {value:{hit:result.upgradedHit},measured};}
   const result=await journey.observeBaselineImpact(context);
   await journey.measureBaselineImpact({...context,firstSound:result.firstSound,battleLayouts:async()=>null,
@@ -93,6 +201,30 @@ test('actual first-hit callers reject a later reused foe slot and wrong deployme
       x=>x.hits[0].kills++,x=>x.callbackRecords[1].tick=59]){
       const x=firstImpactFixture(damage);mutate(x);await assert.rejects(()=>firstImpactCaller(x,options),undefined,String(mutate));
     }
+  }
+});
+
+test('actual first-hit callers preserve the earliest impact when polling receives multiple hits',async()=>{
+  for(const damage of [20,30]){
+    const x=firstImpactFixture(damage),first=x.hits[0];
+    x.hits.push({...first,t:4001,tick:80,kills:x.oracle[80].kills,firstFoeHull:0});
+    x.callbackRecords=x.callbackRecords.slice(0,2);
+    Object.assign(x.callbackRecords[0],{timestamp:104.257,elapsed:1.507,pending:1.507});
+    Object.assign(x.callbackRecords[1],{timestamp:104.257,elapsed:1.507,tick:85,steps:30});
+    const until=journey.createJourneyActions({throwObserverFailure:()=>{},page:{waitForTimeout:async()=>assert.fail('Both impacts are already retained')}}).until;
+    const result=await firstImpactCaller(x,{upgraded:damage===30,until});
+    assert.equal(result.value.hit,first,'The first authoritative impact must survive later hits delivered before the poll');
+    x.hits.splice(1,0,{...first,t:4000.5});
+    await assert.rejects(()=>firstImpactCaller(x,{upgraded:damage===30,until}),/First authoritative impact cannot be duplicated/);
+  }
+});
+
+test('actual first-hit callers reject the earliest contradiction before a later matching impact',async()=>{
+  for(const damage of [20,30]){
+    const x=firstImpactFixture(damage);
+    x.hits.unshift({...x.hits[0],t:3999,tick:59});
+    const until=journey.createJourneyActions({throwObserverFailure:()=>{},page:{waitForTimeout:async()=>assert.fail('The contradictory impact is already retained')}}).until;
+    await assert.rejects(()=>firstImpactCaller(x,{upgraded:damage===30,until}),/First authoritative cannon impact differs from deployment\/oracle/);
   }
 });
 test('actual first-hit audio caller measures a fresh admitted cannon pair independently of suppressed impact time',async()=>{
@@ -181,6 +313,94 @@ test('keyboard submit requires fresh exact selection and a current focused docum
     const value=keyboardSubmitFixture();mutate(value);assert.throws(()=>journey.validateKeyboardSubmit(value));
   }
 });
+test('earned checkpoint capture pauses immediately after its real wave condition without an extra timed delay',async()=>{
+  const source=readFileSync('e2e/helpers/lastStandJourney.mjs','utf8');
+  const begin=source.indexOf('    // First qualify a short earned boundary'),end=source.indexOf('    const savedWave=',begin);
+  assert.ok(begin>0&&end>begin);
+  const run=new Function('page','until','states','load','mark','gameKey',`return (async()=>{${source.slice(begin,end)}})()`);
+  for(const earned of [true,false]){
+    let phase='battle',inputs=0,checked=false;
+    const state={load:3,completedWave:earned?4:1,saveState:'ready'};
+    const execute=()=>run({waitForTimeout:async()=>{phase='result';}},async(items,start,predicate)=>{
+      checked=true;assert.equal(items[0],state);if(!predicate(state))throw Error('checkpoint not yet earned');return state;
+    },[state],3,async()=>100,async(name,action,predicate)=>{
+      assert.equal(checked,true);assert.equal(phase,'battle','Extra delay consumed the live checkpoint pause window');
+      assert.deepEqual([name,action],['SpeedRate','session']);assert.equal(predicate({paused:true}),true);inputs++;
+    });
+    if(earned){await execute();assert.equal(inputs,1);}else {await assert.rejects(execute,/checkpoint not yet earned/);assert.equal(inputs,0);}
+  }
+});
+
+test('live keyboard Pause is submitted before a slow focus capture can reach natural defeat',async()=>{
+  const value=keyboardSubmitFixture(),trace=[],states=[{...value.state,paused:false}],encounters=[],events=[],report={keyboard_actions:[],screenshots:[]};
+  value.layout.width=1280;value.layout.height=720;
+  value.layout.controls=[{name:'Menu',x:20,y:20},{name:'SpeedRate',x:20,y:80}]
+    .map(c=>({...c,width:44,height:44,active:true,interactable:true}));
+  const layouts=[value.layout];let now=10;
+  const page={locator:()=>({evaluate:async()=>true}),waitForTimeout:async()=>{},
+    evaluate:async code=>typeof code==='string'?null:{...value.documentState,t:now+10},
+    keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=now+1;},
+      down:async key=>{events.push(key);assert.equal(states.at(-1).phase,'battle');states.push({...value.state,action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
+  const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
+    geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720},documentState:{...value.documentState,t:now+10}}),keyboardFocus:async()=>{},
+    projectedControls:tierJourneyControlGeometry,hudControls:layout=>layout.controls,
+    check:(condition,message)=>assert.ok(condition,message),
+    screenshot:async()=>{events.push('capture');if(!states.at(-1).paused){states.at(-1).phase='result';value.layout.phase='result';}},
+    until:async(items,start,predicate)=>items.slice(start).find(predicate),validateKeyboardSubmit:journey.validateKeyboardSubmit}).gameKey;
+  await run('SpeedRate','session',item=>item.paused);
+  assert.deepEqual(events,['Enter','capture']);assert.equal(states.at(-1).paused,true);
+});
+
+test('actual keyboard Pause avoids redundant document round trips before natural defeat',async()=>{
+  // Inert latency model of run43279007301: the hidden-return observation left
+  // about132seconds before real defeat; repeated DOM requests consumed it.
+  // Execute the actual DOM callbacks and geometry, without changing game time.
+  const identity={load:3,timeOrigin:1000,scope:'healthy'},trace=[],states=[],layouts=[],encounters=[];
+  const report={keyboard_actions:[],screenshots:[]},inputs=[],reads=[];
+  let t=10,paused=false,phase='battle',selection='SpeedRate',preInputReads;
+  const controls=['Menu','WaveInfo','SpeedMinus','SpeedRate','SpeedPlus','ShopEntry']
+    .map((name,i)=>({name,x:20+i*70,y:80,width:60,height:44,active:true,interactable:true}));
+  const publish=()=>{
+    if(t>=132000&&!paused)phase='result';
+    layouts.push({...identity,t,phase,selection,coordinates:'top-left',width:1280,height:616,
+      controls:controls.map(c=>({...c,active:phase==='battle',interactable:phase==='battle'})),shopControls:[],settingsControls:[],graphics:[]});
+    states.push({...identity,t,phase,paused,action:'session'});
+  };
+  const canvas={id:'unity-canvas',width:1280,height:616,getBoundingClientRect:()=>({x:0,y:104,width:1280,height:616})};
+  const link={id:'last-stand-return'},document={hidden:false,activeElement:canvas,hasFocus:()=>true,
+    getElementById:id=>id===canvas.id?canvas:link},window={__stInputArea:'outer'};
+  const environment={document,window,performance:{timeOrigin:1000,now:()=>t},
+    getComputedStyle:()=>({visibility:'visible',outlineStyle:'solid',outlineWidth:'2px'})};
+  const evaluate=async(fn,element)=>{
+    t+=24000;reads.push(typeof fn==='string'?fn:fn.toString());publish();
+    return runInNewContext(typeof fn==='string'?fn:`(${fn.toString()})(element)`,{...environment,element});
+  };
+  const edge=(kind,code)=>{t+=1500;trace.push({...identity,t,kind,code,target:document.activeElement.id,
+    focused:true,hidden:false,area:window.__stInputArea});};
+  const page={locator:selector=>({evaluate:fn=>evaluate(fn,selector==='#unity-canvas'?canvas:link)}),evaluate,
+    waitForTimeout:async ms=>{t+=ms;publish();},keyboard:{
+      press:async key=>{
+        const code=key==='Shift+Tab'?'Tab':key;edge('keydown',code);
+        if(key==='Shift+Tab')document.activeElement=link;
+        else if(document.activeElement===link){document.activeElement=canvas;selection=controls[0].name;}
+        else selection=controls[(controls.findIndex(c=>c.name===selection)+1)%controls.length].name;
+        edge('keyup',code);publish();
+      },
+      down:async key=>{preInputReads=reads.length;assert.equal(phase,'battle','Browser inspection consumed the live Pause window');
+        assert.equal(selection,'SpeedRate');inputs.push(key);edge('keydown',key);paused=true;encounters.push({action:'pause'});publish();},
+      up:async key=>{edge('keyup',key);publish();},
+    }};
+  publish();
+  const driver=journey.createJourneyActions({page,trace,states,layouts,encounters,report,process:{platform:'linux'},
+    check:(condition,message)=>assert.ok(condition,message),throwObserverFailure:()=>{},
+    screenshot:async()=>{assert.equal(paused,true,'Live focus capture must follow Pause');},
+    projectedControls:tierJourneyControlGeometry});
+  await driver.gameKey('SpeedRate','session',state=>state.paused);
+  assert.deepEqual(inputs,['Enter']);assert.equal(paused,true);
+  assert.ok(preInputReads<=4,'Only outer focus, return focus, canvas entry and final geometry need DOM reads before Enter');
+  assert.equal(journey.validateKeyboardGameplayInput(trace,report.keyboard_actions).matched,true);
+});
+
 test('actual keyboard caller refuses retained wave-boundary focus migration before Enter',async()=>{
   for(const [selection,delayed] of [['SpeedRate',false],['ShopEntry',false],['Menu',false],['SpeedRate',true],['ShopEntry',true]]){
     const value=keyboardSubmitFixture(),trace=[],states=[],encounters=[],downs=[],report={keyboard_actions:[],screenshots:[]};
@@ -193,7 +413,7 @@ test('actual keyboard caller refuses retained wave-boundary focus migration befo
       keyboard:{press:async code=>{now+=10;trace.push({...value.navigation,t:now,code});value.layout.t=delayed?19:now+1;},
         down:async key=>{downs.push(key);states.push({action:'session',paused:true});encounters.push({action:'pause'});},up:async()=>{}}};
     const run=journey.createJourneyActions({page,trace,states,encounters,layouts,report,
-      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720}}),keyboardFocus:async()=>{},
+      geometry:async()=>({layout:value.prepared,canvas:{x:0,y:0,width:1280,height:720},documentState:{...value.documentState,t:now+10}}),keyboardFocus:async()=>{},
       projectedControls:tierJourneyControlGeometry,
       hudControls:layout=>[...layout.controls,...layout.shopControls,...layout.settingsControls],
       check:(condition,message)=>assert.ok(condition,message),screenshot:async()=>{value.layout.selection=selection;},
@@ -1012,7 +1232,7 @@ test('explicit Pause admits model focus acknowledgement before visible return bu
 
 test('central workload budget separates web-server startup and bounds actual owners',()=>{
   assert.equal(typeof journey.lastStandJourneyTimeBudget,'function','Actual caller budget must be centralized');
-  for(const [host,testMs]of [['win32',2_400_000],['linux',3_600_000]]){
+  for(const [host,testMs]of [['win32',2_400_000],['linux',7_200_000]]){
     for(const served of [false,true]){
       const b=journey.lastStandJourneyTimeBudget(host,{served});
       assert.equal(b.testMs,testMs);assert.equal(b.startupMs,served?0:180_000);
@@ -1058,7 +1278,7 @@ test('actual maintained journey uses a finite host DOM allowance without changin
     const budget=journey.lastStandJourneyTimeBudget(host);
     assert.equal(budget.actionMs,observed);
     assert.ok(Number.isFinite(observed) && observed>0 && observed<budget.testMs);
-    assert.equal(budget.testMs,host==='linux'?3_600_000:2_400_000);
+    assert.equal(budget.testMs,host==='linux'?7_200_000:2_400_000);
   }
 });
 
@@ -1125,7 +1345,7 @@ test('qualification has a closed Windows default and rejects every incompatible 
 
 test('actual owned watcher admits the derived cleanup budget but retains a closed host bound',async()=>{
   for(const [host,lifetime,expected]of [['win32',2_630_000,'stopped'],['win32',2_640_000,'stopped'],['win32',2_640_001,'failed'],
-    ['linux',3_830_000,'stopped'],['linux',3_840_001,'failed'],['linux',640_000,'stopped']]){
+    ['linux',7_430_000,'stopped'],['linux',7_440_000,'stopped'],['linux',7_440_001,'failed'],['linux',640_000,'stopped']]){
     const f=inertSupervisor({host});await f.watchOwnedProcess({...f.options,lifetimeMs:lifetime});
     const record=JSON.parse(f.files.get(f.options.path+'.result.json'));
     assert.equal(record.status,expected,host+' actual owned watcher lifetime '+lifetime);

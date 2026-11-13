@@ -161,6 +161,12 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
 
 - [x] maintenance.reconciled.0050 - (Possible-later, from room-browser-enrichment spec 2026-06-22) Surface `interestRate` / `suddenDeathTurn` on the public browse row too, now that `StoredOptions` declares them. Pure read-path addition mirroring the rounds/armsLevel/botCount work. [L/S]  (done 2026-10-29)
 ## In-flight
+- [x] Keep runtime polling journals within the acquisition deadline  (from github:SUaDtL/singedTerra/actions/runs/43290726426/jobs/131436285882/observer-journal)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43290726426/jobs/131436285882/observer-journal
+  - Desc: Run 43290726426 job 131436285882 retained a coherent pair within 4578.7ms of page time but hit its wall deadline while full 54.7MB report snapshots ran inside polling. Reproduce snapshot latency through the actual check writer, retain every clock check in the durable journal, defer successful full snapshots until acquisition outcome, and preserve immediate failure snapshots and both eight-second deadlines.
+  - Work type: fix
+  - Work ID: WORK-2094382A25B47EA0C66D3E3A4283C152
+  - Work operation ID: st559-observer-journal-create
 - [~] Integrate Dependabot PRs 553-556  (from github-pr-batch#553-556)  (started 2026-11-09)
   - Work origin: github-pr-batch#553-556
   - Desc: Combine and qualify Supabase CLI 3, Supabase JS 2.119, Preact 11 and Pixelmatch 8, preserving backend release and gameplay compatibility
@@ -181,6 +187,80 @@ Decision forks split to `open-questions.md` (CONFIRM-04 rate-limiting, CONFIRM-0
   - Work operation ID: work-fd71c89c83e2c3770b65717723ed78373175bef2
   - Spec ID: ST-LS-BUILDCRAFT-SPEC
   - Plan ID: ST-LS-BUILDCRAFT-PLAN
+- [ ] Migrate the pre-existing CombatBalanceMeasurements .NET SHA-256 helper and existing evidence callers to approved Node provenance with scoped parity proof.  (from review:auth-crypto-final-staged-review-20261111#triage-1)
+  - Work origin: review:auth-crypto-final-staged-review-20261111#triage-1
+  - Desc: Follow up CombatBalanceMeasurements.cs:145-146, whose pre-existing System.Security.Cryptography SHA-256 implementation lies outside POLICY-CRYPTO's Node-specific provenance approval. Inventory and migrate only the old helper and existing evidence-tool callers through the approved Node helper, preserving exact raw/LF-normalized provenance semantics and retaining scoped before/after parity evidence. New Skills callers have been removed in the current remediation; do not broaden that sprint, change gameplay, alter security policy, or invent an ADR. Source: auth-crypto-final-staged-review-20261111.md [NEEDS-TRIAGE].
+  - Work type: unknown
+  - Work ID: WORK-628DACD5D6FA79837B0BF0654EC77A39
+  - Work operation ID: ls-skills-harvest-existing-dotnet-provenance-20261112
+- [x] Last Stand Skills: collection, loadouts and combat use  (from feature-spec#ST-LS-SKILLS-SPEC)  (done 2026-11-11)
+  - Work origin: feature-spec#ST-LS-SKILLS-SPEC
+  - Desc: Deliver the authorized end-to-end Skills sprint over the existing equipment-bay UI: earned acquisition, duplicate development, shared active/passive loadouts, combat abilities, durable recovery, balance and actual player verification.
+  - Work type: feature
+  - Work ID: WORK-3FCD1F1C76B8E5478A86EDA1C11A36AC
+  - Work operation ID: ls-skills-work-create-20261111-v2
+- [~] Deliver the concept-led Last Stand equipment bay, Armory and gameplay UI  (from feature-spec#ST-LS-BAY-SPEC)  (started 2026-11-09)
+  - Work origin: feature-spec#ST-LS-BAY-SPEC
+  - Desc: Implement and render the user supplied industrial equipment bay reference in Unity, with working current controls and isolated saves.
+  - Work type: feature
+  - Work ID: WORK-B0D64B792CB6E3ABA4B4231FD38EFC34
+  - Work operation ID: bay-work-create-20261109
+  - Spec ID: ST-LS-BAY-SPEC
+  - Plan ID: ST-LS-BAY-PLAN
+- [x] Repair Skills edition CI qualification  (from github:SUaDtL/singedTerra/actions/jobs/130954511674)  (done 2026-11-11)
+  - Work origin: github:SUaDtL/singedTerra/actions/jobs/130954511674
+  - Desc: CI and local wave qualification reject the synthetic current-edition background fixture because it combines v4 rules with a v8 envelope. Make the fixture represent a complete neutral v9 Skills checkpoint while retaining legacy compatibility and strict malformed-edition rejection.
+  - Work type: fix
+  - Work ID: WORK-2B8444F7CEDC75704E7CCD60C2AED265
+  - Work operation ID: work-0695865ae1f33106f343ed455e250640d033e241
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Repair current Last Stand browser CI admission  (from github:SUaDtL/singedTerra/actions/runs/43151236183/browser)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43151236183/browser
+  - Desc: PR 559 browser jobs reject the complete current export using a historical fixed file count; qualify actual export membership, preserve final served-byte drift rejection, and resolve the observed tier geometry failure with current browser proof.
+  - Work type: fix
+  - Work ID: WORK-F0658F281A5FBD4A391C4F1CBD2346E6
+  - Work operation ID: work-c7c5591ce84a3181f900118c8b51b74adf21b733
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Repair browser runtime observation and renderer admission  (from github:SUaDtL/singedTerra/actions/runs/43242487483/browser)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43242487483/browser
+  - Desc: Hosted run 43242487483 reaches full runtime checks and exposes batched first-hit selection plus the concept renderer retaining an unsupported HDR debug shader. Preserve exact earliest-event validation, strip the unsupported reference from every shipped renderer only during Web build, restore native resources, and qualify the rebuilt full browser matrix.
+  - Work type: fix
+  - Work ID: WORK-034C12946EE855D073360E8C5C1995E2
+  - Work operation ID: work-0e24a4027193cd02c0441eed0e23c0875ae8d376
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Resume returned runs through the observed inspection phase  (from github:SUaDtL/singedTerra/actions/runs/43251922328/entry-resume)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43251922328/entry-resume
+  - Desc: Hosted run 43251922328 job 131300092870 returns an earned checkpoint to workshop with Redeploy active, but the entry helper and aggregate require Deploy. Use the existing phase-aware selector after resizing, retain actual resume state and layout, reject invalid or mismatched checkpoint/control evidence, and qualify the full hosted matrix. Target regressions reproduce both hard-coded control failures.
+  - Work type: fix
+  - Work ID: WORK-D7C9F1476CC6A307FDD146318B625E94
+  - Work operation ID: st559-entry-resume-fix
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Submit live keyboard Pause before capture latency  (from github:SUaDtL/singedTerra/actions/runs/43251922328/keyboard-pause)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43251922328/keyboard-pause
+  - Desc: Hosted run 43251922328 job 131300092898 completed four waves but reached natural defeat during a blocking pre-Enter keyboard focus screenshot. Preserve current visibility, focus and selection checks, send verified Pause before capturing the paused result, and remove redundant fixed delay after earned checkpoints are already available. Keep actual earned-state, one-activation and input guards and qualify the hosted matrix.
+  - Work type: fix
+  - Work ID: WORK-4B9B8C6201E54EB0B046C05C14F02866
+  - Work operation ID: st559-keyboard-pause-fix
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
+- [x] Use the first current runtime clock before another browser request  (from github:SUaDtL/singedTerra/actions/runs/43251922328/first-clock)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43251922328/first-clock
+  - Desc: A coherent pair present at the initial clock sample ages out during an unnecessary second request in CI job5. Evaluate the initial sample with unchanged freshness, run, counter and eight-second guards; retain target RED and independent review.
+  - Work type: fix
+  - Work ID: WORK-6870DFD185388C0665AD8111DD801885
+  - Work operation ID: st559-first-clock-fix
+- [x] Calibrate bounded Linux functional journey owner budgets  (from github:SUaDtL/singedTerra/actions/runs/43263332826/linux-workload)  (done 2026-11-12)
+  - Work origin: github:SUaDtL/singedTerra/actions/runs/43263332826/linux-workload
+  - Desc: Hosted job131340530596 reaches the 60-minute outer limit with 461 passing checks and a valid purchase14seconds before termination. Admit the full software-rendered Linux workload within a finite two-hour total, retain exact action/observation/cleanup safeguards and Windows40-minute budget, and verify all required CI on the final head.
+  - Work type: fix
+  - Work ID: WORK-51B650C9F752000C38A11BDCD58A982F
+  - Work operation ID: st559-linux-workload-fix
+  - Spec ID: ST-LS-SKILLS-SPEC
+  - Plan ID: ST-LS-SKILLS-PLAN
 - [x] Make deployment journeys observe stable timing boundaries  (from github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries)  (done 2026-11-07)
   - Work origin: github:SUaDtL/singedTerra/actions/runs/42352063077/timing-boundaries
   - Desc: Retained Pages run 42352063077 proves current Return, first-wave and one-second retry assertions can race legitimate progression. Pause before Return snapshots, capture actual committed wave states without granting rewards or changing gameplay, and control the fixture retry clock while retaining receipt recovery assertions.

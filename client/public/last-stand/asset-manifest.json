@@ -1,19 +1,19 @@
 {
   "schema": "singedterra-last-stand-web/v1",
   "source": {
-    "build": "Web-20261107T072248Z-7c0959",
+    "build": "Web-20261112T152213Z-94202e",
     "receipt": "campaign-unity/docs/last-stand-web/receipt-sanitized.json",
-    "receiptSha256": "7c780cd8c4e689c17eccd5937e7b968c45cd7dd62a062b82dd95a019379d0a97",
-    "sourceLockSha256": "18098f43a8611df002d258cf4a9a47c98d3c055676ce12e6ec9137f108970c68",
-    "sourceHead": "95979868060909b31bc6f6aaec4f1bfb9cacb713",
-    "sourceInventorySha256": "cc20e1a7c92f54d2e7a65e54f3c19f13d0f0459581e39fc41b27bdc4bc690990",
-    "originalIndexSha256": "0f8d53d584cdf04fa1dc505e298c8f1e62bed673ad3226bf868a2b4591a58791"
+    "receiptSha256": "f7da5dcedc46ade037d4a677d0ce79c7aba4fc7488e4a477b13f459a89c3cc9a",
+    "sourceLockSha256": "d75f33f0643c9f1f09c9ef3ad63295221102cce7f72b36fdf338178470e08ea2",
+    "sourceHead": "58cd6da99cb079e49241e9d78176f5ffe72fcfd2",
+    "sourceInventorySha256": "2c275c86c477b9f6749204ea54e57641f2ea75508b570575196ee5bafb1ab91e",
+    "originalIndexSha256": "36f1f1563d91236a955c08db5f14ccb320376593a440195314262af6b6cc907a"
   },
-  "wrapperSha256": "e6b58034bf2f6b8b725cece7f8bc78deb66a28769b09340056737d406512b1d8",
+  "wrapperSha256": "38d94230851f7348218fbe07391cd42f262533a72145c5c1f6875e37731fdf0b",
   "wrapperFiles": {
     "Tools/make_web_entry.py": {
       "mode": "lf-text",
-      "sha256": "262feef2ce62af0d0b304c0a6f6b0dd2848a80300dd0e7cf56239f81e72ca79c"
+      "sha256": "5a67663cbfa6d12a895ead16199dab14c3f2c5694bd3e8f71c93aa23d221b3ad"
     },
     "Tools/web-index-template.html": {
       "mode": "lf-text",
@@ -21,13 +21,14 @@
     }
   },
   "files": {
-    "Build/Web-20261107T072248Z-7c0959.data": "9610e811e85c8a68d9d74752812b7568bed9960a163751efbf996062d96a9e4c",
-    "Build/Web-20261107T072248Z-7c0959.framework.js": "02d5011f53792b961f752506a79296ebb78f13a15ee98ab237f470d503d81bad",
-    "Build/Web-20261107T072248Z-7c0959.loader.js": "322461f7a71bfa47844cac475896a5fc0e3c3c8484be0d034668e1010f996b49",
-    "Build/Web-20261107T072248Z-7c0959.wasm": "5a9c0f7aba1f4f9ddb3af68e229457f4e37ac31032e8229adb65216d12d96177",
+    "Build/Web-20261112T152213Z-94202e.data": "0c67e579c5fb833df115c118a67b94d8988708201452ef76c8da97a0675b142c",
+    "Build/Web-20261112T152213Z-94202e.framework.js": "ef805364cf6dfffd543e281f026ff8411fcd115f96209197d5afa3f95d9c431e",
+    "Build/Web-20261112T152213Z-94202e.loader.js": "2792439f0066dfce6342573bfc03b6eba5770f37aacd74ccffa7de9740a93c5b",
+    "Build/Web-20261112T152213Z-94202e.wasm": "cea64cca31bf0045ebbb943003d9b8b6bb4848bf63da95feb32a789c03cea847",
     "TemplateData/MemoryProfiler.png": "0ce87be20d0c24ab6cb73b57de2004da261cc2a641e69319c6ae3fe11fc85483",
     "TemplateData/favicon.ico": "9c13beb90ee8f70580d52a21d5233970d1c89e71e4a34a462c22610941c3c77f",
     "TemplateData/fullscreen-button.png": "21221581673a54b8139d408d4a3f8d2b879e86827d4b6fc53b995ff7a99ee3e9",
+    "TemplateData/profiler.js": "433e40af9a544d1ef5fec67b0b52af25a851928626c3f3ef0d09b35ded610c0d",
     "TemplateData/progress-bar-empty-dark.png": "bbee7131afe8a3365906240d89184dc86234c119467f390bc4bc6802328fdb4d",
     "TemplateData/progress-bar-empty-light.png": "143696c060ad43d6c30f19ff5f49000927a139a2a1e4c9f45fafaa2b90d7d2be",
     "TemplateData/progress-bar-full-dark.png": "3306a6244dcb3926fca38a28e3ced589df8ff1beed955eb17c0bbf01c918bc62",

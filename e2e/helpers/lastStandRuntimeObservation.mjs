@@ -33,14 +33,20 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
   const initial=await clock(),deadline=Date.now()+8000;
   const documentRecord=item=>item?.load===load && item.timeOrigin===initial.timeOrigin;
   const loopRun=item=>item?.runId || item?.pendingRunId || 0;
-  let detail;
+  // The first clock already bounds a current pair. Another remote request can
+  // age that pair out while the browser is busy, before we ever inspect it.
+  let detail,now=initial;
   while(true) {
-    const now=await clock(),latest=encounters.at(-1),current=states.at(-1);
+    const latest=encounters.at(-1),current=states.at(-1);
+    // Journal every clock check immediately. Rewriting the accumulated full
+    // report here can consume the very deadline being measured; the outcome
+    // below retains normal snapshot cadence and immediate failed snapshots.
     check(Number.isFinite(now.t) && Number.isFinite(now.timeOrigin) && now.timeOrigin===initial.timeOrigin && now.t>=initial.t,
-      'coherent observation document clock',{initial,now});
+      'coherent observation document clock',{initial,now},{snapshot:false});
     const encounter=options.status || options.action ? encounters.findLast(item=>documentRecord(item) &&
       (options.status===undefined || item.status===options.status) && (options.action===undefined || item.action===options.action) &&
-      (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) : latest;
+      (options.paused===undefined || item.paused===options.paused) && item.run===latest?.run && item.t>=(options.minT??0)) :
+      encounters.findLast(item=>documentRecord(item) && item.run===latest?.run && item.t<=now.t);
     const deployment=encounters.findLast(item=>documentRecord(item) && item.run===encounter?.run && item.action==='deploy');
     const deployedState=deployment && states.find(item=>documentRecord(item) && item.sessionRun===deployment.run &&
       ['deploy','resume'].includes(item.action) && item.tick===deployment.tick && item.t>=deployment.t && item.runId>0);
@@ -52,22 +58,24 @@ async function implementation_observeRuntimePair({encounters,states,load,clock,w
       (options.run===undefined || encounter.run===options.run) && encounter.t<=now.t && state.t<=now.t &&
       encounter.t>=(options.minT??0) && (options.action===undefined || encounter.action===options.action) &&
       (options.paused===undefined || encounter.paused===options.paused);
-    // Active streams report at second boundaries. An older active report must
-    // await a real new pair; immutable Pause/Fitting and requested action/terminal
-    // witness retain their actual event clock without inventing a fresh stamp.
-    const fresh=encounter && (options.action!==undefined || encounter.paused || encounter.status!=='Running' || now.t-encounter.t<=1000);
+    // A slow clock response may arrive after later console records. Use a pair
+    // within the sampled clock; an event emitted during this bounded request is
+    // fresh without rewriting its timestamp or extending pre-request staleness.
+    const fresh=encounter && (options.action!==undefined || encounter.paused || encounter.status!=='Running' ||
+      encounter.t>=initial.t || now.t-encounter.t<=1000);
     const runBound=encounter?.status==='Fitting' || (deployedState && loopRun(state)===deployedState.runId);
+    if(now.t-initial.t>=8000 || Date.now()>=deadline) {
+      check(false,'coherent actual loop/session observation pair absent within bounded wait',detail);
+      throw new Error('Actual runtime observation pair absent');
+    }
     if(identity && fresh && runBound) {
       check(encounter.hp===state.hull && encounter.kills===state.kills && encounter.paused===state.paused &&
         (options.status!==undefined || encounter.paused===current.paused),
         'coherent actual loop/session observation counters',detail);
       return {...encounter,hull:state.hull,loop:state};
     }
-    if(now.t-initial.t>=8000 || Date.now()>=deadline) {
-      check(false,'coherent actual loop/session observation pair absent within bounded wait',detail);
-      throw new Error('Actual runtime observation pair absent');
-    }
     await wait(40);
+    now=await clock();
   }
 }
 
@@ -104,12 +112,12 @@ function implementation_elapsedTicks(before,after) {
     'Background callback step budget exceeded');
 }
 
-function implementation_isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || /^last-stand-waves-v[123]:/.test(item?.rules??'');}
+function implementation_isWaveObservation(item){return Number.isInteger(item?.wave) && item.wave>0 || /^last-stand-waves-v[1234]:/.test(item?.rules??'');}
 
 function implementation_validateAdmittedClock(before,after) {
   sameDocument(before,after);
   for(const item of [before,after]){
-    assert.match(item.rules??'',/^last-stand-waves-v[123]:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
+    assert.match(item.rules??'',/^last-stand-waves-v[1234]:/);assert.ok(Number.isInteger(item.wave) && item.wave>0);
     assert.equal(item.scope,'healthy');assert.equal(item.status,'Running');
     assert.equal(item.paused,false);assert.equal(item.catchingUp,false);assert.equal(item.failed,false);
     assert.equal(item.selectedSpeed,1);assert.equal(item.effectiveSpeed,1);
@@ -159,7 +167,7 @@ function implementation_cannonDeployment(deployed,encounters,oracle){
     Number.isSafeInteger(deployed.runId) && Number.isSafeInteger(deployed.sessionRun),
     'Cannon proof requires explicit current document, scope and run identities');
   assert.ok(deployed.action==='deploy' && deployed.phase==='battle' && deployed.saveState==='ready' &&
-    ['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(deployed.profileVersion) && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
+    ['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3','last-stand-waves-v4'].includes(deployed.profileVersion) && deployed.runId>0 && deployed.sessionRun>0 && deployed.tick===0 &&
     deployed.activeTier===1 && deployed.fittingId==='repair' && [20,30].includes(deployed.cannonDamage),
     'First cannon proof requires its actual current repair deployment');
   const models=encounters.filter(item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun && item.action==='deploy');
@@ -190,7 +198,11 @@ async function implementation_observeFirstCannonImpact({deployed,start,hits,enco
   cannonDeployment(deployed,encounters,oracle);
   const expected=Object.values(oracle).find(row=>row.cannon>0);
   assert.ok(expected?.cannon===1 && oracle[expected.tick-1]?.cannon===0,'First cannon event absent from source-bound oracle');
-  const hit=await until(hits,start,item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t,45);
+  const current=item=>sameDeploymentDocument(item,deployed) && item.t>=deployed.t;
+  // Polling returns the newest matching record. A callback can emit several
+  // impacts before that poll; preserve the first without skipping contradictions.
+  await until(hits,start,current,45);
+  const hit=hits.slice(start).find(current);
   assert.ok(hit.tick===expected.tick && hit.cannonDamage===deployed.cannonDamage && hit.kills===expected.kills &&
     hit.firstFoeHull===Math.max(0,30-deployed.cannonDamage),'First authoritative cannon impact differs from deployment/oracle');
   await until(callbackRecords,0,item=>sameDeploymentDocument(item,deployed) && item.run===deployed.sessionRun &&
@@ -376,7 +388,7 @@ function implementation_validateAwayAudioReturn({kind,before,begin,recovered,ms,
   const observed=cues.filter(c=>current(c) && c.t>=loss.t+200 && c.t<=recovered);
   assert.ok(observed.every(c=>Number.isFinite(c.t)),'Invalid current audio cue clock');
   const returnCues=observed.filter(c=>c.t>=returned.t),callbacks=[];
-  const waveRun=['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3'].includes(before.loop?.profileVersion);
+  const waveRun=['last-stand-waves-v1','last-stand-waves-v2','last-stand-waves-v3','last-stand-waves-v4'].includes(before.loop?.profileVersion);
   // The current controller retains its wave profile after ReturnToInspection
   // removes the model. Its finalized result has explicit absent-clock/run fields;
   // it is a silent lifecycle boundary, never an archived combat callback lane.
@@ -388,7 +400,7 @@ function implementation_validateAwayAudioReturn({kind,before,begin,recovered,ms,
     item.phase===phase && item.saveState==='ready' && item.runId===0 && item.pendingRunId===0 &&
     item.activeTier===0 && item.hasCheckpoint===false && item.tick===0 && item.wave===0 && item.completedWave===0;
   const idleWaveResult=waveRun && idleModel(before) && idleLoop(before.loop,'result') && before.loop.t>=before.t;
-  assert.equal(waveRun,typeof before.rules==='string' && /^last-stand-waves-v[123]:/.test(before.rules) || idleWaveResult,
+  assert.equal(waveRun,typeof before.rules==='string' && /^last-stand-waves-v[1234]:/.test(before.rules) || idleWaveResult,
     'Native audio interval wave profile and model rules disagree');
   if(idleWaveResult){
     const during=item=>current(item) && item.t>=before.t && item.t<=recovered;

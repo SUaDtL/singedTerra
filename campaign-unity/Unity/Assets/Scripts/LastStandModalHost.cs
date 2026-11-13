@@ -36,6 +36,8 @@ namespace SingedTerra.LastStand
         public readonly LastStandPlannerHud Planner;
         public readonly LastStandAppearanceHud Appearance;
         public readonly LastStandArmoryHud Armory;
+        public readonly LastStandSkillsHud Skills;
+        public float LayoutDensity { get; private set; } = 1;
         public bool HidesBackground=>activePage?.HidesBackground==true;
         public readonly Button Menu;
         public readonly Button[] Buttons;
@@ -53,6 +55,7 @@ namespace SingedTerra.LastStand
             Planner=new LastStandPlannerHud(loop,root,font,openWorkshop,canOpenWorkshop,metal,surface);
             Appearance=new LastStandAppearanceHud(loop,root,font,metal,surface);
             Armory=new LastStandArmoryHud(loop,root,font,metal,surface);
+            Skills=new LastStandSkillsHud(loop,root,font,metal,surface);
             settingsPage=Register(null,new Page(Settings.Buttons,()=>Settings.InitialFocus,Settings.Refresh,Settings.Layout,Settings.Reveal,Settings.ScrollKeyboard));
             Register("research",new Page(Research.Buttons,()=>Research.InitialFocus,
                 visible=>Research.Refresh(visible,loop.ResearchSnapshot,loop.Progression.GetBestWave(1),loop.Progression.Wallet,loop.ResearchCanAct,loop.ResearchStatus,loop.Progression.GetBestWave(2),loop.Progression.SelectedLoadout),
@@ -62,6 +65,7 @@ namespace SingedTerra.LastStand
             Register("planner",new Page(Planner.Buttons,()=>Planner.InitialFocus,Planner.Refresh,Planner.Layout,Planner.Reveal,Planner.ScrollKeyboard));
             Register("appearance",new Page(Appearance.Buttons,()=>Appearance.InitialFocus,Appearance.Refresh,Appearance.Layout,Appearance.Reveal,Appearance.ScrollKeyboard,true));
             Register("armory",new Page(Armory.Buttons,()=>Armory.InitialFocus,Armory.Refresh,Armory.Layout,Armory.Reveal,Armory.ScrollKeyboard,true));
+            Register("skills",new Page(Skills.Buttons,()=>Skills.InitialFocus,Skills.Refresh,Skills.Layout,Skills.Reveal,Skills.ScrollKeyboard));
             var buttons=new List<Button>();foreach(var page in orderedPages)buttons.AddRange(page.Buttons);Buttons=buttons.ToArray();
         }
         Page Register(string key,Page page)
@@ -90,7 +94,12 @@ namespace SingedTerra.LastStand
             wasOpen=loop.MenuOpen;wasPage=loop.MenuPage;
         }
         public void Layout(float w,float h,float sx,float sy)
-        {activePage?.Layout(w,h,sx,sy);}
+        {
+            // Match the bay's type scale on large displays while keeping
+            // compact windows at their existing usable target sizes.
+            float density=LayoutDensity=Mathf.Max(1,Mathf.Min(w/1600,h/900));
+            activePage?.Layout(w/density,h/density,sx*density,sy*density);
+        }
         public void Reveal(Button button)=>activePage?.Reveal(button);
         public void Scroll(string direction)
         {activePage?.Scroll(direction);}

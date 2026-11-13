@@ -45,7 +45,7 @@ public static class LastStandUiFoundationChecks
         var modal=Activator.CreateInstance(modalType,new object[]{"Neutral",root,font,(Action)(()=>closes++),null,null});
         var shade=Field<RectTransform>(modal,"Shade");var panel=Field<RectTransform>(modal,"Panel");
         float width=(float)Call(modal,"Layout",profile.x,profile.y,1f,1f,700f);
-        var pane=Call(modal,"Pane","NeutralList");var second=Call(modal,"Pane","NeutralDetail");
+        var pane=Call(modal,"Pane","NeutralList",false);var second=Call(modal,"Pane","NeutralDetail",false);
         var content=Field<RectTransform>(pane,"Content");var viewport=Field<RectTransform>(pane,"Viewport");
         var secondViewport=Field<RectTransform>(second,"Viewport");
         float paneWidth=(width-36)/2,height=Math.Min(180,profile.y-140);
@@ -54,7 +54,7 @@ public static class LastStandUiFoundationChecks
         Button last=null;
         for(int i=0;i<12;i++)
         {
-            last=(Button)Call(modal,"Button","NeutralAction"+i,"ACTION "+i,content,(Action)(()=>clicks++));
+            last=(Button)Call(modal,"Button","NeutralAction"+i,"ACTION "+i,content,(Action)(()=>clicks++),16);
             Call(modal,"Place",last,8f,8f+i*52,paneWidth-16,44f);
         }
         Call(pane,"Finish",640f);Call(second,"Finish",height);

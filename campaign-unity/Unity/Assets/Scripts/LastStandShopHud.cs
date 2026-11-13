@@ -55,11 +55,12 @@ namespace SingedTerra.LastStand
         ShopCardControls CreateShopCard(LastStandUpgradeDefinition definition)
         {
             string id = "ShopCard_" + definition.Key; var panel = MakePanel(id,Content,false,false);
+            panel.GetComponent<Image>().color=new Color(.30f,.28f,.24f,.22f);
             var controls = new ShopCardControls { TrackId = definition.Id, Key = definition.Key,
                 Title = Label(id + "Title",panel,16), Levels = Label(id + "Levels",panel,14),
                 Current = Label(id + "CurrentEffect",panel,14), Next = Label(id + "NextEffect",panel,14),
                 Price = Label(id + "Price",panel,14), Refusal = Label(id + "Refusal",panel,14) };
-            controls.Title.color = Brass; controls.Title.fontStyle = FontStyle.Bold;
+            controls.Title.color = Brass; controls.Title.fontStyle = FontStyle.Normal;
             controls.Levels.alignment = TextAnchor.UpperRight;
             controls.Next.color = DisabledPaper;
             controls.Price.color = Brass;
@@ -76,7 +77,7 @@ namespace SingedTerra.LastStand
             Entry = Action("ShopEntry","MECHANICS SHOP",root,OpenShop);
             Panel = MakePanel("ShopPanel",root,true);
             shopHeading = Label("ShopHeading",Panel,16); shopHeading.text = "MECHANICS SHOP";
-            shopHeading.color = Brass; shopHeading.fontStyle = FontStyle.Bold;
+            shopHeading.color = Brass; shopHeading.fontStyle = FontStyle.Normal;
             shopCurrency = Label("ShopCurrency",Panel,14); shopCurrency.color = Brass;
             Close = Action("ShopClose","\u00d7",Panel,CloseShop);
             Quantity=Action("ShopQuantity","[1]   10\n100   MAX",Panel,loop.CycleShopQuantity);
@@ -85,7 +86,7 @@ namespace SingedTerra.LastStand
                 Action("ShopTabDefense","DEFENSE",Panel,() => SelectCategory(LastStandUpgradeCategory.Defense)),
                 Action("ShopTabUtility","UTILITY",Panel,() => SelectCategory(LastStandUpgradeCategory.Utility)) };
             Viewport = Node("ShopViewport",Panel); nodes.Add(Viewport.name,Viewport);
-            Viewport.gameObject.AddComponent<Image>().color = Ink;
+            Viewport.gameObject.AddComponent<Image>().color = new Color(.10f,.095f,.08f,.18f);
             Viewport.gameObject.AddComponent<RectMask2D>();
             Content = Node("ShopContent",Viewport); nodes.Add(Content.name,Content);
             shopScroll = Panel.gameObject.AddComponent<ScrollRect>();

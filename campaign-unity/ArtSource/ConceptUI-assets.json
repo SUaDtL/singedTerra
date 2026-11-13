@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "purpose": "Last Stand concept-led equipment bay, Armory and combat presentation",
+  "references": [
+    "User-supplied equipment-bay concept, 2026-11-09",
+    "User-supplied battlefield and HUD concept, 2026-11-09"
+  ],
+  "rasterGeneration": {
+    "tool": "Built-in image_gen.imagegen",
+    "use": "Production textures and illustrations. Native screenshots are recorded separately and are never generated images.",
+    "assets": [
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/IndustrialRubble.png",
+        "sha256": "1cdef83ceba353333a449b8d44342eed5332b5cc11274554468d031856dbd565",
+        "pixelSize": [
+          1254,
+          1254
+        ],
+        "prompt": "Use case: stylized-concept. Asset type: production environment sprite atlas for a photorealistic scorched-earth military tank game. Square RGBA canvas with genuinely transparent background, strict 2 by 2 equal quadrant atlas, four separate ground-level ruined industrial rubble clusters entirely contained in their own quadrants with at least 8% transparent padding. Camera looks down 35 degrees from horizontal, orthographic isometric style but PHOTOREALISTIC and natural, not low-poly or cartoon. Top left: collapsed broken reinforced concrete foundation and rusted rebar, gritty fine rubble spilling around two substantial fractured slabs, asymmetrical low pile. Top right: collapsed corrugated steel shack roof, rusted girders and broken concrete chunks, low mound. Bottom left: a shattered concrete road barrier with rusty pipe sections and a few battered ammunition crates, fine ash debris at base. Bottom right: destroyed industrial generator base with bent plates, dark rusty scrap and splintered concrete, low rubble pile. Each pile occupies a footprint about 5 metres across and less than 1 metre high. Strong realistic intricate surface texture, chipped dusty edges, pitted dark metal, desaturated ash brown and gray palette with subtle rust, matched warm diffuse light from upper left, softly occluded crevices and faint contact shadow only immediately beneath each cluster. Single isolated group in each cell, never crossing central grid lines, no ground square or background surrounding the pile. No vehicles, people, vegetation, fire, smoke, text, lettering, logos, UI, frames, checkerboard or watermark. Actual transparency and fine irregular alpha edges. Production-quality realistic render suitable for fixed isometric environment dressing.",
+        "usage": "Twelve low ground projections with physical slab and scrap meshes nearby. The shallow surface cannot hide approaching units. No encounter objects or events are baked into the atlas."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/IndustrialRuins.png",
+        "sha256": "6db8ba0833be1be5dab155b27cb2a9e4a429dcf532e8b1d438d0c7be09a984db",
+        "pixelSize": [
+          1254,
+          1254
+        ],
+        "prompt": "Use case: game-production-environment-atlas. Generate a square 2 by 2 atlas of FOUR separate isolated photorealistic ruined industrial props for a gritty isometric tank defense game. TRUE TRANSPARENT BACKGROUND. Each prop centered entirely within its own equal quadrant with at least 8 percent fully transparent margin on all sides; no overlap across grid center lines and no visible grid. Camera is the same for all props: orthographic three-quarter isometric view, looking down 44 degrees, seeing front and right sides. Warm dusty sunlight from upper left, restrained ash-brown/gray metal palette. TOP LEFT: an abandoned oil pumpjack, detailed rusted truss beam, rods, dark steel machinery, stained concrete base and debris. TOP RIGHT: a shattered two-story concrete factory corner with half-collapsed corrugated steel roofing, exposed bent rebar, fractured wall edges, industrial pipework and low debris around its base. BOTTOM LEFT: a tall skeletal industrial service tower, cross braces, broken catwalks, cables, ladders and a small sagging black canvas flag. BOTTOM RIGHT: a large low irregular mound of broken reinforced concrete, rusted pipes, corrugated sheets, jagged steel and a broken industrial wheel, resembling a demolished workshop. Film-quality material detail: gritty concrete, dented metal, irregular breakage, rust, soot, oily joints, not stylized low polygon geometry. Props isolated with cutout alpha and no rectangular backing, landscape, horizon, ground plane beyond small integral foundations, cast shadow on background, sky, vehicles, people, fire, smoke, UI, text, letters, logos or watermark. These are production distant scenery impostors, not a game screenshot.",
+        "usage": "Four distant scenery impostors, placed only around the unreachable battlefield perimeter. Perspective matches each environment camera pitch; threat clearance is checked against their actual quad vertices. No units, events or interface content is baked into the atlas."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/ServiceArmor.png",
+        "sha256": "1f613dc8e853c2f5ece866ec1ee26b3aa3f1c7e503917cf29f5c8ebd9825086c",
+        "pixelSize": [
+          1254,
+          1254
+        ],
+        "prompt": "Use case: texture-asset. Create a production albedo texture for actual 3D tank applique armor plates, NOT an interface or a screenshot. Square image, completely opaque. A single rectangular cast steel military armor panel viewed perfectly straight on orthographically, extending to all four image edges. Very dark muted olive drab brown paint with realistic extensive age, field repairs, oily grime, irregular chipped bare gunmetal edges, fine pale scratches, corrosion around corners, subtle small bullet scars, streaked accumulated ash. A restrained border of worn steel and dirty recessed welds inside the outer 4% of the image; middle remains solid armor. Four realistic tiny recessed hex bolts, one near each corner, centered 8% from each edge. Material is substantial and harsh, photographic film asset detail, high micro contrast but no bright glossy reflections. Broad uneven patches of rubbed paint expose dark metal beneath. Neutral diffuse overcast lighting suitable for a physically based shader, no directional cast shadows or perspective. Absolutely no text, numbers, emblems, grid, labels, logo, UI, buttons, scene, machinery outside the panel, or transparent areas. The texture must look like physical battered battle tank steel, not a brown noise texture and not wood.",
+        "usage": "UV-mapped worn service panel texture on actual beveled applique geometry. Runtime mesh UV3 distinguishes authored plates from the original imported meshes; paint still comes from the selected appearance."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/AshBattlefield.png",
+        "sha256": "52a7d12ae244d6be943901b8895a680f2e3240a62ca0671e429cc9ac7c951d71",
+        "pixelSize": [
+          1254,
+          1254
+        ],
+        "prompt": "Production game environment texture, NOT a screenshot or a UI mockup. Create one square 4096x4096 overhead orthographic diffuse/albedo ground map of a 70 metre by 70 metre ruined industrial badlands battlefield for a gritty realistic tank defense game. Camera exactly straight down, no perspective, no horizon. Match a desaturated ash-brown/gray, scorched-earth post-apocalyptic industrial warzone. Make it look materially rich and believable: disrupted compacted soil, subtle broad shallow shell craters with cracked lips, bulldozed earth ridges, overlapping tracked-vehicle ruts that fan toward the center, shattered pale concrete pads, ruined asphalt patches, patches of soot and dark oil, scattered small concrete and shale fragments. Composition: central 10 metre diameter clearing of fairly smooth worn soil, roughly at image center, with several interrupted low earth berm arcs just outside it. The broad playable middle remains mostly traversable earth. Much more complex ruined concrete foundations, rusty sheet metal fragments and ground-level industrial debris around the outer quarter. Roads/ruts must look naturally asymmetric and not like a target pattern; no concentric perfect circles, no neat grid. Large-scale light/dark ground variation and carefully authored detail across the map, not uniform noise. ALL elements are ground surface detail or low rubble. Flat diffuse daylight, soft ambient crevice shading only, no strong directional shadows. High-resolution realistic material photography quality, crisp yet restrained contrast. Absolutely NO tanks, cars, characters, units, vegetation, tall buildings, standing walls, towers, fire, lightning, explosions, smoke, interface, labels, markings, numbers, text, borders, icons or watermarks. Fill the whole image with continuous ground so it can be mapped on a real 3D terrain surface; no vignette.",
+        "usage": "Authored ground albedo mapped over the central 80 metres of the real battlefield. A lit ground shader blends the boundary into tiled soil; units, shadows, controls and combat effects remain real Unity scene content."
+      },
+      {
+        "path": "Unity/Assets/Resources/EquipmentBay/Hangar.png",
+        "sha256": "52ab11fb8f7bc79d7bf6a2dc3f8b0b864c6406ad2d56ecff6d4f15c92f967176",
+        "promptSummary": "Empty realistic industrial tank maintenance hangar matching the supplied equipment-bay reference; warm overhead work lights, cool rim light, weathered metal and concrete, fixed camera composition with clear central vehicle space; no tank, UI, labels or text.",
+        "usage": "Fixed background behind a live transparent-camera tank rendering; also source for a Unity-baked environment reflection cubemap."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/WeatheredArmor.png",
+        "sha256": "7757ed94ce77e60d834481945951787b88a87d7d934b8f5c64da79888137b3d3",
+        "promptSummary": "Square seamless PBR diffuse weathered khaki brown gray armor; flat even light, fine grain, scuffs, rust and soot; no objects, panels, bolts or text; mid-value suitable for tinting.",
+        "usage": "Triplanar object-space armored vehicle material and UI button surface."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/AshTerrain.png",
+        "sha256": "dbebf39b51d7094a64d658a969689fcbb4515185180c8be5911e4bfda1c1eb04",
+        "promptSummary": "Seamless overhead dry gray brown badlands diffuse soil, small pebbles, shale, dried ruts, soot and tiny rubble; no perspective, horizon, vehicles, UI, text or large props; even light.",
+        "usage": "Tiled battlefield soil, concrete and low debris."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/EquipmentAtlas.png",
+        "sha256": "44220a896cf6001d9df975e74afd65d99b979d906bb12108fd45d035f60c6123",
+        "promptSummary": "Transparent 4 by 2 equal-cell separate-item atlas: cannon AP shell, field repair pack, twin rocket pod, scattergun; mortar, railgun, arc emitter, shield projector. Gritty weathered steel, brass, warm key and blue accents, no frames or text.",
+        "usage": "Live loadout and Armory cards select the matching cell using UV coordinates; labels and mechanics come from game state."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/Panel.png",
+        "sha256": "3d10b7797afb0cd4ad74f17298e1fd50294e310cd86b7bcb50b90e77191b1583",
+        "promptSummary": "Single blank realistic 3:2 dark steel and brass panel, orthographic with no perspective. Narrow heavy cast iron bevel border, worn brass inset rails, tiny corner screws, quiet charcoal grain center. Nine-slice edges; no text or widgets; transparent outside corners only.",
+        "usage": "Nine-slice native UI mesh around live interactive panels."
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/CombatParticles.png",
+        "sha256": "0ff074ba054b782cf0c8304f75fafc17656c1889fd12c02db22cb0c1beb33877",
+        "pixelSize": [
+          1254,
+          1254
+        ],
+        "prompt": "Use case: stylized-concept. Asset type: production VFX sprite atlas for a realistic gritty 3D tank defense game, not a screenshot or mockup. Generate one square RGBA image with a truly transparent background, a strict 2 by 2 grid of FOUR isolated volumetric particle sprites, each centered within its equal quadrant and wholly inside that quadrant with 12% transparent margin. No grid lines. TOP LEFT: a round billowing charcoal gray explosion smoke cloud with intricately curled lobes, wispy soft transparent edges, lit warmly from upper left, no fire. TOP RIGHT: a round light beige dust cloud kicked up by armored tracks, many small rolling lobes, soft transparent edges. BOTTOM LEFT: a compact bright orange and yellow fiery explosion fireball, white hot small center, realistic turbulent flame tongues and darker orange perimeter, black-free transparent edges. BOTTOM RIGHT: a vertically rising orange flame plume from burning wreckage, narrow base and broad curling flame tongues, isolated and fully contained in the quadrant. High quality realistic rendered fluid simulation look; translucent smoke wisps preserved in alpha; neither cartoon nor vector. No objects, terrain, vehicles, people, text, labels, borders, interface or watermark. Each sprite independent, no overlap across the exact center lines. Fill useful area of each quadrant so each can be sampled separately with UV coordinates. Transparent background must remain genuinely transparent, not a checkerboard baked into the pixels.",
+        "usage": "Four alpha particle sprites sampled by the live bounded combat effect pool. Kill events own wrecks, explosions and smoke; movement owns track dust. All age and rotation are driven by EncounterView simulation elapsed time and respect pause and reduced effects."
+      }
+    ]
+  },
+  "fonts": {
+    "project": "https://github.com/jpt/barlow",
+    "version": "1.422",
+    "commit": "697600fcece1685b0ba409eb82868546def9a84e",
+    "license": "SIL Open Font License 1.1",
+    "licensePath": "Unity/Assets/Resources/ArtDirection/Barlow-OFL.txt",
+    "modified": false,
+    "files": [
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/Body.ttf",
+        "upstreamPath": "fonts/ttf/Barlow-Regular.ttf",
+        "sha256": "a72240db047b468c957834cdbd607f013da32edee62d096f5fe0a4c2dc8433ce"
+      },
+      {
+        "path": "Unity/Assets/Resources/ArtDirection/Display.ttf",
+        "upstreamPath": "fonts/ttf/BarlowCondensed-SemiBold.ttf",
+        "sha256": "0dae49e31a5dd598184b8ed18ed877f9280e07c4cc3fa7c2cad25a5e7d8a3ad4"
+      }
+    ]
+  }
+}

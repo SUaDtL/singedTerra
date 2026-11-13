@@ -24,6 +24,8 @@ namespace SingedTerra.Encounter
         Material closePaint, rangedPaint, rubber, health, shell, rocket, incoming, repair, scatter,mortar,railgun,arc,shield;
         int nextTrail;
         bool currentGeometry;
+        Transform skillMines;
+        LineRenderer mineBoundary;
         public bool FullEffects { get; private set; } = true;
         public int VisibleUnits { get; private set; }
         public int PoolSize => units.Length;
@@ -32,6 +34,11 @@ namespace SingedTerra.Encounter
             var material = new Material(basis);
             material.SetTexture("_BaseMap", null); material.SetColor("_BaseColor", color);
             materials.Add(material); return material;
+        }
+        Material Signal(Color color)
+        {
+            var material=new Material(Shader.Find("SingedTerra/Combat Glow"));
+            material.SetColor("_BaseColor",new Color(color.r*2.4f,color.g*2.4f,color.b*2.4f,1));materials.Add(material);return material;
         }
         Transform Box(string name, Transform parent, Vector3 position, Vector3 scale, Material material)
         {
@@ -52,13 +59,24 @@ namespace SingedTerra.Encounter
             rangedPaint = Paint(basis, new Color(.43f,.34f,.19f));
             rubber = Paint(basis, new Color(.055f,.06f,.065f));
             health = Paint(basis, new Color(.55f,.75f,.37f));
-            shell = Paint(basis, new Color(1f,.82f,.32f));
-            rocket = Paint(basis, new Color(1f,.38f,.12f));
-            incoming = Paint(basis, new Color(.86f,.24f,.18f));
-            repair = Paint(basis, new Color(.25f,.9f,.65f));
-            scatter = Paint(basis, new Color(1f,.70f,.40f));
-            mortar=Paint(basis,new Color(.94f,.66f,.33f));railgun=Paint(basis,new Color(.56f,.87f,1f));
-            arc=Paint(basis,new Color(.70f,.92f,.45f));shield=Paint(basis,new Color(.42f,.75f,1f));
+            shell = Signal(new Color(1f,.86f,.55f));
+            rocket = Signal(new Color(1f,.38f,.12f));
+            incoming = Signal(new Color(.86f,.24f,.18f));
+            repair = Signal(new Color(.25f,.9f,.65f));
+            scatter = Signal(new Color(1f,.70f,.40f));
+            mortar=Signal(new Color(.94f,.66f,.33f));railgun=Signal(new Color(.56f,.87f,1f));
+            arc=Signal(new Color(.44f,.62f,1f));shield=Signal(new Color(.42f,.75f,1f));
+            skillMines=new GameObject("Armed defensive minefield").transform;skillMines.SetParent(transform,false);
+            mineBoundary=new GameObject("Minefield perimeter").AddComponent<LineRenderer>();mineBoundary.transform.SetParent(skillMines,false);
+            mineBoundary.useWorldSpace=false;mineBoundary.loop=true;mineBoundary.positionCount=64;mineBoundary.widthMultiplier=.045f;mineBoundary.sharedMaterial=mortar;
+            for(int i=0;i<64;i++){float angle=i*Mathf.PI*2/64;mineBoundary.SetPosition(i,new Vector3(Mathf.Sin(angle)*10,.06f,Mathf.Cos(angle)*10));}
+            for(int i=0;i<12;i++)
+            {
+                float angle=i*Mathf.PI/6;var at=new Vector3(Mathf.Sin(angle)*10,.11f,Mathf.Cos(angle)*10);
+                var mine=Box("Buried mine",skillMines,at,new Vector3(.38f,.14f,.38f),rangedPaint);mine.localRotation=Quaternion.Euler(0,angle*Mathf.Rad2Deg,0);
+                Box("Mine armed indicator",skillMines,at+Vector3.up*.09f,new Vector3(.08f,.045f,.08f),mortar);
+            }
+            skillMines.gameObject.SetActive(false);
             review=owner.GetComponent<SingedTerra.VisualReview.BattlefieldReview>();
             if(review){reviewVisuals=new SingedTerra.VisualReview.ReviewCombatVisuals(review,owner,transform);review.Changed+=reviewVisuals.FaceCamera;}
             for (int i = 0; i < (review ? 0 : units.Length); i++)
@@ -76,7 +94,7 @@ namespace SingedTerra.Encounter
             {
                 var line = new GameObject("EncounterTracer_" + i).AddComponent<LineRenderer>();
                 line.transform.SetParent(transform, false); line.positionCount = 2;
-                line.useWorldSpace = true; line.startWidth = .075f; line.endWidth = .035f;
+                line.useWorldSpace = true; line.startWidth = .11f; line.endWidth = .045f;
                 line.sharedMaterial = shell; line.enabled = false; trails[i] = line;
             }
         }
@@ -95,6 +113,8 @@ namespace SingedTerra.Encounter
         public void Render(EncounterModel model)
         {
             BindModel(model);
+            skillMines.position=owner.tank.position;skillMines.gameObject.SetActive(model.MinefieldArmed);
+            mineBoundary.enabled=model.MinefieldArmed&&FullEffects;
             owner.SetShieldCharge(model.Shield,model.CurrentShieldCapacity);
             if(reviewVisuals!=null){reviewVisuals.Render(model);VisibleUnits=reviewVisuals.Active;return;}
             VisibleUnits = 0;
@@ -158,6 +178,9 @@ namespace SingedTerra.Encounter
                     Trace(target+Vector3.up*.85f,target,e.Kind==EncounterEventKind.EnemyShield?shield:repair);
                 else if (e.Kind == EncounterEventKind.Repair)
                     Trace(Center(repairMeshes), center, repair);
+                else if(e.Kind==EncounterEventKind.EmergencyRepairs)Trace(center-Vector3.up,center+Vector3.up*1.8f,repair);
+                else if(e.Kind==EncounterEventKind.Overdrive)Trace(center-Vector3.right,center+Vector3.right,mortar);
+                else if(e.Kind==EncounterEventKind.Minefield)Trace(target-Vector3.up*.5f,target+Vector3.up*1.6f,rocket);
                 else if(e.Kind==EncounterEventKind.CloseHit || e.Kind==EncounterEventKind.RangedHit)Trace(target, center, incoming);
             }
             reviewVisuals?.Present(model);
@@ -192,12 +215,21 @@ namespace SingedTerra.Encounter
         {
             if (!FullEffects) return;
             int i = nextTrail; nextTrail = (nextTrail + 1) % trails.Length; life[i] = .22f;
-            trails[i].sharedMaterial = material;trails[i].positionCount=arc?9:2;
+            bool electrical=material==this.arc;
+            trails[i].sharedMaterial = material;trails[i].positionCount=arc?9:electrical?13:2;
+            trails[i].startColor=trails[i].endColor=Color.white;
             trails[i].SetPosition(0,from);trails[i].SetPosition(trails[i].positionCount-1,to);
             for(int point=1;point<trails[i].positionCount-1;point++)
             {
                 float t=point/(float)(trails[i].positionCount-1);
-                trails[i].SetPosition(point,Vector3.Lerp(from,to,t)+Vector3.up*(4*t*(1-t)*3f));
+                Vector3 offset=Vector3.up*(4*t*(1-t)*3f);
+                if(electrical)
+                {
+                    var sideways=Vector3.Cross((to-from).normalized,Vector3.up).normalized;
+                    float envelope=Mathf.Sin(t*Mathf.PI);
+                    offset=envelope*(sideways*Mathf.Sin(point*19.7f+i*7.1f)*.42f+Vector3.up*Mathf.Cos(point*11.3f+i)*.25f);
+                }
+                trails[i].SetPosition(point,Vector3.Lerp(from,to,t)+offset);
             }
             trails[i].enabled = true;
         }
@@ -208,6 +240,7 @@ namespace SingedTerra.Encounter
             {
                 life[i] = Mathf.Max(0, life[i] - elapsed);
                 trails[i].enabled = FullEffects && life[i] > 0;
+                trails[i].startColor=trails[i].endColor=new Color(1,1,1,Mathf.Clamp01(life[i]/.22f));
             }
         }
         public void ToggleEffects()
@@ -221,6 +254,7 @@ namespace SingedTerra.Encounter
         {
             VisibleUnits = 0; nextTrail = 0;currentGeometry=false;
             reviewVisuals?.Clear();
+            if(skillMines)skillMines.gameObject.SetActive(false);
             foreach (var unit in units) if (unit) unit.gameObject.SetActive(false);
             for (int i = 0; i < life.Length; i++) { life[i] = 0; if (trails[i]) trails[i].enabled = false; }
         }
