@@ -30,8 +30,13 @@ function implementation_nativeChromeArgs(profile, mode='native') {
     '--window-size=1616,988', ...(process.platform==='win32' && mode==='native'?[]:['--headless=new']), 'about:blank'];
 }
 
-const windowError=error=>({name:String(error?.name??'Error').slice(0,100),
-  message:String(error?.message??error).slice(0,1000),stack:String(error?.stack??'').slice(0,4000)});
+const snapshotFailures=new WeakSet();
+const windowError=error=>(error?.nativeSnapshotDiagnostics || (error && typeof error==='object' && snapshotFailures.has(error)))
+  ? {name:String(error?.name??'Error').slice(0,100),message:'Native window snapshot failed',
+    ...(error?.nativeSnapshotDiagnostics?{native_snapshot:error.nativeSnapshotDiagnostics}:{})}
+  : ({name:String(error?.name??'Error').slice(0,100),
+  message:String(error?.message??error).slice(0,1000),stack:String(error?.stack??'').slice(0,4000),
+  ...(error?.nativeSnapshotDiagnostics?{native_snapshot:error.nativeSnapshotDiagnostics}:{})});
 
 function implementation_retainWindowFailure(report,key,value) {
   const records=report[key]??=[];records.push(value);
@@ -42,8 +47,15 @@ function implementation_ownedNativeWindowSnapshot(owner, activation=null) {
   assert.equal(process.platform,'win32','Native HWND observation is unavailable on this host');
   const startedUptimeMs=Math.floor(uptime())*1000;
   assert.ok(Number.isSafeInteger(startedUptimeMs) && startedUptimeMs>0,'Native subprocess monotonic origin unavailable');
+  const startedUtcMs=Date.now(),startedAt=performance.now();
   const encoded=Buffer.from(JSON.stringify({root:owner.root,profile:owner.profile,activation,startedUptimeMs})).toString('base64');
-  return JSON.parse(powershell(`$owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
+  try {return JSON.parse(powershell(`$nativeStageClock=[Diagnostics.Stopwatch]::StartNew()
+    function Write-NativeSnapshotStage([string]$stage) {
+      try {[Console]::Error.WriteLine('ST_NATIVE_SNAPSHOT_STAGE '+([ordered]@{stage=$stage;elapsed_ms=$nativeStageClock.Elapsed.TotalMilliseconds;utc_ms=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()}|ConvertTo-Json -Compress))}catch{}
+    }
+    Write-NativeSnapshotStage 'script-entry'
+    $owner=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encoded}'))|ConvertFrom-Json
+    Write-NativeSnapshotStage 'compile-begin'
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
@@ -418,21 +430,72 @@ public class LastStandAwayWindowProbe {
   }
 }
 '@
+    Write-NativeSnapshotStage 'compile-end'
+    Write-NativeSnapshotStage 'pin-begin'
     $pin=[LastStandAwayWindowProbe+ProcessPin]::Open($owner.root.pid,$owner.root.exe)
     try {
+      Write-NativeSnapshotStage 'pin-end'
       # The same live kernel object spans this exact start/exe/profile admission.
+    Write-NativeSnapshotStage 'cim-begin'
     $current=Get-CimInstance Win32_Process -Filter ('ProcessId='+$owner.root.pid)
+    Write-NativeSnapshotStage 'cim-end'
     if(-not $current -or $current.CreationDate.ToUniversalTime().ToString('o') -ne $owner.root.start -or $current.ExecutablePath -ne $owner.root.exe){throw 'Owned native process identity mismatch'}
     $argument='--user-data-dir='+$owner.profile
     if(-not ($current.CommandLine.Contains('"'+$argument+'"') -or $current.CommandLine.Split(' ').Contains($argument))){throw 'Owned native profile mismatch'}
       if(-not $pin.Check()){throw 'Owned process exited or changed during admission'}
+      Write-NativeSnapshotStage 'admission-complete'
       if($owner.activation){
         $a=$owner.activation
         $identityCheck={return $pin.Check()}
         $inputBudget={return [LastStandAwayWindowProbe]::CanBeginInput($owner.startedUptimeMs)}
-        [LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck,[Func[bool]]$inputBudget)|ConvertTo-Json -Depth 8 -Compress
-      } else {[LastStandAwayWindowProbe]::Read($owner.root.pid)|ConvertTo-Json -Depth 5 -Compress}
-    } finally {$pin.Dispose()}`));
+        Write-NativeSnapshotStage 'activation-begin'
+        $result=[LastStandAwayWindowProbe]::Activate($owner.root.pid,$a.hwnd,$a.left,$a.top,$a.width,$a.height,[Func[bool]]$identityCheck,[Func[bool]]$inputBudget)
+        Write-NativeSnapshotStage 'activation-end'
+        $depth=8
+      } else {
+        Write-NativeSnapshotStage 'snapshot-begin'
+        $result=[LastStandAwayWindowProbe]::Read($owner.root.pid)
+        Write-NativeSnapshotStage 'snapshot-end'
+        $depth=5
+      }
+      Write-NativeSnapshotStage 'json-begin'
+      $result|ConvertTo-Json -Depth $depth -Compress
+      Write-NativeSnapshotStage 'json-end'
+    } finally {$pin.Dispose();Write-NativeSnapshotStage 'pin-closed'}`,{quietStderr:true}));}
+  catch(error) {
+    // Stage labels and timings are diagnostic only and cannot authorize input.
+    if(error && typeof error==='object')snapshotFailures.add(error);
+    try {
+      const stderr=String(error.stderr??''),stages=[];
+      for(const line of stderr.slice(0,16_384).split(/\r?\n/)) {
+        if(!line.startsWith('ST_NATIVE_SNAPSHOT_STAGE '))continue;
+        try {
+          const item=JSON.parse(line.slice('ST_NATIVE_SNAPSHOT_STAGE '.length));
+          if(typeof item?.stage==='string' && /^(script-entry|compile-begin|compile-end|pin-begin|pin-end|cim-begin|cim-end|admission-complete|activation-begin|activation-end|snapshot-begin|snapshot-end|json-begin|json-end|pin-closed)$/.test(item.stage) &&
+            Number.isFinite(item.elapsed_ms) && item.elapsed_ms>=0 && Number.isFinite(item.utc_ms) && item.utc_ms>0 && stages.length<16)
+            stages.push({stage:item.stage,elapsed_ms:item.elapsed_ms,utc_ms:item.utc_ms});
+        }catch{/* Ignore unrelated or incomplete stderr. */}
+      }
+      error.nativeSnapshotDiagnostics={diagnostic_only:true,started_utc_ms:startedUtcMs,elapsed_ms:performance.now()-startedAt,
+        stages,stderr_truncated:stderr.length>16_384};
+    }catch{/* Diagnostics remain best effort. */}
+    // execFileSync copies stderr into message, stack and output. Outer journey
+    // owners also report the thrown error, so sanitize it before propagation.
+    let safeError;
+    if(error && typeof error==='object')try {
+      error.message='Native window snapshot failed';
+      error.stack='Error: Native window snapshot failed';
+      for(const field of ['stdout','stderr','output'])if(field in error)error[field]=null;
+      if(error.message==='Native window snapshot failed' && error.stack==='Error: Native window snapshot failed' &&
+        ['stdout','stderr','output'].every(field=>!(field in error)||error[field]===null))safeError=error;
+    }catch{/* A frozen or read-only error needs a safe replacement. */}
+    if(!safeError) {
+      safeError=new Error('Native window snapshot failed');
+      if(error?.nativeSnapshotDiagnostics)safeError.nativeSnapshotDiagnostics=error.nativeSnapshotDiagnostics;
+      snapshotFailures.add(safeError);
+    }
+    throw safeError;
+  }
 }
 
 // Passive observations precede auxiliary cleanup. Each document is sampled in

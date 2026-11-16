@@ -3,7 +3,7 @@ import test from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { join, resolve } from 'node:path';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { runInNewContext } from 'node:vm';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -1131,6 +1131,77 @@ async function assertPrecleanupNativeAdmission(setupSource=readFileSync(resolve(
     actualGate:journey.ensureOwnedNativeForeground.toString(),fixture:'honest inert ownership/native/document records; actual gate and setup; no native PASS or gameplay claim'}));
   assert.equal(failures.length,0,'Actual precleanup setup must verify exact owned native admission before its DOM wait and reject false document-only admission');
 }
+
+test('native snapshot diagnostics preserve timeout prefixes without becoming window authority',async()=>{
+  const root={pid:77,ppid:55,start:'inert-owned-start',exe:'inert-owned.exe'};
+  const bounds={left:10,top:10,width:1044,height:788,windowState:'normal'};
+  const window={...bounds,pid:root.pid,hwnd:'444',kind:'Chrome_WidgetWin_1',measured:true,visible:true,minimized:false};
+  const observation={windows:[window],dropped:0,foreground:{pid:root.pid,hwnd:window.hwnd}};
+  const browser={},context={},owner={root,profile:'inert-owned-profile',context},report={};
+  let calls=0,detaches=0,captured,capturedOptions;
+  const prefix=stage=>'ST_NATIVE_SNAPSHOT_STAGE '+JSON.stringify({stage,elapsed_ms:12.5,utc_ms:12345})+'\n';
+  const failure=Object.assign(new Error('spawnSync powershell.exe ETIMEDOUT'),{code:'ETIMEDOUT',stderr:Buffer.from(
+    prefix('script-entry')+prefix('compile-begin')+prefix('compile-end')+prefix('cim-begin')+
+    'unrelated private stderr must not be retained\n'+prefix('unrecognized')+prefix(['script-entry'])+prefix(null)+
+    'ST_NATIVE_SNAPSHOT_STAGE {"stage":"snapshot-end","elapsed_ms":"12","utc_ms":12345}\n'+
+    'ST_NATIVE_SNAPSHOT_STAGE null\nST_NATIVE_SNAPSHOT_STAGE malformed\n')});
+  failure.message+='\nunrelated private stderr must not be retained';
+  failure.stack+='\nunrelated private stderr must not be retained';
+  const build=execute=>journey.createLastStandNativeDriver({
+    process:{platform:'win32'},ownedBrowserWindows:new WeakMap([[browser,owner]]),
+    ownedProcessIdentity:()=>root,powershell:execute,uptime:()=>1000,
+  });
+  const actual=build((script,options)=>{captured=script;capturedOptions=options;if(++calls===2)throw failure;return JSON.stringify(observation);});
+  const session={send:async method=>method==='Target.getTargetInfo'
+    ?{targetInfo:{type:'page',targetId:'inert-page',browserContextId:'inert-context'}}:{windowId:41,bounds},
+    detach:async()=>{detaches++;}};
+  context.newCDPSession=async()=>session;browser.newBrowserCDPSession=async()=>session;
+  const page={context:()=>context,isClosed:()=>false,
+    evaluate:async()=>({hidden:false,focused:true,visibility:'visible',t:100,timeOrigin:1000}),
+    waitForFunction:async(_predicate,_origin,options)=>assert.equal(options.timeout,10000)};
+  await assert.rejects(()=>actual.ensureOwnedNativeForeground({native:{browser,context},page,report,kind:'inert',role:'original'}),
+    error=>error===failure,'The original timeout object, not a replacement diagnostic error, must escape');
+  const record=report.native_foreground_preconditions[0];
+  assert.equal(record.status,'refused');assert.equal(record.activationNeeded,false);assert.equal(record.after,undefined);
+  assert.equal(detaches,2);assert.equal(record.error.name,failure.name);
+  assert.equal(record.error.native_snapshot?.diagnostic_only,true,'Timeout stage prefix must survive failed foreground retention');
+  assert.deepEqual(record.error.native_snapshot.stages.map(item=>item.stage),['script-entry','compile-begin','compile-end','cim-begin']);
+  assert.ok(!JSON.stringify(record.error).includes('private stderr'));
+  assert.match(captured,/ST_NATIVE_SNAPSHOT_STAGE/,'The maintained subprocess emits the stage prefix');
+  assert.deepEqual(capturedOptions,{quietStderr:true},'Native snapshot suppresses child stderr forwarding');
+  assert.deepEqual(build(()=>JSON.stringify(observation)).ownedNativeWindowSnapshot(owner),observation,
+    'Successful native JSON is unchanged');
+  assert.throws(()=>build(()=>prefix('snapshot-end')).ownedNativeWindowSnapshot(owner),SyntaxError,
+    'Diagnostic text cannot substitute for native JSON');
+  const huge=Object.assign(new Error('inert timeout'),{stderr:Buffer.from(prefix('script-entry').repeat(1000))});
+  assert.throws(()=>build(()=>{throw huge;}).ownedNativeWindowSnapshot(owner),error=>error===huge);
+  const bounded=actual.windowError(huge).native_snapshot;
+  assert.ok(bounded.stages.length<=16 && bounded.stderr_truncated);
+  const empty=Object.assign(new Error('inert timeout before script entry'),{stderr:Buffer.alloc(0)});
+  assert.throws(()=>build(()=>{throw empty;}).ownedNativeWindowSnapshot(owner),error=>error===empty);
+  assert.deepEqual(actual.windowError(empty).native_snapshot.stages,[],'No stage output cannot invent an admission or startup completion');
+  const immutable=Object.freeze(new Error('private frozen child stderr'));
+  assert.throws(()=>build(()=>{throw immutable;}).ownedNativeWindowSnapshot(owner),error=>
+    error!==immutable && !String(error.stack).includes('private frozen child stderr'),
+    'A non-extensible error must be replaced with a safe projection');
+  let childError;
+  try {execFileSync(process.execPath,['-e',"process.stderr.write('private child sentinel'); process.exit(1)"],{stdio:['pipe','pipe','pipe']});}
+  catch(error){childError=error;}
+  assert.ok(childError && childError.message.includes('private child sentinel'));
+  const childDriver=build(()=>{throw childError;});
+  assert.throws(()=>childDriver.ownedNativeWindowSnapshot(owner),error=>error===childError);
+  assert.ok(!JSON.stringify(childDriver.windowError(childError)).includes('private child sentinel'));
+  assert.ok(!JSON.stringify({message:childError.message,stack:childError.stack,stdout:childError.stdout,stderr:childError.stderr,output:childError.output}).includes('private child sentinel'));
+});
+
+test('quiet PowerShell failures do not forward subprocess stderr',{skip:process.platform!=='win32'},()=>{
+  const hostUrl=pathToFileURL(resolve(import.meta.dirname,'../../e2e/helpers/lastStandJourneyHost.mjs')).href;
+  const script=`import {powershell} from ${JSON.stringify(hostUrl)}; try {powershell("[Console]::Error.WriteLine('private-child-sentinel'); exit 1",{quietStderr:true}); process.exitCode=2;} catch(error) {if (!String(error.stderr).includes('private-child-sentinel')) process.exitCode=3;}`;
+  const output=spawnSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',stdio:['pipe','pipe','pipe']});
+  assert.equal(output.status,0);
+  assert.ok(!output.stdout.includes('private-child-sentinel'));
+  assert.ok(!output.stderr.includes('private-child-sentinel'));
+});
 
 test('native document readiness retains original caller admission controls',async()=>{
   await assertPrecleanupNativeAdmission();
