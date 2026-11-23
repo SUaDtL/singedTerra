@@ -145,12 +145,19 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      - name: Refuse unreviewed remote configuration differences
+        id: config_preflight
+        run: node scripts/ci/reviewedConfigDiff.mjs preflight
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          REVIEWED_CONFIG_PROPOSAL: ${{ secrets.REVIEWED_CONFIG_PROPOSAL }}
       - name: Read migration inventory before mutation
         id: migrations_before
         shell: bash
         run: |
           set -euo pipefail
-          npx --no-install supabase migration list --linked --output json > "$RUNNER_TEMP/migrations-before.json"
+          npx --no-install supabase migration list --output json --remote > "$RUNNER_TEMP/migrations-before.json"
           cat "$RUNNER_TEMP/migrations-before.json"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -160,7 +167,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx --no-install supabase db push --linked --dry-run --output json > "$RUNNER_TEMP/migration-dry-run.txt"
+          npx --no-install supabase db push --dry-run --output json --remote > "$RUNNER_TEMP/migration-dry-run.txt"
           cat "$RUNNER_TEMP/migration-dry-run.txt"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -181,16 +188,21 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          REVIEWED_CONFIG_PROPOSAL: ${{ secrets.REVIEWED_CONFIG_PROPOSAL }}
       - name: Push the reviewed project configuration
         id: config
         run: npm run deploy:backend:config
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          REVIEWED_CONFIG_PROPOSAL: ${{ secrets.REVIEWED_CONFIG_PROPOSAL }}
       - name: Deploy the exact compatible function inventory
         id: functions
         run: npm run deploy:backend:functions
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       - name: Read config metadata after attempted release
         id: management_after
         if: always() && steps.link.outcome == 'success'
@@ -201,7 +213,7 @@ jobs:
       - name: Read migration inventory after attempted release
         id: migrations_after
         if: always() && steps.link.outcome == 'success'
-        run: npx --no-install supabase migration list --linked --output json > "$RUNNER_TEMP/migrations-after.json"
+        run: npx --no-install supabase migration list --output json --remote > "$RUNNER_TEMP/migrations-after.json"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -229,6 +241,7 @@ jobs:
           CONFIGURATION_OUTCOME: ${{ steps.configuration.outcome }}
           LINK_OUTCOME: ${{ steps.link.outcome }}
           MANAGEMENT_BEFORE_OUTCOME: ${{ steps.management_before.outcome }}
+          CONFIG_PREFLIGHT_OUTCOME: ${{ steps.config_preflight.outcome }}
           MIGRATIONS_BEFORE_OUTCOME: ${{ steps.migrations_before.outcome }}
           MIGRATION_DRY_RUN_OUTCOME: ${{ steps.migration_dry_run.outcome }}
           FUNCTIONS_BEFORE_OUTCOME: ${{ steps.functions_before.outcome }}

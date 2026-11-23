@@ -129,7 +129,8 @@
         "ObservationVersionTests.test_current_schema_cannot_be_downgraded_or_mislabeled",
         "ObservationVersionTests.test_duplicate_json_keys_are_not_silently_repaired",
         "ObservationVersionTests.test_incomplete_extra_repeated_and_malformed_current_refused",
-        "ObservationVersionTests.test_retained_and_current_complete_shapes"
+        "ObservationVersionTests.test_retained_and_current_complete_shapes",
+        "ObservationVersionTests.test_skills_v7_requires_complete_collection_battle_and_navigation_controls"
       ]
     },
     {
@@ -1150,6 +1151,78 @@
       ]
     },
     {
+      "path": "last_stand_skills/test_journey_guards.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Runs the actual Node Skills fixture, draw and input-binding admission guards; no rendered player acceptance",
+      "cases": [
+        "SkillsJourneyGuardTests.test_actual_node_skills_journey_guards"
+      ]
+    },
+    {
+      "path": "last_stand_skills/test_layout.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production Skills collection, combat, persistence or layout contracts; no rendered player acceptance",
+      "cases": [
+        "SkillLayoutTests.test_three_skills_have_full_targets_and_contained_labels_without_control_overlap"
+      ]
+    },
+    {
+      "path": "last_stand_skills/test_progression.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production Skills collection, combat, persistence or layout contracts; no rendered player acceptance",
+      "cases": [
+        "SkillProgressionTests.test_backup_roundtrip_preserves_skill_state",
+        "SkillProgressionTests.test_deployment_freezes_ranks_and_resume_preserves_spent_uses",
+        "SkillProgressionTests.test_draw_retry_commits_one_fixed_outcome_and_excludes_maxed",
+        "SkillProgressionTests.test_eligibility_slots_and_ownership_are_distinct",
+        "SkillProgressionTests.test_intel_rewards_are_atomic_and_confirmed_once",
+        "SkillProgressionTests.test_invalid_saved_skill_fields_preserve_original_bytes",
+        "SkillProgressionTests.test_mutations_refuse_stale_readonly_and_malformed_inputs",
+        "SkillProgressionTests.test_named_build_preset_applies_hardware_and_skills_atomically",
+        "SkillProgressionTests.test_v8_migration_keeps_checkpoint_and_does_not_invent_rewards"
+      ]
+    },
+    {
+      "path": "last_stand_skills_combat/test_acquisition.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Fresh production deploy/wave/purchase/draw trajectory and independent evidence mutation checks; no native or rendered qualification",
+      "cases": [
+        "SkillAcquisitionTests.test_fresh_transactions_earn_all_five_milestones_and_bounded_collection",
+        "SkillAcquisitionTests.test_validator_rejects_gifts_rerolls_false_unlocks_and_unfunded_progress"
+      ]
+    },
+    {
+      "path": "last_stand_skills_combat/test_combat.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Production Skills collection, combat, persistence or layout contracts; no rendered player acceptance",
+      "cases": [
+        "SkillCombatTests.test_activation_refusals_and_single_use",
+        "SkillCombatTests.test_armed_mines_survive_real_paid_upgrade_boundary",
+        "SkillCombatTests.test_checkpoint_keeps_spent_uses_and_active_effects",
+        "SkillCombatTests.test_checkpoint_rejects_forged_skill_state",
+        "SkillCombatTests.test_mines_wait_for_ring_and_hit_only_in_range",
+        "SkillCombatTests.test_overdrive_accelerates_independent_weapons_then_expires",
+        "SkillCombatTests.test_passives_apply_once_and_survive_upgrades",
+        "SkillCombatTests.test_pause_speed_and_delayed_callback_preserve_skill_results",
+        "SkillCombatTests.test_rank_effects_match_declared_percentages",
+        "SkillCombatTests.test_retained_buildcraft_runs_have_neutral_skills"
+      ]
+    },
+    {
+      "path": "last_stand_skills_ui/test_skills_hud.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Imported Unity Skills controls and focus; requires actual Editor and scene",
+      "cases": [
+        "SkillsHudTests.test_imported_collection_builds_recovery_and_accessibility"
+      ]
+    },
+    {
       "path": "last_stand_tank/test_appearance.py",
       "lane": "portable",
       "owner": "Last Stand tank customization sprint",
@@ -1400,6 +1473,15 @@
       ]
     },
     {
+      "path": "last_stand_ui/test_web_renderer_resources.py",
+      "lane": "unity-editor",
+      "owner": "Qualified Unity host: named unittest entrypoint",
+      "reason": "Requires imported renderer assets and Editor process; verifies temporary Web shader omission and exact native restoration",
+      "cases": [
+        "WebRendererResourcesTests.test_scene_and_resources_renderers_restore_after_success_and_failure"
+      ]
+    },
+    {
       "path": "last_stand_waves/test_armament_presentation.py",
       "lane": "unity-editor",
       "owner": "Qualified Unity host: named unittest entrypoint",
@@ -1606,6 +1688,19 @@
       ]
     },
     {
+      "path": "test_last_stand_provenance.py",
+      "lane": "portable",
+      "owner": "CI last-stand-1: npm run test:last-stand:portable",
+      "reason": "Approved Node provenance adapter byte equivalence, strict response admission and failure paths; no native or rendered acceptance",
+      "cases": [
+        "ApprovedProvenanceTests.test_failures_and_invalid_inputs_never_return_a_digest",
+        "ApprovedProvenanceTests.test_large_batch_uses_only_the_approved_cli_and_preserves_order",
+        "ApprovedProvenanceTests.test_malformed_partial_or_substituted_replies_are_rejected",
+        "ApprovedProvenanceTests.test_raw_vectors_and_lf_identity_preserve_bom_and_non_ascii",
+        "ApprovedProvenanceTests.test_skills_tools_use_the_approved_provenance_boundary"
+      ]
+    },
+    {
       "path": "test_make_web_entry.py",
       "lane": "portable",
       "owner": "CI last-stand-1: npm run test:last-stand:portable",
@@ -1614,7 +1709,8 @@
         "WebEntryTests.test_generated_wrapper_preserves_native_tab_traversal",
         "WebEntryTests.test_last_stand_return_discloses_paused_wave_checkpoint_resume",
         "WebEntryTests.test_last_stand_return_stays_visible_above_loading_and_error",
-        "WebEntryTests.test_other_scene_has_no_last_stand_return"
+        "WebEntryTests.test_other_scene_has_no_last_stand_return",
+        "WebEntryTests.test_pointer_refocus_preserves_selection_then_keyboard_entry_resumes"
       ]
     },
     {

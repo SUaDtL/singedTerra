@@ -21,7 +21,15 @@ namespace SingedTerra.LastStand
         readonly Dictionary<string,Button> controls = new Dictionary<string,Button>();
         readonly List<Button> visible = new List<Button>();
         readonly Button[] tabs;
+        readonly Dictionary<string,Text> rowLabels=new Dictionary<string,Text>();
+        readonly Dictionary<string,Text> rowDetails=new Dictionary<string,Text>();
+        readonly Dictionary<string,Text> rowValues=new Dictionary<string,Text>();
+        readonly Dictionary<string,RectTransform> rowRules=new Dictionary<string,RectTransform>();
+        readonly Text[] menuGroups=new Text[3];
+        readonly Text settingsHint;
+        readonly RectTransform categoryRule,footerRule;
         string tab = "Audio", previousPage = "";
+        string compositionMode="";
         int helpTopic;
         float viewportHeight;
         public Button[] Buttons => buttons.ToArray();
@@ -47,7 +55,7 @@ namespace SingedTerra.LastStand
             Button("ChoiceNext",">",panel,() => loop.MoveSelection(1));
             Button("HelpPrevious","<",panel,() => MoveHelp(-1));
             Button("HelpNext",">",panel,() => MoveHelp(1));
-            tabs = new Button[4]; string[] labels = { "Audio", "Display", "Gameplay", loop.Platform.CanOpenAccount ? "Save & Account" : "Save" };
+            tabs = new Button[4]; string[] labels = { "Audio", "Display", "Guidance", loop.Platform.CanOpenAccount ? "Save & Account" : "Save" };
             for (int i=0;i<labels.Length;i++)
             {
                 string value = labels[i]; tabs[i] = Button("SettingsTab" + i,value,panel,() => { tab=value; ResetScroll(); loop.RefreshControls(); });
@@ -59,6 +67,7 @@ namespace SingedTerra.LastStand
             Button("MenuSettings","SETTINGS",content,() => loop.OpenMenu("settings"));
             Button("MenuAppearance","TANK APPEARANCE",content,loop.OpenAppearance);
             Button("MenuArmory","ARMORY & BUILDS",content,loop.OpenArmory);
+            Button("MenuSkills","SKILLS",content,loop.OpenSkills);
             Button("MenuHelp","HELP & CONTROLS",content,() => loop.OpenMenu("help"));
             Button("MenuGuidance","",content,FollowGuidance);
             Button("GuidanceDismiss","DISMISS THIS TIP",content,() => {var action=loop.ContextGuidance;if(action!=null)loop.Guidance.DismissContext(action.Id);loop.RefreshControls();});
@@ -99,7 +108,43 @@ namespace SingedTerra.LastStand
             Button("SettingsDefaults","RESTORE SETTINGS DEFAULTS",content,() => loop.RequestConfirmation("reset-settings"));
             Button("ConfirmCancel","CANCEL",content,loop.CancelConfirmation);
             Button("ConfirmProceed","CONFIRM",content,loop.ConfirmAction);
+            settingsHint=Text("SettingsHint",panel,14);settingsHint.color=Paper;
+            categoryRule=Rule("SettingsCategoryRule",panel);footerRule=Rule("SettingsFooterRule",panel);
+            for(int i=0;i<menuGroups.Length;i++){menuGroups[i]=Text("MenuGroup"+i,content,18);menuGroups[i].color=Brass;}
+            Row("SettingsMute","Master sound","Turn all game audio on or off.");
+            Row("MasterMinus","Master volume","Overall volume for music and effects.",true);
+            Row("EffectsMinus","Effects volume","Weapons, impacts and interface sounds.",true);
+            Row("EffectsSample","Test effects","Preview a sound at the current volume.");
+            Row("MusicEnabled","Ambient music","Background music during preparation and combat.");
+            Row("MusicMinus","Music volume","Music level within the master volume.",true);
+            Row("DisplayQuality","Render quality","High detail keeps the scene at full resolution.");
+            Row("DisplayEffects","Battle effects","Reduce smoke, flashes and debris for a calmer view.");
+            Row("DisplayFullscreen","Window mode","Switch between a window and fullscreen.");
+            Row("TutorialTips","Tutorial tips","Show contextual guidance as you play.");
+            Row("PurchaseSuggestions","Upgrade suggestions","Highlight useful purchases for your current build.");
+            Row("GameplayHelp","Help & controls","Read the controls and gameplay reference at any time.");
             shade.gameObject.SetActive(false);
+        }
+        RectTransform Rule(string name,Transform parent)
+        {var r=LastStandUiPrimitives.Node(name,parent);var image=r.gameObject.AddComponent<Image>();image.color=new Color(.65f,.51f,.29f,.3f);image.raycastTarget=false;return r;}
+        void Row(string id,string label,string detail,bool value=false)
+        {
+            rowLabels[id]=Text(id+"Label",content,18);rowLabels[id].text=label;
+            rowDetails[id]=Text(id+"Detail",content,14);rowDetails[id].text=detail;rowDetails[id].color=new Color(.73f,.70f,.61f);
+            rowRules[id]=Rule(id+"Rule",content);
+            if(value){rowValues[id]=Text(id+"Value",content,18);rowValues[id].alignment=TextAnchor.MiddleCenter;rowValues[id].color=Brass;}
+        }
+        void HideComposition()
+        {
+            compositionMode="";
+            body.gameObject.SetActive(true);
+            foreach(var t in rowLabels.Values)t.gameObject.SetActive(false);
+            foreach(var t in rowDetails.Values)t.gameObject.SetActive(false);
+            foreach(var t in rowValues.Values)t.gameObject.SetActive(false);
+            foreach(var r in rowRules.Values)r.gameObject.SetActive(false);
+            foreach(var t in menuGroups)t.gameObject.SetActive(false);
+            settingsHint.gameObject.SetActive(false);categoryRule.gameObject.SetActive(false);footerRule.gameObject.SetActive(false);
+            foreach(var id in new[]{"SettingsBack","SettingsDefaults"})if(controls[id].transform.parent!=content)controls[id].transform.SetParent(content,false);
         }
         void Volume(string channel, Func<int> read, Action<int> set)
         {
@@ -124,18 +169,22 @@ namespace SingedTerra.LastStand
         }
         void FollowDestination(string destination)
         {
+            if(!DestinationAvailable(destination))return;
             if(destination=="workshop")
             {if(!canOpenWorkshop())return;loop.CloseMenu();openWorkshop?.Invoke();}
             else if(destination=="research")loop.OpenResearch();
+            else if(destination=="skills")loop.OpenSkills();
             else if(destination=="data")loop.OpenMenu("save");
             else if(destination!="")loop.OpenMenu(destination);
         }
+        bool DestinationAvailable(string destination)=>destination=="workshop"?canOpenWorkshop():destination=="skills"?loop.CanCustomizeBuild:true;
         public void Refresh(bool visiblePage)
         {
             shade.gameObject.SetActive(visiblePage); if (!visiblePage) { previousPage=""; return; }
             if (previousPage != loop.MenuPage)
             {if(loop.MenuPage=="save")tab=loop.Platform.CanOpenAccount?"Save & Account":"Save";ResetScroll(); previousPage=loop.MenuPage;}
             foreach (var b in buttons) b.gameObject.SetActive(false);
+            HideComposition();
             close.gameObject.SetActive(true); visible.Clear();
             choiceName.gameObject.SetActive(loop.SelectionOpen || loop.MenuPage=="help");
             shade.GetComponent<Image>().color=loop.SelectionOpen ? Color.clear : new Color(0,0,0,.82f);
@@ -157,14 +206,15 @@ namespace SingedTerra.LastStand
                     Show("ChoiceNext",enabled:loop.CanSelectLoadout && loop.Selection.CanNext);
                     break;
                 case "menu":
+                    title.text="COMMAND MENU";
                     body.text = loop.Session.Model != null ? "Run paused. Closing this menu preserves a manual pause." : "LAST STAND";
                     if(loop.Guidance.Tutorial != "") body.text += "\n\n" + loop.Guidance.Tutorial;
                     var guidance=loop.ContextGuidance;
                     if(guidance!=null)
-                    {body.text+="\n\n"+guidance.Body;Show("MenuGuidance",guidance.Label,guidance.Destination!="workshop"||canOpenWorkshop());Show("GuidanceDismiss");}
-                    Show("MenuResume"); Show("MenuSettings");
+                    {body.text+="\n\n"+guidance.Body;Show("MenuGuidance",guidance.Label,DestinationAvailable(guidance.Destination));Show("GuidanceDismiss");}
+                    Show("MenuResume",loop.Session.Model!=null?"RETURN TO BATTLE":"RETURN TO EQUIPMENT BAY"); Show("MenuSettings");
                     if(loop.Phase=="garage"||loop.Phase=="workshop")
-                    {Show("MenuArmory",enabled:loop.CanCustomizeBuild);Show("MenuAppearance",enabled:loop.CanCustomizeAppearance);}
+                    {Show("MenuArmory",enabled:loop.CanCustomizeBuild);Show("MenuSkills",enabled:loop.CanCustomizeBuild);Show("MenuAppearance",enabled:loop.CanCustomizeAppearance);}
                     Show("MenuHelp"); Show("MenuMilestones");
                     Show("MenuWaveInfo",enabled:loop.CanInspectWave);
                     Show("MenuResearch",loop.Progression.GetBestWave(1)>=25?"RESEARCH LAB":"RESEARCH LAB - T1 WAVE 25");
@@ -186,15 +236,13 @@ namespace SingedTerra.LastStand
                     else if (tab == "Display")
                     {
                         body.text += "\nPerformance lowers 3D render resolution to 75%. Interface text stays at full resolution.\n" + loop.Platform.FullscreenStatus;
-                        Show("DisplayQuality","QUALITY: " + p.Quality.ToString().ToUpperInvariant(),loop.Display.Available);
+                        Show("DisplayQuality",p.Quality==LastStandQuality.Current?"HIGH DETAIL":"PERFORMANCE",loop.Display.Available);
                         Show("DisplayEffects",p.ReducedEffects ? "EFFECTS: REDUCED" : "EFFECTS: FULL");
                         if(loop.Platform.FullscreenAvailable)Show("DisplayFullscreen",loop.Platform.Fullscreen ? "EXIT FULLSCREEN" : "ENTER FULLSCREEN",loop.Platform.FullscreenAvailable);
                     }
-                    else if (tab == "Gameplay")
+                    else if (tab == "Guidance")
                     {
-                        body.text += "\nLast running speed: " + loop.Session.LastPositiveSpeed.ToString("0.0") +
-                            "x. Research cap: "+loop.Session.MaximumSpeed.ToString("0.0")+
-                            "x. Research raises the cap; you choose the running speed.\nEssential status, errors and confirmations remain visible.";
+                        body.text += "\nEssential status, errors and confirmations remain visible when guidance is turned off.";
                         Show("TutorialTips",p.TutorialTips ? "TUTORIAL TIPS: ON" : "TUTORIAL TIPS: OFF");
                         Show("PurchaseSuggestions",p.PurchaseSuggestions ? "PURCHASE SUGGESTIONS: ON" : "PURCHASE SUGGESTIONS: OFF"); Show("GameplayHelp");
                     }
@@ -213,11 +261,10 @@ namespace SingedTerra.LastStand
                         if(loop.PreviousBackupAvailable)
                             Show("DataPrevious");
                         if(loop.Preferences.CanRetry)Show("PreferencesRetry");
-                        if(loop.Platform.CanOpenAccount)Show("DataAccount",enabled:canLeave); Show("SettingsDefaults");
-                        footer.text="Local save only; account sync is unavailable. Backups contain gameplay progress, not account or device settings.\n"+
-                            loop.Preferences.Status+"\nGame "+Application.version+" / Unity "+Application.unityVersion+" / "+Application.platform;
+                        if(loop.Platform.CanOpenAccount)Show("DataAccount",enabled:canLeave);
+                        footer.text="Backups contain gameplay progress. Audio, display and guidance settings stay on this device.";
                     }
-                    Show("SettingsBack"); break;
+                    Show("SettingsDefaults","RESET SETTINGS");Show("SettingsBack"); break;
                 case "backup-preview":
                     body.text=loop.BackupComparison();
                     Show("BackupCancel");Show("BackupReplace",enabled:loop.BackupPreview!=null && !loop.BackupBusy && !loop.Progression.RestorePending && loop.Session.Model==null);
@@ -228,8 +275,9 @@ namespace SingedTerra.LastStand
                     Show("HelpPrevious",enabled:helpTopic>0);Show("HelpNext",enabled:helpTopic<LastStandGuidance.HelpTopics.Count-1);
                     // Selector buttons live beside the topic title, not in the action list.
                     visible.Remove(controls["HelpPrevious"]);visible.Remove(controls["HelpNext"]);
-                    if(topic.Destination!="")Show("HelpAction",topic.ActionLabel,topic.Destination!="workshop"||canOpenWorkshop());
+                    if(topic.Destination!="")Show("HelpAction",topic.ActionLabel,DestinationAvailable(topic.Destination));
                     if(topic.Destination=="workshop"&&!canOpenWorkshop())footer.text+="\nPermanent upgrades are available from the garage.";
+                    if(topic.Destination=="skills"&&!loop.CanCustomizeBuild)footer.text+="\nSkills collection and loadout changes are available from the garage. Your current run keeps its equipped skills.";
                     Show("SettingsBack");break;
                 case "wave":
                     title.text="ENEMY STATS";
@@ -265,6 +313,79 @@ namespace SingedTerra.LastStand
         }
         void VolumeRows(string name, int value)
         { Show(name+"Minus",name.ToUpperInvariant()+" " + value + "%  -",value>0); Show(name+"Plus",name.ToUpperInvariant()+" " + value + "%  +",value<100); }
+        void Caption(string id,string value)=>controls[id].GetComponentInChildren<Text>(true).text=value;
+        void LayoutSettings(float width,float height,float sx,float sy)
+        {
+            float w=Math.Min(1000,width-48),h=Math.Min(676,height-32);
+            modal.LayoutAt(width,height,sx,sy,new Rect((width-w)/2,(height-h)/2,w,h));
+            modal.Place(title,24,20,w-168,40);modal.Place(close,w-116,20,92,44);
+            for(int i=0;i<tabs.Length;i++)
+            {if(tabs[i].transform.parent!=panel)tabs[i].transform.SetParent(panel,false);modal.Place(tabs[i],24,104+i*56,168,48);}
+            categoryRule.gameObject.SetActive(true);modal.Place(categoryRule,216,96,1,h-192);
+            footerRule.gameObject.SetActive(true);modal.Place(footerRule,24,h-88,w-48,1);
+            foreach(var id in new[]{"SettingsBack","SettingsDefaults"})if(controls[id].transform.parent!=panel)controls[id].transform.SetParent(panel,false);
+            modal.Place(controls["SettingsBack"],w-212,h-68,188,44);
+            modal.Place(controls["SettingsDefaults"],24,h-68,168,44);
+            settingsHint.gameObject.SetActive(true);settingsHint.text=loop.Preferences.Status;
+            modal.Place(settingsHint,240,h-65,w-476,44);
+            float inner=w-264;
+            viewportHeight=h-192;pane.Layout(240,96,inner,viewportHeight,sx,sy);
+            bool data=tab!="Audio"&&tab!="Display"&&tab!="Guidance";
+            body.gameObject.SetActive(data);footer.gameObject.SetActive(data&&footer.text!="");
+            float row=0;
+            if(data){float bh=modal.Preferred(body,inner-16)+16;modal.Place(body,0,row,inner-16,bh);row+=bh+8;}
+            var p=loop.Preferences.Current;
+            Caption("SettingsMute",p.Muted?"OFF":"ON");Caption("MusicEnabled",p.MusicEnabled?"ON":"OFF");
+            Caption("DisplayEffects",p.ReducedEffects?"REDUCED":"FULL");
+            Caption("DisplayFullscreen",loop.Platform.Fullscreen?"FULLSCREEN":"WINDOWED");
+            Caption("TutorialTips",p.TutorialTips?"ON":"OFF");Caption("PurchaseSuggestions",p.PurchaseSuggestions?"ON":"OFF");
+            Caption("EffectsSample","PLAY SAMPLE");Caption("GameplayHelp","OPEN HELP");
+            rowDetails["DisplayQuality"].text=p.Quality==LastStandQuality.Current?"Full scene resolution. Interface text stays sharp.":"Lower scene resolution for smoother performance.";
+            foreach(var b in visible)
+            {
+                if(b.name=="SettingsBack"||b.name=="SettingsDefaults"||b.name.EndsWith("Plus",StringComparison.Ordinal))continue;
+                if(rowLabels.TryGetValue(b.name,out var label))
+                {
+                    var detail=rowDetails[b.name];label.gameObject.SetActive(true);detail.gameObject.SetActive(true);
+                    modal.Place(label,0,row+5,inner-236,26);modal.Place(detail,0,row+32,inner-236,36);
+                    if(rowValues.TryGetValue(b.name,out var value))
+                    {
+                        string channel=b.name.Substring(0,b.name.Length-5);
+                        int number=channel=="Master"?p.MasterVolume:channel=="Effects"?p.EffectsVolume:p.MusicVolume;
+                        value.gameObject.SetActive(true);value.text=number+"%";
+                        Caption(b.name,"−");Caption(channel+"Plus","+");
+                        modal.Place(b,inner-204,row+9,44,44);modal.Place(value,inner-156,row+9,92,44);
+                        modal.Place(controls[channel+"Plus"],inner-60,row+9,44,44);
+                    }
+                    else modal.Place(b,inner-204,row+9,188,44);
+                    rowRules[b.name].gameObject.SetActive(true);modal.Place(rowRules[b.name],0,row+71,inner-16,1);row+=80;
+                }
+                else{modal.Place(b,0,row,inner-16,44);row+=56;}
+            }
+            if(footer.gameObject.activeSelf){float fh=modal.Preferred(footer,inner-16)+12;modal.Place(footer,0,row+8,inner-16,fh);row+=fh+8;}
+            pane.Finish(row);ClampScroll();scroll.scrollSensitivity=44*sy;
+        }
+        void LayoutMenu(float width,float height,float sx,float sy)
+        {
+            float w=Math.Min(1040,width-48),h=Math.Min(640,height-32);
+            modal.LayoutAt(width,height,sx,sy,new Rect((width-w)/2,(height-h)/2,w,h));
+            modal.Place(title,24,20,w-168,40);modal.Place(close,w-116,20,92,44);
+            viewportHeight=h-104;pane.Layout(24,88,w-48,viewportHeight,sx,sy);
+            float inner=w-64,bh=modal.Preferred(body,inner)+8;modal.Place(body,0,0,inner,bh);
+            string[][] groups={new[]{"MenuResume","MenuWaveInfo","MenuMilestones","MenuHistory","MenuNewRun","MenuAbandon"},
+                new[]{"MenuArmory","MenuSkills","MenuAppearance","MenuResearch","MenuPlanner"},
+                new[]{"MenuSettings","MenuHelp","MenuAbout","MenuGuidance","GuidanceDismiss","MenuCampaigns"}};
+            string[] names={"CURRENT RUN","EQUIPMENT & PROGRESS","GUIDANCE & OPTIONS"};
+            float cw=(inner-32)/3,maxY=0;
+            for(int i=0;i<groups.Length;i++)
+            {
+                float x=i*(cw+16),y=bh+24;var heading=menuGroups[i];heading.gameObject.SetActive(true);heading.text=names[i];modal.Place(heading,x,y,cw,28);y+=40;
+                foreach(string id in groups[i])if(visible.Contains(controls[id]))
+                {modal.Place(controls[id],x,y,cw,48);modal.Style(controls[id],controls[id].interactable,id=="MenuResume");y+=60;}
+                maxY=Math.Max(maxY,y);
+            }
+            footer.gameObject.SetActive(false);pane.Finish(maxY);ClampScroll();scroll.scrollSensitivity=44*sy;
+        }
         public void Layout(float width, float height, float unitsX, float unitsY)
         {
             if (!shade.gameObject.activeSelf) return;
@@ -289,7 +410,16 @@ namespace SingedTerra.LastStand
                 ClampScroll();scroll.scrollSensitivity=44*unitsY;
                 return;
             }
-            float w=modal.Layout(width,height,unitsX,unitsY,700),h=modal.PanelHeight;
+            string nextMode=width>=1000&&height>=620?
+                (loop.MenuPage=="settings"||loop.MenuPage=="save"?"settings":loop.MenuPage=="menu"?"menu":"compact"):"compact";
+            if(compositionMode!=nextMode){HideComposition();compositionMode=nextMode;}
+            if(nextMode=="settings")
+            {LayoutSettings(width,height,unitsX,unitsY);return;}
+            if(nextMode=="menu")
+            {LayoutMenu(width,height,unitsX,unitsY);return;}
+            float panelHeight=Math.Min(height-16,loop.MenuPage=="confirm"?400:loop.MenuPage=="help"?500:loop.MenuPage=="about"?520:700);
+            float panelWidth=Math.Min(700,width-16);
+            float w=modal.LayoutAt(width,height,unitsX,unitsY,new Rect((width-panelWidth)/2,(height-panelHeight)/2,panelWidth,panelHeight)),h=modal.PanelHeight;
             float y=modal.HeaderBottom,inner=w-24,bodyTopOffset=8;
             if(loop.MenuPage=="help")
             {

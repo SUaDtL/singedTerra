@@ -7,7 +7,7 @@ namespace SingedTerra.Encounter
 {
     // Deterministic bounded combat; the run edition selects authored rules.
     public enum EncounterStatus { Running, Defeated, Limit }
-    public enum EncounterEventKind { Cannon, Launcher, Repair, CloseHit, RangedHit, Scattergun, Mortar, Railgun, Arc, ShieldAbsorb, ShieldRecharge, EnemyShield, EnemyRepair }
+    public enum EncounterEventKind { Cannon, Launcher, Repair, CloseHit, RangedHit, Scattergun, Mortar, Railgun, Arc, ShieldAbsorb, ShieldRecharge, EnemyShield, EnemyRepair, Overdrive, EmergencyRepairs, MinefieldArmed, Minefield }
     // Scalar boundary data; empty cohorts are regenerated from tier/wave identity.
     public sealed class EncounterCheckpoint
     {
@@ -21,6 +21,8 @@ namespace SingedTerra.Encounter
         public readonly LastStandLoadout Loadout;
         public readonly LastStandCombatResearchSnapshot CombatResearch;
         public readonly LastStandBuildcraftCheckpoint Buildcraft;
+        public readonly LastStandSkillSnapshot Skills;
+        public readonly LastStandSkillCombatCheckpoint SkillState;
         public EncounterCheckpoint(string rulesVersion,int tier,int fitting,int wave,int completedWave,int tick,
             int hull,int maximumHull,int spawned,int kills,int cannonShots,int launcherShots,int scattergunShots,
             int restored,int closeHits,int rangedHits,int nextSpawnTick,int nextCannonTick,int nextLauncherTick,
@@ -28,7 +30,8 @@ namespace SingedTerra.Encounter
             int scattergunDamage,int cannonPeriod,int repairAmount,int armorLevel,int committedCannonDamage=EncounterModel.CannonDamage,
             int mortarShots=0,int railgunShots=0,int nextMortarTick=1,int nextRailgunTick=1,
             int mortarDamage=LastStandUpgradeCatalog.BaseMortarDamage,int railgunDamage=LastStandUpgradeCatalog.BaseRailgunDamage,
-            LastStandLoadout loadout=null,LastStandCombatResearchSnapshot combatResearch=null,LastStandBuildcraftCheckpoint buildcraft=null)
+            LastStandLoadout loadout=null,LastStandCombatResearchSnapshot combatResearch=null,LastStandBuildcraftCheckpoint buildcraft=null,
+            LastStandSkillSnapshot skills=null,LastStandSkillCombatCheckpoint skillState=null)
         {
             RulesVersion=rulesVersion;Tier=tier;Fitting=fitting;Wave=wave;CompletedWave=completedWave;Tick=tick;
             Hull=hull;MaximumHull=maximumHull;Spawned=spawned;Kills=kills;CannonShots=cannonShots;LauncherShots=launcherShots;
@@ -42,6 +45,7 @@ namespace SingedTerra.Encounter
             MortarDamage=mortarDamage;RailgunDamage=railgunDamage;
             Loadout=loadout??LastStandLoadout.Single((LastStandFitting)fitting);CombatResearch=combatResearch??LastStandCombatResearchSnapshot.None;
             Buildcraft=buildcraft??new LastStandBuildcraftCheckpoint();
+            Skills=skills??LastStandSkillSnapshot.None;SkillState=skillState??new LastStandSkillCombatCheckpoint();
             if(Loadout.Primary!=(LastStandFitting)fitting)throw new ArgumentException("Checkpoint loadout identity mismatch.");
         }
     }
@@ -131,9 +135,11 @@ namespace SingedTerra.Encounter
         public EncounterModel(bool launcher, EncounterProfile profile, int cannonDamage = CannonDamage)
             :this(launcher?LastStandFitting.Launcher:LastStandFitting.Repair,profile,cannonDamage){}
         public EncounterModel(LastStandFitting fitting, EncounterProfile profile, int cannonDamage = CannonDamage,
-            LastStandLoadout loadout=null,LastStandCombatResearchSnapshot combatResearch=null)
+            LastStandLoadout loadout=null,LastStandCombatResearchSnapshot combatResearch=null,LastStandSkillSnapshot skills=null)
         {
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
+            Skills=skills??LastStandSkillSnapshot.None;
+            if(!Profile.Edition.IsSkills&&!Skills.IsEmpty)throw new ArgumentException("Skills require their captured run edition.");
             Loadout=loadout??LastStandLoadout.Single(fitting);CombatResearch=combatResearch??LastStandCombatResearchSnapshot.None;
             Loadout.ValidateEdition(Profile.Edition);
             if(Loadout.Primary!=fitting||!Profile.Edition.IsBuildcraft&&!CombatResearch.IsEmpty)throw new ArgumentException("Unsupported loadout/research snapshot.");
@@ -141,17 +147,18 @@ namespace SingedTerra.Encounter
             if (cannonDamage < CannonDamage || cannonDamage > (Profile.IsWaveBased?LastStandWaveCatalog.MaximumCombatValue:50)) throw new ArgumentOutOfRangeException(nameof(cannonDamage));
             if(!Enum.IsDefined(typeof(LastStandFitting),fitting))throw new ArgumentOutOfRangeException(nameof(fitting));
             CommittedCannonDamage = cannonDamage;
-            CurrentCannonDamage = cannonDamage;
+            CurrentCannonDamage = SkillDamage(cannonDamage);
+            CurrentMaximumHull=Hull=SkillHull(MaximumHull);
             Fitting = fitting;
             if(HasShield)Shield=CurrentShieldCapacity=LastStandUpgradeCatalog.BaseShieldCapacity;
             for (int i = 0; i < Capacity; i++) foes[i] = new EncounterFoe();
         }
-        public static EncounterModel CreatePlayable(LastStandFitting fitting,int tier,LastStandShopState shop)
+        public static EncounterModel CreatePlayable(LastStandFitting fitting,int tier,LastStandShopState shop,LastStandSkillSnapshot skills=null)
         {
             if(shop==null)throw new ArgumentNullException(nameof(shop));
             if(!shop.Edition.IsLegacy&&shop.Tier!=tier)throw new ArgumentException("Shop/model tier mismatch.");
             int committed=shop.GetDefinition(LastStandUpgradeTrackId.CannonAttack).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.CannonAttack).PermanentLevel,1);
-            var model=new EncounterModel(fitting,EncounterProfile.ForTier(tier,shop.Edition),committed,shop.Loadout,shop.CombatResearch);
+            var model=new EncounterModel(fitting,EncounterProfile.ForTier(tier,shop.Edition),committed,shop.Loadout,shop.CombatResearch,skills);
             model.ApplyShopProjection(shop);return model;
         }
         public void ApplyShopProjection(LastStandShopState shop)
@@ -175,12 +182,12 @@ namespace SingedTerra.Encounter
         public bool TryApplyPlayableMortarProjection(int damage)
         {
             if(!Profile.IsPlayable||Status!=EncounterStatus.Running||!HasMortar||damage<LastStandUpgradeCatalog.BaseMortarDamage||damage>LastStandWaveCatalog.MaximumCombatValue)return false;
-            CurrentMortarDamage=damage;return true;
+            CurrentMortarDamage=SkillDamage(damage);return true;
         }
         public bool TryApplyPlayableRailgunProjection(int damage)
         {
             if(!Profile.IsPlayable||Status!=EncounterStatus.Running||!HasRailgun||damage<LastStandUpgradeCatalog.BaseRailgunDamage||damage>LastStandWaveCatalog.MaximumCombatValue)return false;
-            CurrentRailgunDamage=damage;return true;
+            CurrentRailgunDamage=SkillDamage(damage);return true;
         }
         public bool TryApplyPlayableArmorProjection(int level)
         {
@@ -190,7 +197,7 @@ namespace SingedTerra.Encounter
         public bool TryApplyPlayableScattergunProjection(int damage)
         {
             if(!Profile.IsPlayable || Status!=EncounterStatus.Running || !HasScattergun || damage<LastStandUpgradeCatalog.BaseScattergunDamage || damage>LastStandWaveCatalog.MaximumCombatValue)return false;
-            CurrentScattergunDamage=damage;return true;
+            CurrentScattergunDamage=SkillDamage(damage);return true;
         }
         // Consume validated catalog projections without owning shop levels or formulas.
         public bool TryApplyPlayableAttackProjection(int cannonDamage, int launcherDamage)
@@ -198,14 +205,15 @@ namespace SingedTerra.Encounter
             if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
                 cannonDamage < CannonDamage || launcherDamage < LauncherDamage ||
                 cannonDamage>LastStandWaveCatalog.MaximumCombatValue || launcherDamage>LastStandWaveCatalog.MaximumCombatValue) return false;
-            CurrentCannonDamage = cannonDamage;
-            CurrentLauncherDamage = launcherDamage;
+            CurrentCannonDamage = SkillDamage(cannonDamage);
+            CurrentLauncherDamage = SkillDamage(launcherDamage);
             return true;
         }
         // The catalog supplies immutable numeric capacity and a captured pure hit
         // projection. This model owns only their applied combat state.
         public bool TryApplyPlayableDefenseProjection(int maximumHull, Func<int, int> incomingHit)
         {
+            maximumHull=SkillHull(maximumHull);
             if (!Profile.IsPlayable || Status != EncounterStatus.Running ||
                 maximumHull < CurrentMaximumHull || maximumHull>LastStandWaveCatalog.MaximumCombatValue || incomingHit == null || incomingHit(1) != 1) return false;
             int nextHull = (int)Math.Min((long)maximumHull, Hull + (long)maximumHull - CurrentMaximumHull);
@@ -221,7 +229,7 @@ namespace SingedTerra.Encounter
                 period < 1 || period > CannonPeriod) return false;
             if (period == CurrentCannonPeriod) return true;
             CurrentCannonPeriod = period;
-            if (lastCannonShot > 0) nextCannon = Math.Max(Tick + 1, lastCannonShot + period);
+            if (lastCannonShot > 0) nextCannon = Math.Max(Tick + 1, lastCannonShot + SkillPeriod(period));
             return true;
         }
         // The catalog supplies the amount; the repair fitting retains its fixed cadence.
@@ -247,24 +255,25 @@ namespace SingedTerra.Encounter
                     foe.Distance = Math.Max(StopDistance(foe), foe.Distance -
                         Profile.Speed(foe.Kind));
             if(Profile.IsWaveBased)PrepareIncomingHits();
+            StepSkills();
             if (Tick >= nextCannon && Shoot(Profile.MainRange, CurrentCannonDamage, EncounterEventKind.Cannon))
-            { CannonShots++; lastCannonShot = Tick; nextCannon = Tick + CurrentCannonPeriod; }
+            { CannonShots++; lastCannonShot = Tick; nextCannon = Tick + SkillPeriod(CurrentCannonPeriod); }
             if (HasLauncher)
             {
                 if (Tick >= nextLauncher && Shoot(Profile.AuxiliaryRange, CurrentLauncherDamage, EncounterEventKind.Launcher))
-                { LauncherShots++; nextLauncher = Tick + LauncherPeriod; }
+                { LauncherShots++; nextLauncher = Tick + SkillPeriod(LauncherPeriod); }
             }
             if(HasScattergun)
             {
-                if(Tick>=nextScattergun && Scatter()) {ScattergunShots=Add(ScattergunShots,1);nextScattergun=Tick+ScattergunPeriod;}
+                if(Tick>=nextScattergun && Scatter()) {ScattergunShots=Add(ScattergunShots,1);nextScattergun=Tick+SkillPeriod(ScattergunPeriod);}
             }
             if(HasMortar)
             {
-                if(Tick>=nextMortar&&Mortar()){MortarShots=Add(MortarShots,1);nextMortar=Tick+LastStandUpgradeCatalog.MortarPeriod;}
+                if(Tick>=nextMortar&&Mortar()){MortarShots=Add(MortarShots,1);nextMortar=Tick+SkillPeriod(LastStandUpgradeCatalog.MortarPeriod);}
             }
             if(HasRailgun)
             {
-                if(Tick>=nextRailgun&&Railgun()){RailgunShots=Add(RailgunShots,1);nextRailgun=Tick+LastStandUpgradeCatalog.RailgunPeriod;}
+                if(Tick>=nextRailgun&&Railgun()){RailgunShots=Add(RailgunShots,1);nextRailgun=Tick+SkillPeriod(LastStandUpgradeCatalog.RailgunPeriod);}
             }
             if (HasRepair && Tick >= nextRepair)
             {
@@ -396,7 +405,7 @@ namespace SingedTerra.Encounter
             int left=foe.NextAttack-Tick;
             return left<=LastStandEnemyCatalog.Get(foe.Kind).TelegraphTicks?left:0;
         }
-        public int IncomingDamagePerHit(int raw)=>Math.Max(1,Math.Min(raw,incomingHitProjection(raw)));
+        public int IncomingDamagePerHit(int raw)=>SkillIncoming(Math.Max(1,Math.Min(raw,incomingHitProjection(raw))));
         void AttackTank()
         {
             for (int i = 0; i < Capacity && Hull > 0; i++)
@@ -433,6 +442,10 @@ namespace SingedTerra.Encounter
                 .Append('|').Append(ArcShots).Append('|').Append(nextArc).Append('|').Append(CurrentArcDamage)
                 .Append('|').Append(Shield).Append('|').Append(CurrentShieldCapacity).Append('|').Append(ShieldRestored).Append('|').Append(ShieldAbsorbed)
                 .Append('|').Append(nextShieldRecharge).Append('|').Append(lastShieldHit);
+            if(Profile.IsWaveBased&&Profile.Edition.IsSkills){
+                result.Append("|skills:").Append(Skills.Loadout);foreach(int rank in Skills.Ranks)result.Append(',').Append(rank);
+                result.Append('|').Append(skillSpentMask).Append('|').Append(overdriveUntilTick).Append('|').Append(minefieldArmed).Append('|').Append(minefieldDamage);
+            }
             foreach (var f in foes)
                 if(Profile.IsWaveBased && !f.Alive)result.Append(";0,0,0,0");
                 else {
@@ -448,7 +461,7 @@ namespace SingedTerra.Encounter
             return new EncounterCheckpoint(Profile.Edition.RulesVersion,Profile.Tier,(int)Fitting,Wave,CompletedWave,Tick,Hull,CurrentMaximumHull,Spawned,Kills,
                 CannonShots,LauncherShots,ScattergunShots,Restored,CloseHits,RangedHits,nextSpawn,nextCannon,nextLauncher,nextRepair,nextScattergun,lastCannonShot,
                 CurrentCannonDamage,CurrentLauncherDamage,CurrentScattergunDamage,CurrentCannonPeriod,CurrentRepairAmount,CurrentArmorLevel,CommittedCannonDamage,
-                MortarShots,RailgunShots,nextMortar,nextRailgun,CurrentMortarDamage,CurrentRailgunDamage,Loadout,CombatResearch,CaptureBuildcraft());
+                MortarShots,RailgunShots,nextMortar,nextRailgun,CurrentMortarDamage,CurrentRailgunDamage,Loadout,CombatResearch,CaptureBuildcraft(),Skills,CaptureSkills());
         }
         public static EncounterModel RestoreCheckpoint(EncounterProfile profile,LastStandFitting fitting,EncounterCheckpoint s)
         {
@@ -469,11 +482,11 @@ namespace SingedTerra.Encounter
                 s.CommittedCannonDamage<CannonDamage || s.CommittedCannonDamage>s.CannonDamage ||
                 s.CompletedWave==0&&(s.MortarShots!=0||s.RailgunShots!=0)||
                 !ValidAuxiliaryCheckpoint(s.Loadout.Contains(LastStandFitting.Mortar),s.MortarShots,s.NextMortarTick,s.MortarDamage,
-                    LastStandUpgradeCatalog.BaseMortarDamage,LastStandUpgradeCatalog.MortarPeriod,s.Tick)||
+                    LastStandUpgradeCatalog.BaseMortarDamage,LastStandUpgradeCatalog.MortarPeriod,s.Tick,profile.Edition.IsSkills&&(s.SkillState.SpentMask&1)!=0)||
                 !ValidAuxiliaryCheckpoint(s.Loadout.Contains(LastStandFitting.Railgun),s.RailgunShots,s.NextRailgunTick,s.RailgunDamage,
-                    LastStandUpgradeCatalog.BaseRailgunDamage,LastStandUpgradeCatalog.RailgunPeriod,s.Tick))
+                    LastStandUpgradeCatalog.BaseRailgunDamage,LastStandUpgradeCatalog.RailgunPeriod,s.Tick,profile.Edition.IsSkills&&(s.SkillState.SpentMask&1)!=0))
                 throw new ArgumentException("Invalid or incompatible wave checkpoint.");
-            var m=new EncounterModel(fitting,profile,s.CommittedCannonDamage,s.Loadout,s.CombatResearch) {
+            var m=new EncounterModel(fitting,profile,s.CommittedCannonDamage,s.Loadout,s.CombatResearch,s.Skills) {
                 Wave=s.Wave,CompletedWave=s.CompletedWave,Tick=s.Tick,Hull=s.Hull,CurrentMaximumHull=s.MaximumHull,Spawned=s.Spawned,Kills=s.Kills,
                 CannonShots=s.CannonShots,LauncherShots=s.LauncherShots,ScattergunShots=s.ScattergunShots,Restored=s.Restored,CloseHits=s.CloseHits,RangedHits=s.RangedHits,
                 nextSpawn=s.NextSpawnTick,nextCannon=s.NextCannonTick,nextLauncher=s.NextLauncherTick,nextRepair=s.NextRepairTick,nextScattergun=s.NextScattergunTick,
@@ -483,16 +496,16 @@ namespace SingedTerra.Encounter
                 CurrentMortarDamage=s.MortarDamage,CurrentRailgunDamage=s.RailgunDamage
             };
             if(!profile.Edition.IsLegacy&&s.CompletedWave>0)m.CurrentWaveKillMask=(1<<m.waveSpawned)-1;
-            m.TryApplyPlayableArmorProjection(s.ArmorLevel);m.RestoreBuildcraft(s.Buildcraft);return m;
+            m.TryApplyPlayableArmorProjection(s.ArmorLevel);m.RestoreSkills(s.SkillState);m.RestoreBuildcraft(s.Buildcraft);return m;
         }
-        static bool ValidAuxiliaryCheckpoint(bool active,int shots,int nextTick,int damage,int baseDamage,int period,int tick)
+        static bool ValidAuxiliaryCheckpoint(bool active,int shots,int nextTick,int damage,int baseDamage,int period,int tick,bool accelerated=false)
         {
             if(!active)return shots==0&&nextTick==1&&damage==baseDamage;
             if(shots<0||damage<baseDamage||damage>LastStandWaveCatalog.MaximumCombatValue)return false;
             // Empty time without a target can delay a shot, never accelerate it.
             // An unfired armament retains its initial due tick, even at a later boundary.
             return shots==0?nextTick==1:
-                nextTick>=1L+(long)shots*period&&nextTick<=(long)tick+period;
+                nextTick>=1L+(long)shots*(accelerated?BoostedPeriod(period):period)&&nextTick<=(long)tick+period;
         }
     }
 }

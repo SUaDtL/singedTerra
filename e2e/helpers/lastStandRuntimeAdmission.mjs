@@ -21,7 +21,10 @@ export function classifyConsole(messages) {
 export function packagedRuntimeSnapshot() {
   const manifestPath=join(ROOT,'client/public/last-stand/asset-manifest.json');
   const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-  assert.equal(Object.keys(manifest.files).length,16,'Complete packaged runtime inventory required');
+  const exportReceipt=JSON.parse(readFileSync(join(ROOT,manifest.source.receipt),'utf8'));
+  const exportedRuntime=Object.fromEntries(Object.entries(exportReceipt.artifacts??{}).filter(([path])=>path!=='index.html'));
+  assert.ok(Object.keys(exportedRuntime).length>0,'Complete exported runtime inventory required');
+  assert.deepEqual(manifest.files,exportedRuntime,'Packaged runtime inventory differs from the genuine export');
   const files={'client/public/last-stand/asset-manifest.json':fileHash(manifestPath),
     [manifest.source.receipt]:fileHash(join(ROOT,manifest.source.receipt)),
     'campaign-unity/docs/last-stand-web/source-lock.json':fileHash(join(ROOT,'campaign-unity/docs/last-stand-web/source-lock.json'))};

@@ -19,5 +19,6 @@ class ArmoryHudTests(unittest.TestCase):
         self.assertEqual(code, 0, log[-12000:])
         for name in ("locked_bay_preview_cancel_and_saved_bytes", "two_bays_named_presets_atomic_apply_and_resume",
                      "paid_effect_preview_matches_combat_without_changing_retained_run",
-                     "unconfirmed_save_and_stale_draft_refuse", "responsive_controls_name_focus_and_scroll"):
+                     "unconfirmed_save_and_stale_draft_refuse", "responsive_controls_name_focus_and_scroll",
+                     "compact_callouts_require_complete_labels_and_clear_panel_edges"):
             self.assertIn("ST_LS_ARMORY_PASS " + name, log)

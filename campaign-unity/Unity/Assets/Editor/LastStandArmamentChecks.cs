@@ -75,7 +75,7 @@ public static class LastStandArmamentChecks
         foreach(bool killed in new[]{false,true})
         {
             var model=Shot(killed);string snapshot=model.Snapshot();view.Render(model);view.Present(model);
-            var trails=host.GetComponentsInChildren<LineRenderer>(true).Where(t=>t.enabled).ToArray();
+            var trails=host.GetComponentsInChildren<LineRenderer>(true).Where(t=>t.enabled&&t.gameObject.activeInHierarchy).ToArray();
             Need(trails.Length==model.Events.Count*3,"short-range scatter events emit a bounded three-tracer burst for each hit");
             foreach(var trail in trails)
                 Need(Vector3.Distance(trail.GetPosition(0),art.ActiveFittingModule.transform.position)<2 &&
@@ -85,7 +85,7 @@ public static class LastStandArmamentChecks
             var compact=host.GetComponentsInChildren<Renderer>().Where(r=>r.name.StartsWith("Review feedback ")).ToArray();
             Need(compact.Length>=model.Events.Count && compact.All(r=>Vector3.Distance(r.transform.position,art.tank.position)>3),
                 "reduced scatter feedback marks enemies, never incoming damage on the player's tank");
-            Need(!host.GetComponentsInChildren<LineRenderer>(true).Any(t=>t.enabled),"reduced scatter feedback emits no tracers");
+            Need(!host.GetComponentsInChildren<LineRenderer>(true).Any(t=>t.enabled&&t.gameObject.activeInHierarchy),"reduced scatter feedback emits no tracers");
             Need(snapshot==model.Snapshot(),"presentation preserves deterministic combat state");
             view.Clear();view.ToggleEffects();
         }
@@ -128,7 +128,7 @@ public static class LastStandArmamentChecks
     static void Callout(TankPresentation art)
     {
         using var preferences=new LastStandTestPreferencesScope();
-        var factory=LastStandLoopController.StorageFactory;RenderTexture texture=null;
+        var factory=LastStandLoopController.StorageFactory;RenderTexture texture=null;Camera uiCamera=null;object bay=null;
         try
         {
             var earned=EarnedScattergunSave();LastStandLoopController.StorageFactory=()=>earned;
@@ -137,16 +137,22 @@ public static class LastStandArmamentChecks
             typeof(EncounterSession).GetField("focused",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(loop.Session,true);
             Need(art.TrySelectFitting("scattergun"),"callout selects actual third fitting");
             var canvas=art.GetComponentInChildren<Canvas>();canvas.GetComponent<CanvasScaler>().enabled=false;canvas.scaleFactor=1;
-            var callout=canvas.GetComponentInChildren<LastStandFittingCallout>(true);
+            var hud=typeof(LastStandLoopController).GetField("hud",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(loop);
+            var garage=hud.GetType().GetField("garage",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(hud);
+            bay=garage.GetType().GetField("equipmentBay",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(garage);
+            uiCamera=new GameObject("Armament check UI camera").AddComponent<Camera>();uiCamera.enabled=false;uiCamera.cullingMask=0;
             foreach(var size in new[]{new Vector2Int(1366,768),new Vector2Int(390,688),new Vector2Int(844,266)})
             {
+                Invoke(bay,"SetActive",false);
                 art.view.targetTexture=null;if(texture)UnityEngine.Object.DestroyImmediate(texture);
-                texture=new RenderTexture(size.x,size.y,16);art.view.targetTexture=texture;
-                canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=art.view;canvas.planeDistance=1;
+                texture=new RenderTexture(size.x,size.y,16);art.view.targetTexture=texture;uiCamera.targetTexture=texture;
+                canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=uiCamera;canvas.planeDistance=1;
                 Canvas.ForceUpdateCanvases();loop.RefreshControls();
-                canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=art.view;
-                Canvas.ForceUpdateCanvases();loop.RefreshControls();Canvas.ForceUpdateCanvases();callout.Refresh(true);
-                Need(callout.Visible && callout.TargetName=="Attachment_Scattergun","Scattergun has its actual module callout in each viewport");
+                canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=uiCamera;
+                Canvas.ForceUpdateCanvases();loop.RefreshControls();Canvas.ForceUpdateCanvases();
+                foreach(var item in canvas.GetComponentsInChildren<LastStandFittingCallout>())item.Refresh(true);
+                var callout=canvas.GetComponentsInChildren<LastStandFittingCallout>().FirstOrDefault(c=>c.Visible&&c.TargetName=="Attachment_Scattergun");
+                Need(callout,"Scattergun has its actual module callout at "+size);
                 var bounds=art.ActiveFittingRenderers[0].bounds;foreach(var mesh in art.ActiveFittingRenderers)bounds.Encapsulate(mesh.bounds);
                 var expected=art.view.WorldToScreenPoint(bounds.center);
                 var actual=RectTransformUtility.WorldToScreenPoint(canvas.worldCamera,callout.Endpoint.position);
@@ -156,6 +162,8 @@ public static class LastStandArmamentChecks
         }
         finally
         {
+            if(bay!=null)Invoke(bay,"SetActive",false);
+            if(uiCamera){uiCamera.targetTexture=null;UnityEngine.Object.DestroyImmediate(uiCamera.gameObject);}
             art.view.targetTexture=null;if(texture)UnityEngine.Object.DestroyImmediate(texture);
             LastStandLoopController.StorageFactory=factory;
         }

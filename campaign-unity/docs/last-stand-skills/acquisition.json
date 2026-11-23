@@ -1,0 +1,1558 @@
+{
+  "schema": 1,
+  "policy": "skills-fresh-acquisition-v1",
+  "rulesVersion": "last-stand-waves-v4",
+  "drawSeed": 20261111,
+  "drawAlgorithm": "uint32 LCG 1664525*x+1013904223, rejection before modulo, catalog-ordered eligible nonmaxed pool",
+  "originProfileJson": "{\"version\":9,\"credits\":0,\"revision\":2,\"recoveryRemainder\":0,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"skills\":{\"intel\":0,\"copies\":[0,0,0,0,0,0],\"loadout\":[],\"firstAwards\":[]},\"research\":{\"version\":1,\"catalogVersion\":\"research-v2\",\"revision\":0,\"lastObservedUtcMilliseconds\":1790000000000,\"nextProjectIdentity\":1,\"completionSequence\":0,\"completedRanks\":{\"gameSpeed\":0,\"salvageRecovery\":0,\"researchSpeed\":0,\"scrapLogistics\":0,\"armorPiercing\":0,\"areaControl\":0,\"fieldEngineering\":0},\"slots\":[{\"active\":null,\"queued\":null},{\"active\":null,\"queued\":null},{\"active\":null,\"queued\":null}],\"partials\":{\"gameSpeed\":null,\"salvageRecovery\":null,\"researchSpeed\":null,\"scrapLogistics\":null,\"armorPiercing\":null,\"areaControl\":null,\"fieldEngineering\":null}},\"history\":{\"version\":1,\"lastFinalizedRunId\":0,\"current\":null,\"recent\":[],\"tiers\":[],\"lifetime\":{\"tier\":0,\"runs\":0,\"bestWave\":0,\"activeMilliseconds\":0,\"repeatableSalvage\":0,\"milestoneSalvage\":0,\"researchBonusSalvage\":0}},\"permanentLevels\":{\"cannonAttack\":0,\"launcherAttack\":0,\"hullCapacity\":0,\"armor\":0,\"cannonCycle\":0,\"fieldRepair\":0,\"scattergunAttack\":0,\"scrapYield\":0,\"mortarAttack\":0,\"railgunAttack\":0,\"arcOutput\":0,\"shieldCapacity\":0},\"nextRunId\":1,\"lastFinalizedRunId\":0,\"selectedTier\":1,\"selectedFitting\":\"repair\",\"tierRecords\":{\"tier-1\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":true},\"tier-2\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-3\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-4\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-5\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-6\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false}},\"secondaryFitting\":null,\"loadoutPresets\":[null,null,null],\"firstClears\":[],\"unlockedFittings\":[\"launcher\",\"repair\"],\"pendingDefeat\":null,\"checkpoint\":null}",
+  "limits": {
+    "ticks": 2000000,
+    "runs": 96
+  },
+  "assumptions": "Tier 1 launcher, 1x speed, no research or closed time. Spend earned Salvage on permanent round-robin upgrades between runs; buy run upgrades after each kill with earned Scrap. Return to garage at each target milestone, draw all earned Intel using the fixed seed, equip owned passives in hull/ballistics/lining order. No active uses. Input and purchase decision time are excluded.",
+  "ticks": 524583,
+  "activeMilliseconds": 26229150,
+  "closedMilliseconds": 0,
+  "researchSpent": 0,
+  "earnedIntel": 11,
+  "draws": [
+    {
+      "run": 1,
+      "bestWave": 25,
+      "intelBefore": 1,
+      "intelAfter": 0,
+      "copiesBefore": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "reinforcedHull"
+      ],
+      "selectedIndex": 0,
+      "skill": "overdrive",
+      "copiesAfter": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "rank": 1
+    },
+    {
+      "run": 2,
+      "bestWave": 50,
+      "intelBefore": 1,
+      "intelAfter": 0,
+      "copiesBefore": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "reinforcedHull"
+      ],
+      "selectedIndex": 1,
+      "skill": "reinforcedHull",
+      "copiesAfter": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "rank": 1
+    },
+    {
+      "run": 3,
+      "bestWave": 100,
+      "intelBefore": 1,
+      "intelAfter": 0,
+      "copiesBefore": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "reinforcedHull",
+        "ballistics"
+      ],
+      "selectedIndex": 0,
+      "skill": "overdrive",
+      "copiesAfter": [
+        2,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "rank": 1
+    },
+    {
+      "run": 4,
+      "bestWave": 300,
+      "intelBefore": 3,
+      "intelAfter": 2,
+      "copiesBefore": [
+        2,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 1,
+      "skill": "emergencyRepairs",
+      "copiesAfter": [
+        2,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "rank": 1
+    },
+    {
+      "run": 4,
+      "bestWave": 300,
+      "intelBefore": 2,
+      "intelAfter": 1,
+      "copiesBefore": [
+        2,
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 4,
+      "skill": "ballistics",
+      "copiesAfter": [
+        2,
+        1,
+        0,
+        1,
+        1,
+        0
+      ],
+      "rank": 1
+    },
+    {
+      "run": 4,
+      "bestWave": 300,
+      "intelBefore": 1,
+      "intelAfter": 0,
+      "copiesBefore": [
+        2,
+        1,
+        0,
+        1,
+        1,
+        0
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 5,
+      "skill": "reactiveLining",
+      "copiesAfter": [
+        2,
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      "rank": 1
+    },
+    {
+      "run": 5,
+      "bestWave": 500,
+      "intelBefore": 5,
+      "intelAfter": 4,
+      "copiesBefore": [
+        2,
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 0,
+      "skill": "overdrive",
+      "copiesAfter": [
+        3,
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      "rank": 2
+    },
+    {
+      "run": 5,
+      "bestWave": 500,
+      "intelBefore": 4,
+      "intelAfter": 3,
+      "copiesBefore": [
+        3,
+        1,
+        0,
+        1,
+        1,
+        1
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 3,
+      "skill": "reinforcedHull",
+      "copiesAfter": [
+        3,
+        1,
+        0,
+        2,
+        1,
+        1
+      ],
+      "rank": 1
+    },
+    {
+      "run": 5,
+      "bestWave": 500,
+      "intelBefore": 3,
+      "intelAfter": 2,
+      "copiesBefore": [
+        3,
+        1,
+        0,
+        2,
+        1,
+        1
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 2,
+      "skill": "minefield",
+      "copiesAfter": [
+        3,
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "rank": 1
+    },
+    {
+      "run": 5,
+      "bestWave": 500,
+      "intelBefore": 2,
+      "intelAfter": 1,
+      "copiesBefore": [
+        3,
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 1,
+      "skill": "emergencyRepairs",
+      "copiesAfter": [
+        3,
+        2,
+        1,
+        2,
+        1,
+        1
+      ],
+      "rank": 1
+    },
+    {
+      "run": 5,
+      "bestWave": 500,
+      "intelBefore": 1,
+      "intelAfter": 0,
+      "copiesBefore": [
+        3,
+        2,
+        1,
+        2,
+        1,
+        1
+      ],
+      "pool": [
+        "overdrive",
+        "emergencyRepairs",
+        "minefield",
+        "reinforcedHull",
+        "ballistics",
+        "reactiveLining"
+      ],
+      "selectedIndex": 2,
+      "skill": "minefield",
+      "copiesAfter": [
+        3,
+        2,
+        2,
+        2,
+        1,
+        1
+      ],
+      "rank": 1
+    }
+  ],
+  "runs": [
+    {
+      "tier": 1,
+      "fitting": "launcher",
+      "policy": "afterKill",
+      "speedHalfSteps": 2,
+      "outcome": "requested-boundary",
+      "ticks": 7770,
+      "activeMilliseconds": 388500,
+      "selectedWindowEndWave": 25,
+      "calendarStartMilliseconds": 0,
+      "calendarEndMilliseconds": 388500,
+      "kills": 155,
+      "highestClearedWave": 25,
+      "finalHull": 195,
+      "purchaseIntents": 30,
+      "purchaseOpportunities": 154,
+      "earnedScrap": 624,
+      "spentScrap": 616,
+      "remainingScrap": 8,
+      "repeatableSalvage": 25,
+      "researchBonusSalvage": 0,
+      "firstClearSalvage": 17,
+      "salvageGross": 42,
+      "checkpoints": {
+        "1": {
+          "outcome": "cleared",
+          "ticks": 215,
+          "activeMilliseconds": 10750,
+          "hull": 135,
+          "earnedScrap": 18,
+          "spentScrap": 14,
+          "salvageGross": 1,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 72,
+              "kills": 4,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 12,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 48,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 48,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "100": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 25,
+          "partialWaveRoleEffects": []
+        },
+        "300": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 25,
+          "partialWaveRoleEffects": []
+        },
+        "500": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 25,
+          "partialWaveRoleEffects": []
+        },
+        "2000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 25,
+          "partialWaveRoleEffects": []
+        },
+        "5000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 25,
+          "partialWaveRoleEffects": []
+        }
+      },
+      "roleEffects": {
+        "damageByWeaponAndEnemy": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 15168,
+            "kills": 97,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 7560,
+            "kills": 45,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 3438,
+            "kills": 6,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 1874,
+            "kills": 7,
+            "armorPreventedDamage": 0
+          }
+        ],
+        "mortarMultiTargetCasts": 0,
+        "mortarAdditionalTargets": 0,
+        "railgunEffectiveArmorBypass": 0,
+        "restoredHull": 0,
+        "incomingDamageByEnemy": [],
+        "firstEffectWitnesses": []
+      },
+      "researchRanksAfter": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maximumSpeedHalfStepsAfter": 2,
+      "run": 1,
+      "bestWaveBefore": 0,
+      "intelEarned": 1,
+      "permanentSpentTotal": 0,
+      "grossSalvageTotal": 42,
+      "walletAfterRun": 42,
+      "capturedSkills": "research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:0,0,0,0,0,0,0,0,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0"
+    },
+    {
+      "tier": 1,
+      "fitting": "launcher",
+      "policy": "afterKill",
+      "speedHalfSteps": 2,
+      "outcome": "requested-boundary",
+      "ticks": 15877,
+      "activeMilliseconds": 793850,
+      "selectedWindowEndWave": 50,
+      "calendarStartMilliseconds": 388500,
+      "calendarEndMilliseconds": 1182350,
+      "kills": 340,
+      "highestClearedWave": 50,
+      "finalHull": 240,
+      "purchaseIntents": 46,
+      "purchaseOpportunities": 340,
+      "earnedScrap": 1889,
+      "spentScrap": 1602,
+      "remainingScrap": 287,
+      "repeatableSalvage": 50,
+      "researchBonusSalvage": 0,
+      "firstClearSalvage": 25,
+      "salvageGross": 75,
+      "checkpoints": {
+        "1": {
+          "outcome": "cleared",
+          "ticks": 211,
+          "activeMilliseconds": 10550,
+          "hull": 150,
+          "earnedScrap": 18,
+          "spentScrap": 14,
+          "salvageGross": 1,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 58,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 62,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 60,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "100": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 50,
+          "partialWaveRoleEffects": []
+        },
+        "300": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 50,
+          "partialWaveRoleEffects": []
+        },
+        "500": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 50,
+          "partialWaveRoleEffects": []
+        },
+        "2000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 50,
+          "partialWaveRoleEffects": []
+        },
+        "5000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 50,
+          "partialWaveRoleEffects": []
+        }
+      },
+      "roleEffects": {
+        "damageByWeaponAndEnemy": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 70036,
+            "kills": 199,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 34836,
+            "kills": 105,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 10394,
+            "kills": 27,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 5779,
+            "kills": 9,
+            "armorPreventedDamage": 0
+          }
+        ],
+        "mortarMultiTargetCasts": 0,
+        "mortarAdditionalTargets": 0,
+        "railgunEffectiveArmorBypass": 0,
+        "restoredHull": 0,
+        "incomingDamageByEnemy": [],
+        "firstEffectWitnesses": []
+      },
+      "researchRanksAfter": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maximumSpeedHalfStepsAfter": 2,
+      "run": 2,
+      "bestWaveBefore": 25,
+      "intelEarned": 1,
+      "permanentSpentTotal": 41,
+      "grossSalvageTotal": 117,
+      "walletAfterRun": 76,
+      "capturedSkills": "research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:3,1,1,1,1,0,0,1,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0"
+    },
+    {
+      "tier": 1,
+      "fitting": "launcher",
+      "policy": "afterKill",
+      "speedHalfSteps": 2,
+      "outcome": "requested-boundary",
+      "ticks": 36967,
+      "activeMilliseconds": 1848350,
+      "selectedWindowEndWave": 100,
+      "calendarStartMilliseconds": 1182350,
+      "calendarEndMilliseconds": 3030700,
+      "kills": 800,
+      "highestClearedWave": 100,
+      "finalHull": 324,
+      "purchaseIntents": 67,
+      "purchaseOpportunities": 799,
+      "earnedScrap": 7185,
+      "spentScrap": 5356,
+      "remainingScrap": 1829,
+      "repeatableSalvage": 101,
+      "researchBonusSalvage": 0,
+      "firstClearSalvage": 50,
+      "salvageGross": 151,
+      "checkpoints": {
+        "1": {
+          "outcome": "cleared",
+          "ticks": 211,
+          "activeMilliseconds": 10550,
+          "hull": 198,
+          "earnedScrap": 18,
+          "spentScrap": 14,
+          "salvageGross": 1,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 50,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 70,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 60,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "100": {
+          "outcome": "cleared",
+          "ticks": 36967,
+          "activeMilliseconds": 1848350,
+          "hull": 324,
+          "earnedScrap": 7185,
+          "spentScrap": 5356,
+          "salvageGross": 151,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 8926,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 3915,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 741,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 228,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "300": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 100,
+          "partialWaveRoleEffects": []
+        },
+        "500": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 100,
+          "partialWaveRoleEffects": []
+        },
+        "2000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 100,
+          "partialWaveRoleEffects": []
+        },
+        "5000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 100,
+          "partialWaveRoleEffects": []
+        }
+      },
+      "roleEffects": {
+        "damageByWeaponAndEnemy": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 361770,
+            "kills": 494,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 180070,
+            "kills": 252,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 35541,
+            "kills": 38,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 19924,
+            "kills": 16,
+            "armorPreventedDamage": 0
+          }
+        ],
+        "mortarMultiTargetCasts": 0,
+        "mortarAdditionalTargets": 0,
+        "railgunEffectiveArmorBypass": 0,
+        "restoredHull": 0,
+        "incomingDamageByEnemy": [
+          {
+            "enemy": "Ranged",
+            "effectiveDamage": 35,
+            "rawDamage": 45
+          }
+        ],
+        "firstEffectWitnesses": []
+      },
+      "researchRanksAfter": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maximumSpeedHalfStepsAfter": 2,
+      "run": 3,
+      "bestWaveBefore": 50,
+      "intelEarned": 1,
+      "permanentSpentTotal": 115,
+      "grossSalvageTotal": 268,
+      "walletAfterRun": 153,
+      "capturedSkills": "research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:5,2,3,2,2,0,0,3,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0"
+    },
+    {
+      "tier": 1,
+      "fitting": "launcher",
+      "policy": "afterKill",
+      "speedHalfSteps": 2,
+      "outcome": "requested-boundary",
+      "ticks": 159228,
+      "activeMilliseconds": 7961400,
+      "selectedWindowEndWave": 300,
+      "calendarStartMilliseconds": 3030700,
+      "calendarEndMilliseconds": 10992100,
+      "kills": 3900,
+      "highestClearedWave": 300,
+      "finalHull": 1626,
+      "purchaseIntents": 255,
+      "purchaseOpportunities": 3900,
+      "earnedScrap": 95448,
+      "spentScrap": 94328,
+      "remainingScrap": 1120,
+      "repeatableSalvage": 603,
+      "researchBonusSalvage": 0,
+      "firstClearSalvage": 250,
+      "salvageGross": 853,
+      "checkpoints": {
+        "1": {
+          "outcome": "cleared",
+          "ticks": 211,
+          "activeMilliseconds": 10550,
+          "hull": 214,
+          "earnedScrap": 18,
+          "spentScrap": 14,
+          "salvageGross": 1,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 42,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 78,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 60,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "100": {
+          "outcome": "cleared",
+          "ticks": 32243,
+          "activeMilliseconds": 1612150,
+          "hull": 382,
+          "earnedScrap": 7251,
+          "spentScrap": 5356,
+          "salvageGross": 101,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 8861,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 3957,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 806,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 186,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "300": {
+          "outcome": "cleared",
+          "ticks": 159228,
+          "activeMilliseconds": 7961400,
+          "hull": 1626,
+          "earnedScrap": 95448,
+          "spentScrap": 94328,
+          "salvageGross": 853,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 62212,
+              "kills": 12,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 31375,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 4192,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 4381,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "500": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 300,
+          "partialWaveRoleEffects": []
+        },
+        "2000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 300,
+          "partialWaveRoleEffects": []
+        },
+        "5000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 300,
+          "partialWaveRoleEffects": []
+        }
+      },
+      "roleEffects": {
+        "damageByWeaponAndEnemy": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 6883106,
+            "kills": 2453,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 3354644,
+            "kills": 1259,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 407524,
+            "kills": 142,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 309341,
+            "kills": 46,
+            "armorPreventedDamage": 0
+          }
+        ],
+        "mortarMultiTargetCasts": 0,
+        "mortarAdditionalTargets": 0,
+        "railgunEffectiveArmorBypass": 0,
+        "restoredHull": 0,
+        "incomingDamageByEnemy": [],
+        "firstEffectWitnesses": []
+      },
+      "researchRanksAfter": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maximumSpeedHalfStepsAfter": 2,
+      "run": 4,
+      "bestWaveBefore": 100,
+      "intelEarned": 3,
+      "permanentSpentTotal": 225,
+      "grossSalvageTotal": 1121,
+      "walletAfterRun": 896,
+      "capturedSkills": "research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:8,3,4,3,3,0,0,4,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0"
+    },
+    {
+      "tier": 1,
+      "fitting": "launcher",
+      "policy": "afterKill",
+      "speedHalfSteps": 2,
+      "outcome": "requested-boundary",
+      "ticks": 304741,
+      "activeMilliseconds": 15237050,
+      "selectedWindowEndWave": 500,
+      "calendarStartMilliseconds": 10992100,
+      "calendarEndMilliseconds": 26229150,
+      "kills": 7900,
+      "highestClearedWave": 500,
+      "finalHull": 3837,
+      "purchaseIntents": 424,
+      "purchaseOpportunities": 7900,
+      "earnedScrap": 315955,
+      "spentScrap": 315715,
+      "remainingScrap": 240,
+      "repeatableSalvage": 1505,
+      "researchBonusSalvage": 0,
+      "firstClearSalvage": 250,
+      "salvageGross": 1755,
+      "checkpoints": {
+        "1": {
+          "outcome": "cleared",
+          "ticks": 151,
+          "activeMilliseconds": 7550,
+          "hull": 247,
+          "earnedScrap": 19,
+          "spentScrap": 14,
+          "salvageGross": 1,
+          "waveRoleEffects": [
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 120,
+              "kills": 4,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 60,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "100": {
+          "outcome": "cleared",
+          "ticks": 28361,
+          "activeMilliseconds": 1418050,
+          "hull": 431,
+          "earnedScrap": 7383,
+          "spentScrap": 5356,
+          "salvageGross": 101,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 8974,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 3758,
+              "kills": 3,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 693,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 385,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "300": {
+          "outcome": "cleared",
+          "ticks": 150168,
+          "activeMilliseconds": 7508400,
+          "hull": 2054,
+          "earnedScrap": 102000,
+          "spentScrap": 101205,
+          "salvageGross": 603,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 61186,
+              "kills": 12,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 29232,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 5218,
+              "kills": 1,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 6524,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "500": {
+          "outcome": "cleared",
+          "ticks": 304741,
+          "activeMilliseconds": 15237050,
+          "hull": 3837,
+          "earnedScrap": 315955,
+          "spentScrap": 315715,
+          "salvageGross": 1755,
+          "waveRoleEffects": [
+            {
+              "weapon": "Cannon",
+              "enemy": "Close",
+              "effectiveDamage": 119207,
+              "kills": 11,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Cannon",
+              "enemy": "Ranged",
+              "effectiveDamage": 61276,
+              "kills": 7,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Close",
+              "effectiveDamage": 12977,
+              "kills": 2,
+              "armorPreventedDamage": 0
+            },
+            {
+              "weapon": "Launcher",
+              "enemy": "Ranged",
+              "effectiveDamage": 9900,
+              "kills": 0,
+              "armorPreventedDamage": 0
+            }
+          ]
+        },
+        "2000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 500,
+          "partialWaveRoleEffects": []
+        },
+        "5000": {
+          "outcome": "outside-selected-window",
+          "highestClearedWave": 500,
+          "partialWaveRoleEffects": []
+        }
+      },
+      "roleEffects": {
+        "damageByWeaponAndEnemy": [
+          {
+            "weapon": "Cannon",
+            "enemy": "Close",
+            "effectiveDamage": 24957835,
+            "kills": 4964,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Cannon",
+            "enemy": "Ranged",
+            "effectiveDamage": 11573854,
+            "kills": 2568,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Close",
+            "effectiveDamage": 2439042,
+            "kills": 298,
+            "armorPreventedDamage": 0
+          },
+          {
+            "weapon": "Launcher",
+            "enemy": "Ranged",
+            "effectiveDamage": 2140704,
+            "kills": 70,
+            "armorPreventedDamage": 0
+          }
+        ],
+        "mortarMultiTargetCasts": 0,
+        "mortarAdditionalTargets": 0,
+        "railgunEffectiveArmorBypass": 0,
+        "restoredHull": 0,
+        "incomingDamageByEnemy": [],
+        "firstEffectWitnesses": []
+      },
+      "researchRanksAfter": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "maximumSpeedHalfStepsAfter": 2,
+      "run": 5,
+      "bestWaveBefore": 300,
+      "intelEarned": 5,
+      "permanentSpentTotal": 770,
+      "grossSalvageTotal": 2876,
+      "walletAfterRun": 2106,
+      "capturedSkills": "research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull+ballistics:0,0,0,1,1,0;p:12,5,6,5,5,0,0,6,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0"
+    }
+  ],
+  "milestones": [
+    {
+      "wave": 25,
+      "run": 1,
+      "outcome": "earned",
+      "state": {
+        "bestWave": 25,
+        "skillIntel": 0,
+        "copies": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "slots": 1,
+        "eligiblePool": [
+          "overdrive",
+          "reinforcedHull"
+        ],
+        "selectedSkills": "",
+        "grossSalvage": 42,
+        "wallet": 42,
+        "permanentSpent": 0,
+        "activeMilliseconds": 388500
+      },
+      "profileSha256": "3eec90feb1c792e02b66c5788794ccef451413f0f5e0849d3bd9f779d6809249"
+    },
+    {
+      "wave": 50,
+      "run": 2,
+      "outcome": "earned",
+      "state": {
+        "bestWave": 50,
+        "skillIntel": 0,
+        "copies": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "slots": 1,
+        "eligiblePool": [
+          "overdrive",
+          "reinforcedHull"
+        ],
+        "selectedSkills": "reinforcedHull",
+        "grossSalvage": 117,
+        "wallet": 76,
+        "permanentSpent": 41,
+        "activeMilliseconds": 1182350
+      },
+      "profileSha256": "c8534510ad149482eeb5d207eb62007269c206890098b6897d7a0d060fb7b067"
+    },
+    {
+      "wave": 100,
+      "run": 3,
+      "outcome": "earned",
+      "state": {
+        "bestWave": 100,
+        "skillIntel": 0,
+        "copies": [
+          2,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "slots": 2,
+        "eligiblePool": [
+          "overdrive",
+          "emergencyRepairs",
+          "reinforcedHull",
+          "ballistics"
+        ],
+        "selectedSkills": "reinforcedHull",
+        "grossSalvage": 268,
+        "wallet": 153,
+        "permanentSpent": 115,
+        "activeMilliseconds": 3030700
+      },
+      "profileSha256": "ca94278a711489a9101f4083b553e6f69dcfb699f79dc419a17a83b5d323149d"
+    },
+    {
+      "wave": 300,
+      "run": 4,
+      "outcome": "earned",
+      "state": {
+        "bestWave": 300,
+        "skillIntel": 0,
+        "copies": [
+          2,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "slots": 2,
+        "eligiblePool": [
+          "overdrive",
+          "emergencyRepairs",
+          "minefield",
+          "reinforcedHull",
+          "ballistics",
+          "reactiveLining"
+        ],
+        "selectedSkills": "reinforcedHull+ballistics",
+        "grossSalvage": 1121,
+        "wallet": 896,
+        "permanentSpent": 225,
+        "activeMilliseconds": 10992100
+      },
+      "profileSha256": "530bd64c4fa24d48e85e4c7b9028d46cc50b6d8cb174564428a570dd7ea3308e"
+    },
+    {
+      "wave": 500,
+      "run": 5,
+      "outcome": "earned",
+      "state": {
+        "bestWave": 500,
+        "skillIntel": 0,
+        "copies": [
+          3,
+          2,
+          2,
+          2,
+          1,
+          1
+        ],
+        "slots": 3,
+        "eligiblePool": [
+          "overdrive",
+          "emergencyRepairs",
+          "minefield",
+          "reinforcedHull",
+          "ballistics",
+          "reactiveLining"
+        ],
+        "selectedSkills": "reinforcedHull+ballistics+reactiveLining",
+        "grossSalvage": 2876,
+        "wallet": 2106,
+        "permanentSpent": 770,
+        "activeMilliseconds": 26229150
+      },
+      "profileSha256": "12e49fbfc4a72f527883cda5bcfdc6f209201cd551c26e9ae406a442d7dab41e"
+    }
+  ],
+  "finalState": {
+    "bestWave": 500,
+    "skillIntel": 0,
+    "copies": [
+      3,
+      2,
+      2,
+      2,
+      1,
+      1
+    ],
+    "slots": 3,
+    "eligiblePool": [
+      "overdrive",
+      "emergencyRepairs",
+      "minefield",
+      "reinforcedHull",
+      "ballistics",
+      "reactiveLining"
+    ],
+    "selectedSkills": "reinforcedHull+ballistics+reactiveLining",
+    "grossSalvage": 2876,
+    "wallet": 2106,
+    "permanentSpent": 770,
+    "activeMilliseconds": 26229150
+  },
+  "finalProfileJson": "{\"version\":9,\"credits\":2106,\"revision\":2786,\"recoveryRemainder\":0,\"appearance\":{\"treads\":\"foundry\",\"hull\":\"foundry\",\"turret\":\"foundry\",\"barrel\":\"foundry\",\"paint\":\"red\"},\"skills\":{\"intel\":0,\"copies\":[3,2,2,2,1,1],\"loadout\":[\"reinforcedHull\",\"ballistics\",\"reactiveLining\"],\"firstAwards\":[\"tier-1:skills-25\",\"tier-1:skills-50\"]},\"research\":{\"version\":1,\"catalogVersion\":\"research-v2\",\"revision\":1745,\"lastObservedUtcMilliseconds\":1790026217100,\"nextProjectIdentity\":1,\"completionSequence\":0,\"completedRanks\":{\"gameSpeed\":0,\"salvageRecovery\":0,\"researchSpeed\":0,\"scrapLogistics\":0,\"armorPiercing\":0,\"areaControl\":0,\"fieldEngineering\":0},\"slots\":[{\"active\":null,\"queued\":null},{\"active\":null,\"queued\":null},{\"active\":null,\"queued\":null}],\"partials\":{\"gameSpeed\":null,\"salvageRecovery\":null,\"researchSpeed\":null,\"scrapLogistics\":null,\"armorPiercing\":null,\"areaControl\":null,\"fieldEngineering\":null}},\"history\":{\"version\":1,\"lastFinalizedRunId\":5,\"current\":null,\"recent\":[{\"runId\":1,\"tier\":1,\"fitting\":\"launcher\",\"economyVersion\":\"buildcraft-economy-v5\",\"startContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:0,0,0,0,0,0,0,0,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0\",\"endContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:0,0,0,0,0,0,0,0,0,0,0,0;r:9,4,5,4,4,0,0,4,0,0,0,0\",\"highestClearedWave\":25,\"finishReason\":\"abandon\",\"sinceUpdate\":false,\"activeMilliseconds\":388500,\"pausedMilliseconds\":0,\"closedMilliseconds\":0,\"repeatableSalvage\":25,\"milestoneSalvage\":17,\"researchBonusSalvage\":0,\"speedMilliseconds\":[0,388500,0,0,0,0,0,0,0,0]},{\"runId\":2,\"tier\":1,\"fitting\":\"launcher\",\"economyVersion\":\"buildcraft-economy-v5\",\"startContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:3,1,1,1,1,0,0,1,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0\",\"endContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s::0,0,0,0,0,0;p:3,1,1,1,1,0,0,1,0,0,0,0;r:14,6,7,6,6,0,0,7,0,0,0,0\",\"highestClearedWave\":50,\"finishReason\":\"abandon\",\"sinceUpdate\":false,\"activeMilliseconds\":793850,\"pausedMilliseconds\":0,\"closedMilliseconds\":0,\"repeatableSalvage\":50,\"milestoneSalvage\":25,\"researchBonusSalvage\":0,\"speedMilliseconds\":[0,793850,0,0,0,0,0,0,0,0]},{\"runId\":3,\"tier\":1,\"fitting\":\"launcher\",\"economyVersion\":\"buildcraft-economy-v5\",\"startContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:5,2,3,2,2,0,0,3,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0\",\"endContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:5,2,3,2,2,0,0,3,0,0,0,0;r:20,9,10,9,9,0,0,10,0,0,0,0\",\"highestClearedWave\":100,\"finishReason\":\"abandon\",\"sinceUpdate\":false,\"activeMilliseconds\":1848350,\"pausedMilliseconds\":0,\"closedMilliseconds\":0,\"repeatableSalvage\":101,\"milestoneSalvage\":50,\"researchBonusSalvage\":0,\"speedMilliseconds\":[0,1848350,0,0,0,0,0,0,0,0]},{\"runId\":4,\"tier\":1,\"fitting\":\"launcher\",\"economyVersion\":\"buildcraft-economy-v5\",\"startContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:8,3,4,3,3,0,0,4,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0\",\"endContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull:0,0,0,1,0,0;p:8,3,4,3,3,0,0,4,0,0,0,0;r:81,40,41,40,13,0,0,40,0,0,0,0\",\"highestClearedWave\":300,\"finishReason\":\"abandon\",\"sinceUpdate\":false,\"activeMilliseconds\":7961400,\"pausedMilliseconds\":0,\"closedMilliseconds\":0,\"repeatableSalvage\":603,\"milestoneSalvage\":250,\"researchBonusSalvage\":0,\"speedMilliseconds\":[0,7961400,0,0,0,0,0,0,0,0]},{\"runId\":5,\"tier\":1,\"fitting\":\"launcher\",\"economyVersion\":\"buildcraft-economy-v5\",\"startContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull+ballistics:0,0,0,1,1,0;p:12,5,6,5,5,0,0,6,0,0,0,0;r:0,0,0,0,0,0,0,0,0,0,0,0\",\"endContext\":\"research-v2:0,0,0,0;l:launcher;c:0,0,0;s:reinforcedHull+ballistics:0,0,0,1,1,0;p:12,5,6,5,5,0,0,6,0,0,0,0;r:138,69,69,68,11,0,0,69,0,0,0,0\",\"highestClearedWave\":500,\"finishReason\":\"abandon\",\"sinceUpdate\":false,\"activeMilliseconds\":15237050,\"pausedMilliseconds\":0,\"closedMilliseconds\":0,\"repeatableSalvage\":1505,\"milestoneSalvage\":250,\"researchBonusSalvage\":0,\"speedMilliseconds\":[0,15237050,0,0,0,0,0,0,0,0]}],\"tiers\":[{\"tier\":1,\"runs\":5,\"bestWave\":500,\"activeMilliseconds\":26229150,\"repeatableSalvage\":2284,\"milestoneSalvage\":592,\"researchBonusSalvage\":0}],\"lifetime\":{\"tier\":0,\"runs\":5,\"bestWave\":500,\"activeMilliseconds\":26229150,\"repeatableSalvage\":2284,\"milestoneSalvage\":592,\"researchBonusSalvage\":0}},\"permanentLevels\":{\"cannonAttack\":12,\"launcherAttack\":5,\"hullCapacity\":6,\"armor\":5,\"cannonCycle\":5,\"fieldRepair\":0,\"scattergunAttack\":0,\"scrapYield\":6,\"mortarAttack\":0,\"railgunAttack\":0,\"arcOutput\":0,\"shieldCapacity\":0},\"nextRunId\":6,\"lastFinalizedRunId\":5,\"selectedTier\":1,\"selectedFitting\":\"launcher\",\"tierRecords\":{\"tier-1\":{\"bestWave\":500,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":true},\"tier-2\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":true},\"tier-3\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-4\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-5\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false},\"tier-6\":{\"bestWave\":0,\"legacyTicks\":0,\"legacyKills\":0,\"unlocked\":false}},\"secondaryFitting\":null,\"loadoutPresets\":[null,null,null],\"firstClears\":[\"tier-1:wave-10\",\"tier-1:wave-100\",\"tier-1:wave-200\",\"tier-1:wave-25\",\"tier-1:wave-300\",\"tier-1:wave-50\",\"tier-1:wave-500\"],\"unlockedFittings\":[\"launcher\",\"mortar\",\"repair\",\"scattergun\"],\"pendingDefeat\":null,\"checkpoint\":null}",
+  "qualification": "Fresh earned production-model trajectory, not real elapsed play, native/device acceptance, or typical human input cadence.",
+  "originProfileSha256": "79152f878e6c3fe69c2fd39e6fbe58f007264899779a34d55900e32b0016ca0f",
+  "finalProfileSha256": "12e49fbfc4a72f527883cda5bcfdc6f209201cd551c26e9ae406a442d7dab41e",
+  "sourceSha256": {
+    "campaign-unity/Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": "0f16b834ac81232b10b0b9b76eaf9f8c66fa88c675ab9a34d6ba9a9211c53e2a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "af374259a8c1077489c2c431feab67050afe2784426f593fccd149cc50ed8635",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchCatalog.cs": "2237d207d2c83be7990a60e1551da6dccb750aa42a0246449dee28277b882cc8",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchState.cs": "735796a0ec132dcf951d58644dd51413cc36e461a7ac58dbe7d713c2b546ba1a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchPresentation.cs": "f8a1967f03660d78ee70961509d28e68e93df676fc80abc45b54b3392d808047",
+    "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "93b78c0423028bc86e6ddecac37bb9c9aaa5b7113e93059003d29f6573c8b16e",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "594ee6962faac12ec4bae09248f9a90b26746c91049991e8916ef1acc7b446e3",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs": "e5bdc36da7e9be98b21c361419a0d95a0c32c899a0e6129d7120348fc1f9205b",
+    "campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearch.cs": "e8d1cda284d839ac0d956ed6bccf5a38288a3e8fcca16bc3a9c42425af79f92e",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "3c7fbeb42c49417b1b9123e7ef394bf4dcef633db2e16684b77c120b57077396",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "558fb08c438a720567631a5d3b9660d247be1f7d4dee30baa6166ee761888b62",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSkills.cs": "74b2564a72154b48b0a27d810e9d7914539163675f4a12ff2ff23121a52e3ce0",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSkillsSave.cs": "026a51b4103936723b4162246b51164059cd17b467fa9fdae160abd939464dad",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "662c1d7ae86ff4a0b72daf18e10373bc38a08fd702a183221e161b8e9e5c9bf6",
+    "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs": "e1c58ff06bd26eff5440ffb88280d461d9c84dc0a6a541d75f920c179d5038ff",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs": "14448556e4b35ab5263ceda5bfdec626e7d099776b421e81f0c67ab069327e6a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed",
+    "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs": "3f9c8e305c0d16ef2a1b7a0f956c395da4ed91fbe28c482db867b77332c9c784",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b125499fc9b677fbe4b9883558824a1915652929c17330ca51eae6233ee30334",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandSkillCatalog.cs": "c594331fe3222f4b0736243f5d41d904f03ae45ec2b4d494fe5b655874182eea",
+    "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47",
+    "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0",
+    "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc",
+    "campaign-unity/Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98",
+    "campaign-unity/Unity/Assets/Scripts/EncounterBuildcraft.cs": "bdb0646492b7d724688ce5d4f4892a9644aeb9b56657e019dec83b2d74dc352a",
+    "campaign-unity/Unity/Assets/Scripts/EncounterSkills.cs": "bc55b8738306f9b4559806a6ea3c4b6db4309928b3e7e37d634a6efe4a0ff545",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948",
+    "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandLoadout.cs": "ce69caa72a59c23c73a0b87026ed5ebe57b0a172ea05eb06a67dabe0e75a4a09",
+    "campaign-unity/Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505",
+    "campaign-unity/Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": "b1cfd145f96986de141c0372d34deec3229fc92b8fcac2288570d0ae249ac97c",
+    "campaign-unity/Tools/last_stand_skills_combat/SkillAcquisitionMeasurements.cs": "dbc385115d05526c848380918c1f676712e7fd6e4c53097425a7ba686958cfd2",
+    "campaign-unity/Tools/last_stand_skills_combat/measure_acquisition.py": "d2d55b934474a8c7c0c670457f53c041fe2a19d51224e9497211e680c7199ae8",
+    "campaign-unity/Tools/last_stand_source_closure.py": "d7dd692b60045032393e514bc9152d5ee77ab48d03509f15c3fdfc3baf921afc",
+    "campaign-unity/Tools/last_stand_test_runtime.py": "d7fb107fd5f4c64e13189a20038926e8982cd6a3105a8a1307bfcb006993c15c",
+    "campaign-unity/Tools/last_stand_provenance.py": "cca75f0839ecb34ea8d0708f42da27f19ce25b0625fd46814375792ac39e59ac",
+    "scripts/lib/provenance-hash.mjs": "e9a6b1d13dad072fc75649d8020b92dd7060868c13b07f79a091bdef14587099"
+  },
+  "sourceLfNormalization": "CRLF-and-CR-to-LF; all other bytes preserved",
+  "sourceLfSha256": {
+    "campaign-unity/Unity/Assets/Scripts/Application/LastStandResearchCoordinator.cs": "0f16b834ac81232b10b0b9b76eaf9f8c66fa88c675ab9a34d6ba9a9211c53e2a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgression.cs": "af374259a8c1077489c2c431feab67050afe2784426f593fccd149cc50ed8635",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchCatalog.cs": "2237d207d2c83be7990a60e1551da6dccb750aa42a0246449dee28277b882cc8",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchState.cs": "735796a0ec132dcf951d58644dd51413cc36e461a7ac58dbe7d713c2b546ba1a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchClock.cs": "a1e053f2dfbbf51704ee3eb5b8080d98cbb395c50bcbbf23e43a90b2b6e6807b",
+    "campaign-unity/Unity/Assets/Scripts/LastStandResearchPresentation.cs": "f8a1967f03660d78ee70961509d28e68e93df676fc80abc45b54b3392d808047",
+    "campaign-unity/Unity/Assets/Scripts/LastStandStore.cs": "93b78c0423028bc86e6ddecac37bb9c9aaa5b7113e93059003d29f6573c8b16e",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunCheckpoint.cs": "594ee6962faac12ec4bae09248f9a90b26746c91049991e8916ef1acc7b446e3",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSave.cs": "e5bdc36da7e9be98b21c361419a0d95a0c32c899a0e6129d7120348fc1f9205b",
+    "campaign-unity/Unity/Assets/Scripts/LastStandLegacySave.cs": "b38fdc816dba108499cab8be707223b9e01673a9ca54b6fb590502ddb9bb4950",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSaveJson.cs": "c1ae679d79966955ac63d8d10f7c3d0e5643f7f84ed2c3b9a8a06b88386abbc5",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRewardCatalog.cs": "f8b2e472e30ddde0660a45eb2e8934e8c8bee78e403efabd8cecf0d58eba0510",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearch.cs": "e8d1cda284d839ac0d956ed6bccf5a38288a3e8fcca16bc3a9c42425af79f92e",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionResearchSave.cs": "0d1272d0246b598e4347298933b15c80cbca8d62d66bdfee349a8fd3fa54724a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunHistory.cs": "bb59be7e86e0d46605a8fac4e7b9bac3540a17c25d3f770c9765fab4d79b7848",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionBackup.cs": "3c7fbeb42c49417b1b9123e7ef394bf4dcef633db2e16684b77c120b57077396",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionLoadouts.cs": "558fb08c438a720567631a5d3b9660d247be1f7d4dee30baa6166ee761888b62",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSkills.cs": "74b2564a72154b48b0a27d810e9d7914539163675f4a12ff2ff23121a52e3ce0",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionSkillsSave.cs": "026a51b4103936723b4162246b51164059cd17b467fa9fdae160abd939464dad",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandResearchDefinitions.cs": "662c1d7ae86ff4a0b72daf18e10373bc38a08fd702a183221e161b8e9e5c9bf6",
+    "campaign-unity/Unity/Assets/Scripts/EncounterModel.cs": "a7752d4b4732f8b2f176a997f1f84fea03758f97a59b963e185684bcf2a1e52f",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSelection.cs": "14448556e4b35ab5263ceda5bfdec626e7d099776b421e81f0c67ab069327e6a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandShopState.cs": "55f1630afc2417e755908608a30225e06a08ece7010446db37ea697d1070d0ed",
+    "campaign-unity/Unity/Assets/Scripts/LastStandTierCatalog.cs": "3f9c8e305c0d16ef2a1b7a0f956c395da4ed91fbe28c482db867b77332c9c784",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandRunEdition.cs": "b125499fc9b677fbe4b9883558824a1915652929c17330ca51eae6233ee30334",
+    "campaign-unity/Unity/Assets/Scripts/LastStandProgressionAppearance.cs": "4f8514dcd856418f6b43e9fe1fc04254b904bf16a490718dd57324da1526abf2",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandTankAppearance.cs": "d9e74e89804940a1432cc92139bbc78536a922b340c31a6c5899ef8f238270c6",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandSkillCatalog.cs": "c594331fe3222f4b0736243f5d41d904f03ae45ec2b4d494fe5b655874182eea",
+    "campaign-unity/Unity/Assets/Scripts/EncounterProfile.cs": "d888eac0bf582b0b6a68c03626d35d3cf137511c65b0c84ef745e7907d5a4c47",
+    "campaign-unity/Unity/Assets/Scripts/LastStandWaveCatalog.cs": "a2e569e931596b6fa92d3f581884f600c3f6f80128a2b428a985ad01c2651be0",
+    "campaign-unity/Unity/Assets/Scripts/LastStandUpgradeCatalog.cs": "9958e4be66e3c5da92c32b2bbc4c194e104e996600775baeb6311d5c37fbaabc",
+    "campaign-unity/Unity/Assets/Scripts/EncounterGeometry.cs": "3fdd1b0078be84898f1db50aba03c222e5012f119ca57c562899570a69cb8c98",
+    "campaign-unity/Unity/Assets/Scripts/EncounterBuildcraft.cs": "ae17af2e73480adb75edce99e699c1f66d340e41597e14890ae39bfd07e332d1",
+    "campaign-unity/Unity/Assets/Scripts/EncounterSkills.cs": "acfad30b601266b8e500e501bba93ae24cf68ff526748db35321382b9ed7edf2",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandEnemyCatalog.cs": "d5ac0e8dfec23f8c5276456b574873ee696103e013dfe5805885b68ea1d9e948",
+    "campaign-unity/Unity/Assets/Scripts/MechanicsShopModel.cs": "7c3ba5340a567bb9fce1dc0f08890dccf63f0d1adfd80910cf876e82c3496ac7",
+    "campaign-unity/Unity/Assets/Scripts/LastStandRunClock.cs": "d515c36912828d134d70f812052ee55f28150da8aa67f6a14fec8b391b80a94a",
+    "campaign-unity/Unity/Assets/Scripts/LastStandEconomyCatalog.cs": "1e425558a3ad5d0a9e6aca176dc14f1e0d2475fc0c956c3c0ce96fc304e77967",
+    "campaign-unity/Unity/Assets/Scripts/Content/LastStandLoadout.cs": "ce69caa72a59c23c73a0b87026ed5ebe57b0a172ea05eb06a67dabe0e75a4a09",
+    "campaign-unity/Unity/Assets/Scripts/EncounterFoeKind.cs": "87cd424da93d71d167653f8671a64b4a2e82a7aeab8e6a44382ea9294e22344d",
+    "campaign-unity/Unity/Assets/Scripts/LastStandSpeedPolicy.cs": "844b286d8afdb26204fd49ea7f7e5a86d8d4aa72ecd5017aa792cbef5c4ed505",
+    "campaign-unity/Tools/last_stand_combat_depth/CombatBalanceMeasurements.cs": "b1cfd145f96986de141c0372d34deec3229fc92b8fcac2288570d0ae249ac97c",
+    "campaign-unity/Tools/last_stand_skills_combat/SkillAcquisitionMeasurements.cs": "dbc385115d05526c848380918c1f676712e7fd6e4c53097425a7ba686958cfd2",
+    "campaign-unity/Tools/last_stand_skills_combat/measure_acquisition.py": "d2d55b934474a8c7c0c670457f53c041fe2a19d51224e9497211e680c7199ae8",
+    "campaign-unity/Tools/last_stand_source_closure.py": "d7dd692b60045032393e514bc9152d5ee77ab48d03509f15c3fdfc3baf921afc",
+    "campaign-unity/Tools/last_stand_test_runtime.py": "d7fb107fd5f4c64e13189a20038926e8982cd6a3105a8a1307bfcb006993c15c",
+    "campaign-unity/Tools/last_stand_provenance.py": "cca75f0839ecb34ea8d0708f42da27f19ce25b0625fd46814375792ac39e59ac",
+    "scripts/lib/provenance-hash.mjs": "133945252af45188f55ba39895528aa783874a96444780b6447c3506e4d2b212"
+  }
+}

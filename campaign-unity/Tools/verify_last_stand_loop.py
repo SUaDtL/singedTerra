@@ -35,7 +35,8 @@ OBSERVATION_CONTRACTS = (OBSERVATION_CONTRACT,
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v3.json').read_text(encoding='utf8')),
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v4.json').read_text(encoding='utf8')),
     json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v5.json').read_text(encoding='utf8')),
-    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v6.json').read_text(encoding='utf8')))
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v6.json').read_text(encoding='utf8')),
+    json.loads((Path(__file__).resolve().parent / 'contracts/last-stand-observation-v7.json').read_text(encoding='utf8')))
 ROOT = Path(__file__).resolve().parents[1]
 EDITOR = Path('C:/Program Files/Unity 6000.3.27f2/Editor/Unity.exe')
 EVIDENCE = ROOT / 'Evidence' / 'last-stand-playable-loop' / 't03'
@@ -425,6 +426,7 @@ def verify_shop_presentation_states(report, directory):
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -635,6 +637,7 @@ def verify_shop_vertical(report):
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -1287,6 +1290,7 @@ def verify_shop_recovery(report, require_native=False):
              'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
              'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
              'e2e/helpers/lastStandEncounterOracle.mjs',
              'e2e/helpers/lastStandJourneyActions.mjs',
              'e2e/helpers/lastStandJourneyHost.mjs',
@@ -1980,7 +1984,7 @@ class LastStandWebTests(unittest.TestCase):
         # its historical method name does not select the v3 Shop-only runner.
         runner = ROOT.parent / 'scripts' / 'last-stand-playable-loop.mjs'
         completed = subprocess.run(['node', str(runner)], cwd=ROOT.parent,
-                                   capture_output=True, text=True, timeout=2680 if os.name == 'nt' else 3880)
+                                   capture_output=True, text=True, timeout=2680 if os.name == 'nt' else 7480)
         print(completed.stdout, end='', flush=True)
         if completed.stderr:
             print(completed.stderr, end='', flush=True)

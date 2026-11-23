@@ -1048,8 +1048,8 @@ public static class LastStandShopChecks
             ShopInventory(f);int wallet=f.Game.Loop.Progression.Wallet,writes=f.Game.Storage.Writes;
             f.Click("ResearchEntry");
             ProgressionModalTargets(f,"Research","ResearchClose","ResearchFilter");
-            Require(f.Game.Loop.MenuPage=="research" && f.Game.Loop.ResearchSnapshot.slots.Length==2,
-                "garage route opens two-slot Lab");
+            Require(f.Game.Loop.MenuPage=="research" && f.Game.Loop.ResearchSnapshot.slots.Length==LastStandResearchCatalog.SlotCount&&f.Game.Loop.ResearchLabCount==2,
+                "garage route exposes two earned labs while retaining the later locked slot");
             var first=LastStandResearchCatalog.Tracks[0];f.Click("ResearchProject-"+first.Key);
             var start=f.Button("ResearchStart0");
             Require(f.Text("ResearchDescription").text.Contains("20 Salvage")&&f.Text("ResearchDescription").text.Contains("10m")&&

@@ -10,11 +10,11 @@ namespace SingedTerra.LastStand
     internal sealed class LastStandUiPrimitives
     {
         public static readonly Color Ink = new Color(.055f,.068f,.064f);
-        public static readonly Color Graphite = new Color(.17f,.19f,.155f);
+        public static readonly Color Graphite = new Color(.115f,.12f,.11f);
         public static readonly Color Paper = new Color(.94f,.91f,.80f);
         public static readonly Color Brass = new Color(.91f,.69f,.33f);
-        public static readonly Color Olive = new Color(.24f,.27f,.205f);
-        public static readonly Color DisabledSurface = new Color(.14f,.16f,.135f);
+        public static readonly Color Olive = new Color(.24f,.225f,.19f);
+        public static readonly Color DisabledSurface = new Color(.14f,.135f,.12f);
         public static readonly Color DisabledPaper = new Color(.76f,.75f,.67f);
         readonly Font font;
         readonly Texture2D metal;
@@ -22,7 +22,7 @@ namespace SingedTerra.LastStand
         readonly Dictionary<Text,int> sizes = new Dictionary<Text,int>();
 
         public LastStandUiPrimitives(Font font, Texture2D metal, Sprite surface)
-        { this.font=font; this.metal=metal; this.surface=surface; }
+        { this.font=LastStandEquipmentArt.Body?LastStandEquipmentArt.Body:font; this.metal=metal; this.surface=surface; }
 
         public static RectTransform Node(string name, Transform parent)
         {
@@ -36,7 +36,8 @@ namespace SingedTerra.LastStand
         public Text Text(string name,Transform parent,int size)
         {
             var text=Node(name,parent).gameObject.AddComponent<Text>();
-            text.font=font;text.fontSize=size;text.color=Paper;text.raycastTarget=false;text.supportRichText=false;
+            text.font=(size>=20||name.EndsWith("Heading")||name.EndsWith("Title"))&&LastStandEquipmentArt.Display?LastStandEquipmentArt.Display:font;
+            text.fontSize=size;text.color=Paper;text.raycastTarget=false;text.supportRichText=false;
             text.horizontalOverflow=HorizontalWrapMode.Wrap;text.verticalOverflow=VerticalWrapMode.Truncate;
             sizes.Add(text,size);return text;
         }
@@ -56,6 +57,7 @@ namespace SingedTerra.LastStand
             colors.pressedColor=new Color(.85f,.85f,.85f);colors.fadeDuration=.08f;button.colors=colors;
             button.onClick.AddListener(()=>handler());
             var text=Text(name+"Text",rect,size);text.text=label;text.alignment=TextAnchor.MiddleCenter;
+            if(LastStandEquipmentArt.Display)text.font=LastStandEquipmentArt.Display;
             if(stretchLabel)
             {
                 text.rectTransform.anchorMin=Vector2.zero;text.rectTransform.anchorMax=Vector2.one;

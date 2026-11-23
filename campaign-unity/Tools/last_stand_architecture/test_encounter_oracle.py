@@ -53,7 +53,7 @@ console.log(JSON.stringify({sources:WAVE_ORACLE_SOURCES,profiles:Object.keys(pro
         observed = json.loads(result.stdout)
         sources = observed["sources"]
         expected_sources = {
-            "EncounterModel.cs", "EncounterBuildcraft.cs", "EncounterProfile.cs", "EncounterGeometry.cs",
+            "EncounterModel.cs", "EncounterBuildcraft.cs", "EncounterSkills.cs", "Content/LastStandSkillCatalog.cs", "EncounterProfile.cs", "EncounterGeometry.cs",
             "EncounterFoeKind.cs", "LastStandTierCatalog.cs", "LastStandWaveCatalog.cs",
             "LastStandRewardCatalog.cs", "LastStandSelection.cs", "LastStandUpgradeCatalog.cs",
             "LastStandEconomyCatalog.cs", "MechanicsShopModel.cs", "LastStandShopState.cs",

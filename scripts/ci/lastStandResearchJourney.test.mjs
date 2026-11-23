@@ -17,6 +17,7 @@ const previousObservationContract=JSON.parse(readFileSync(new URL('../../campaig
 const currentObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v3.json',import.meta.url),'utf8'));
 const continuityObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v4.json',import.meta.url),'utf8'));
 const buildcraftObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v6.json',import.meta.url),'utf8'));
+const skillsObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v7.json',import.meta.url),'utf8'));
 const appearanceObservationContract=JSON.parse(readFileSync(new URL('../../campaign-unity/Tools/contracts/last-stand-observation-v5.json',import.meta.url),'utf8'));
 // Invented telemetry tests only the admission reader; it cannot qualify a UI.
 function observation(contract=observationContract){
@@ -32,7 +33,7 @@ test('tier journey binds its executable helper and observation closure and detec
   assert.equal(typeof tierJourney.tierJourneyInputHashes,'function');
   const current=await tierJourney.tierJourneyInputHashes();
   for(const path of ['e2e/helpers/lastStandTierJourney.mjs','e2e/helpers/lastStandJourney.mjs',...LAST_STAND_HELPER_INPUTS,
-    ...[1,2,3,4,5,6].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
+    ...[1,2,3,4,5,6,7].map(version=>'campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json')]){
     assert.ok(Object.hasOwn(current,path),'Bound current execution source: '+path);
     assert.equal(current[path],sha(readFileSync(path)));
   }
@@ -51,7 +52,7 @@ test('tier journey binds its executable helper and observation closure and detec
   }
 });
 
-for(const version of [1,2,3,4,5,6])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
+for(const version of [1,2,3,4,5,6,7])test('research journey binds observation v'+version+' and detects changed bytes',t=>{
   const contract='campaign-unity/Tools/contracts/last-stand-observation-v'+version+'.json';
   const current=researchJourneyInputHashes();assert.ok(Object.hasOwn(current,contract));
   assert.equal(current[contract],sha(readFileSync(contract)));
@@ -129,19 +130,19 @@ test('v4 save and Help observation requires all eleven new controls and refuses 
 });
 
 function scrollingModalGeometry(owner){
-  const name=owner==='Planner'?'PlannerPin':owner==='Appearance'?'AppearancePaintPurple':owner==='Armory'?'ArmoryName':'RunHistoryRunANext';
-  const field=owner==='Planner'?'plannerControls':owner==='Appearance'?'appearanceControls':owner==='Armory'?'armoryControls':'historyControls';
+  const name=owner==='Skills'?'SkillOverdriveEquip':owner==='Planner'?'PlannerPin':owner==='Appearance'?'AppearancePaintPurple':owner==='Armory'?'ArmoryName':'RunHistoryRunANext';
+  const field=owner==='Skills'?'skillsControls':owner==='Planner'?'plannerControls':owner==='Appearance'?'appearanceControls':owner==='Armory'?'armoryControls':'historyControls';
   const clip={x:20,y:100,width:400,height:100};
   const item={name,x:28,y:220,width:384,height:44,active:true,interactable:true};
   const path=owner+'Modal/'+owner+'Panel/'+owner+'Viewport';
   const graphics=[{path,kind:'LastStandConsoleSurface',active:true,hasClip:true,clip},
     {...item,path:path+'/'+owner+'Content/'+name,kind:'LastStandConsoleSurface',hasClip:true,clip}];
-  const scroll=owner==='Planner'?'planner':owner==='Appearance'?'appearance':owner==='Armory'?'armory':'history';
+  const scroll=owner==='Skills'?'skills':owner==='Planner'?'planner':owner==='Appearance'?'appearance':owner==='Armory'?'armory':'history';
   return {layout:{width:800,height:600,controls:[],shopControls:[],settingsControls:[],researchControls:[],historyControls:[],plannerControls:[],
     [field]:[item],[scroll+'ScrollOffset']:0,[scroll+'MaximumScrollOffset']:200,graphicsTruncated:false,raw:raw({graphics})},
     graphics,canvas:{width:800,height:600},item,scroll};
 }
-for(const owner of ['Planner','RunHistory','Appearance','Armory'])test(owner+' geometry proves own pane reach and refuses false clipping',()=>{
+for(const owner of ['Planner','RunHistory','Appearance','Armory','Skills'])test(owner+' geometry proves own pane reach and refuses false clipping',()=>{
   const value=scrollingModalGeometry(owner);assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,false);
   value.item.y-=100;value.graphics[1].y-=100;value.layout[value.scroll+'ScrollOffset']=100;value.layout.raw=raw({graphics:value.graphics});
   assert.equal(tierJourneyControlGeometry(value.layout,value.canvas)[0].full,true);
@@ -169,6 +170,21 @@ test('v6 requires every Armory, expanded lab and shop control with no v5 downgra
     v=>v.schema='singedterra-last-stand-observation/v5']){
     const changed=clone(current);mutate(changed);assert.throws(()=>readShopControlObservation(raw(changed)));
   }
+});
+test('v7 requires every collection and combat skill control and retains exact v6 admission',()=>{
+ const current=observation(skillsObservationContract),result=readShopControlObservation(raw(current));
+ assert.equal(result.skillsControls.length,12);assert.equal(lastStandObservedControls(result).length,205);
+ assert.equal(readShopControlObservation(raw(observation(buildcraftObservationContract))).schema,'singedterra-last-stand-observation/v6');
+ for(const [field,names] of [['skillsControls',current.skillsControls.map(row=>row.name)],['controls',['CombatSkill0','CombatSkill1','CombatSkill2']],
+  ['settingsControls',['MenuSkills']],['armoryControls',['ArmorySkills']]])for(const name of names){
+  const missing=clone(current);missing[field]=missing[field].filter(row=>row.name!==name);
+  assert.throws(()=>readShopControlObservation(raw(missing)),/Complete/,name+' cannot disappear');
+ }
+ for(const change of [v=>delete v.skillsControls,v=>delete v.skillsScrollOffset,v=>v.skillsMaximumScrollOffset='500',
+  v=>v.skillsScrollOffset=-1,v=>v.skillsControls.push(clone(v.skillsControls[0])),v=>v.skillsControls[0].name='invented-skill',
+  v=>v.schema='singedterra-last-stand-observation/v6']){
+  const bad=clone(current);change(bad);assert.throws(()=>readShopControlObservation(raw(bad)));
+ }
 });
 function labGeometry(){
   const clip={x:20,y:100,width:400,height:400},name='ResearchStart0';
@@ -211,17 +227,18 @@ for(const name of ['ResearchFilter','ResearchProject-gameSpeed','ResearchBack','
     assert.throws(()=>tierJourneyControlGeometry(bad.layout,bad.canvas));
   }
 });
-for(const [version,names] of [[3,['SettingsTab0','ChoicePrevious','ChoiceNext']],[4,['HelpPrevious','HelpNext']]])for(const name of names)test(name+' v'+version+' admits fixed or genuine compact scroll ownership',()=>{
+for(const [version,names] of [[3,['SettingsTab0','ChoicePrevious','ChoiceNext']],[4,['HelpPrevious','HelpNext']],[7,['ArmoryApply','ArmoryCancel','ArmorySkills']]])for(const name of names)test(name+' v'+version+' admits fixed or genuine compact scroll ownership',()=>{
+  const owner=name.startsWith('Armory')?'Armory':'Settings',key=owner.toLowerCase();
   function packet(clipped){
     const item={name,x:28,y:clipped?620:20,width:44,height:44,active:true,interactable:true},clip={x:20,y:100,width:400,height:400};
-    const path='SettingsModal/SettingsPanel/SettingsViewport';
+    const path=owner+'Modal/'+owner+'Panel/'+owner+'Viewport';
     const graphics=[{path,kind:'LastStandConsoleSurface',active:true,hasClip:true,clip},
-      {...item,path:clipped?path+'/SettingsContent/'+name:'SettingsModal/SettingsPanel/'+name,kind:'LastStandConsoleSurface',hasClip:clipped,clip}];
-    return {layout:{schema:'singedterra-last-stand-observation/v'+version,width:800,height:600,controls:[],shopControls:[],settingsControls:[item],
-      settingsScrollOffset:0,settingsMaximumScrollOffset:400,graphicsTruncated:false,raw:raw({graphics})},graphics};
+      {...item,path:clipped?path+'/'+owner+'Content/'+name:owner+'Modal/'+owner+'Panel/'+name,kind:'LastStandConsoleSurface',hasClip:clipped,clip}];
+    return {layout:{schema:'singedterra-last-stand-observation/v'+version,width:800,height:600,controls:[],shopControls:[],[key+'Controls']:[item],
+      [key+'ScrollOffset']:0,[key+'MaximumScrollOffset']:400,graphicsTruncated:false,raw:raw({graphics})},graphics};
   }
   for(const clipped of [false,true])assert.equal(tierJourneyControlGeometry(packet(clipped).layout,{width:800,height:600})[0].full,!clipped);
-  for(const mutate of [v=>v.graphics[1].path='Other/'+v.graphics[1].path,v=>v.layout.settingsMaximumScrollOffset=10,
+  for(const mutate of [v=>v.graphics[1].path='Other/'+v.graphics[1].path,v=>v.layout[key+'MaximumScrollOffset']=10,
     v=>v.graphics.push(clone(v.graphics[1])),v=>v.layout.graphicsTruncated=true]){
     const bad=packet(true);mutate(bad);bad.layout.raw=raw({graphics:bad.graphics});
     assert.throws(()=>tierJourneyControlGeometry(bad.layout,{width:800,height:600}));
@@ -246,11 +263,11 @@ test('fixture admission binds relative saves and exact current sources; rejects 
     // because the file no longer matches its manifest.
     for(const row of cases){
       const file=join(directory,row.savePath),original=readFileSync(file);
-      for(const version of [5,6,9,0,'6',null,undefined]){
+      for(const version of [5,6,10,0,'6',null,undefined]){
         const saved=JSON.parse(original);saved.version=version;
         const bytes=JSON.stringify(saved),broken=clone(manifest);
         writeFileSync(file,bytes);broken.cases.find(item=>item.id===row.id).saveSha256=sha(bytes);
-        assert.throws(()=>admitResearchFixtures(broken,path,directory),/Research fixture requires explicit save version 7 or 8/,
+        assert.throws(()=>admitResearchFixtures(broken,path,directory),/Research fixture requires explicit save version 7, 8 or 9/,
           row.id+': '+String(version));
       }
       writeFileSync(file,original);
@@ -263,7 +280,7 @@ test('fixture admission binds relative saves and exact current sources; rejects 
   }finally{rmSync(directory,{recursive:true,force:true});}
 });
 
-test('profile8 research fixture binds the complete current closure and exact seven-track three-lab shape',t=>{
+test('profile8 and profile9 research fixtures bind complete current closure and exact research and skills shapes',t=>{
   const directory=mkdtempSync(join(tmpdir(),'st-research-current-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));
   const sourceSha256={};for(const path of RESEARCH_FIXTURE_SOURCES){mkdirSync(dirname(join(directory,path)),{recursive:true});writeFileSync(join(directory,path),'inert');sourceSha256[path]=sha('inert');}
   const stamp=Date.now(),saved={version:8,checkpoint:null,research:{catalogVersion:'research-v2',lastObservedUtcMilliseconds:stamp,
@@ -274,6 +291,13 @@ test('profile8 research fixture binds the complete current closure and exact sev
   const manifest={schema:'last-stand-research-qualification-fixtures/v1',storageKey:'singedTerra.lastStand.prototype.v1',scope:'Explicit development seeds',
     clockMode:'current UTC final anchors; synthetic earlier training',generatedUtcMilliseconds:stamp,sourceSha256,cases};
   const path=join(directory,'manifest.json');writeFileSync(path,JSON.stringify(manifest));admitResearchFixtures(manifest,path,directory);
+  const skills={intel:3,copies:[1,0,0,0,0,0],loadout:['overdrive'],firstAwards:[]};
+  for(const row of manifest.cases){const raw=JSON.stringify({...saved,version:9,skills});writeFileSync(join(directory,row.savePath),raw);row.saveSha256=sha(raw);}
+  assert.doesNotThrow(()=>admitResearchFixtures(manifest,path,directory));
+  const current=clone(manifest),brokenSkills=clone(skills);brokenSkills.loadout.push('minefield');
+  const brokenRaw=JSON.stringify({...saved,version:9,skills:brokenSkills});writeFileSync(join(directory,cases[0].savePath),brokenRaw);current.cases[0].saveSha256=sha(brokenRaw);
+  assert.throws(()=>admitResearchFixtures(current,path,directory));
+  for(const row of manifest.cases){const raw=JSON.stringify(saved);writeFileSync(join(directory,row.savePath),raw);row.saveSha256=sha(raw);}
   for(const change of [s=>s.version=9,s=>s.research.catalogVersion='research-v3',s=>s.research.slots.pop(),s=>delete s.research.completedRanks.armorPiercing]){
     const bad=clone(saved),copy=clone(manifest);change(bad);const raw=JSON.stringify(bad);writeFileSync(join(directory,cases[0].savePath),raw);copy.cases[0].saveSha256=sha(raw);
     assert.throws(()=>admitResearchFixtures(copy,path,directory));

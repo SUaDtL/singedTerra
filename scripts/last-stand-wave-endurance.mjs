@@ -209,6 +209,7 @@ const inputPaths=['scripts/last-stand-wave-endurance.mjs','scripts/last-stand-wa
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'scripts/assets/verify-last-stand-source.mjs','scripts/assets/verify-last-stand.mjs'];
 const inputHashes=()=>Object.fromEntries(inputPaths.map(path=>[path,sha(readFileSync(resolve(root,path)))]));
 const compactState=state=>Object.fromEntries(['phase','saveState','runId','activeTier','wave','completedWave','checkpointWave','hasCheckpoint',

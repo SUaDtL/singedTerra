@@ -16,7 +16,7 @@ const MANIFEST_PATH = 'supabase/backend-release-manifest.json';
 const MAX_MANIFEST_BYTES = 1024 * 1024;
 const MAX_API_BYTES = 2 * 1024 * 1024;
 const API_VERSION = '2022-11-28';
-const WORKFLOW_CONTRACT_SHA256 = 'c4bb006d07fa8182951a7a3a481836e4aacd59ce1628d9c9ab18f7acac0f7840';
+const WORKFLOW_CONTRACT_SHA256 = '4faa6d6ced4512608dbbc7ff0db8e89a1877158ee5d11d8ac2808a097a91135a';
 // Retained cq1 ships executable ESM plus its type-only facade and provenance
 // inside the existing shared/src tree. These are hashed source, not credentials.
 const RELEASE_SOURCE_EXTENSIONS = new Set(['.json', '.sql', '.toml', '.ts', '.mts', '.mjs']);
@@ -290,9 +290,9 @@ function assertSortedUnique(values, label) {
 
 export function assertPackageReleaseScripts(packageJson, functionNames) {
   const expected = {
-    'deploy:backend:migrations': 'supabase db push --linked --yes',
-    'deploy:backend:config': 'supabase config push --yes',
-    'deploy:backend:functions': `supabase functions deploy ${functionNames.join(' ')} --use-api --yes`,
+    'deploy:backend:migrations': 'node scripts/ci/reviewedConfigDiff.mjs migrations',
+    'deploy:backend:config': 'node scripts/ci/reviewedConfigDiff.mjs config',
+    'deploy:backend:functions': 'node scripts/ci/reviewedConfigDiff.mjs functions',
     'deploy:backend': 'npm run backend:release:check && npm run deploy:backend:migrations && npm run deploy:backend:config && npm run deploy:backend:functions',
   };
   for (const [name, command] of Object.entries(expected)) {
@@ -320,7 +320,7 @@ export function loadAndValidateManifest(repositoryRoot = root) {
     'schemaVersion', 'supabaseCliVersion', 'verifiedReplayShared',
   ], 'backend release manifest');
   if (manifest.schemaVersion !== 1) fail('Unsupported backend release manifest schema.');
-  if (!/^2\.[0-9]+\.[0-9]+$/.test(manifest.supabaseCliVersion)) fail('Invalid Supabase CLI version.');
+  if (!/^3\.[0-9]+\.[0-9]+$/.test(manifest.supabaseCliVersion)) fail('Invalid Supabase CLI version.');
 
   exactKeys(manifest.config, ['path', 'sha256'], 'config entry');
   if (manifest.config.path !== 'supabase/config.toml') fail('Invalid backend config path.');
@@ -580,7 +580,7 @@ export function assertWorkflowContract(raw) {
   for (const phase of ['deploy:backend:migrations', 'deploy:backend:config', 'deploy:backend:functions']) {
     if (!raw.includes(`npm run ${phase}`)) fail(`Backend workflow is missing ${phase}.`);
   }
-  const orderedIds = ['revalidate', 'configuration', 'link', 'management_before', 'migrations_before',
+  const orderedIds = ['revalidate', 'configuration', 'link', 'management_before', 'config_preflight', 'migrations_before',
     'migration_dry_run', 'functions_before', 'migrations', 'config', 'functions'];
   let previous = -1;
   for (const id of orderedIds) {
@@ -783,6 +783,7 @@ export function buildReceipt(environment = process.env) {
       configuration: environment.CONFIGURATION_OUTCOME ?? 'unknown',
       link: environment.LINK_OUTCOME ?? 'unknown',
       managementBefore: environment.MANAGEMENT_BEFORE_OUTCOME ?? 'unknown',
+      configPreflight: environment.CONFIG_PREFLIGHT_OUTCOME ?? 'unknown',
       migrationsBefore: environment.MIGRATIONS_BEFORE_OUTCOME ?? 'unknown',
       migrationDryRun: environment.MIGRATION_DRY_RUN_OUTCOME ?? 'unknown',
       functionsBefore: environment.FUNCTIONS_BEFORE_OUTCOME ?? 'unknown',

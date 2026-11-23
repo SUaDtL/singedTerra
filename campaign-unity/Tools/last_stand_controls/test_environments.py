@@ -88,6 +88,18 @@ namespace SingedTerra.Encounter {
  public class EncounterSession:UnityEngine.Component { public Model Model;public bool Paused;public EncounterView View; }
 }
 namespace SingedTerra.LastStand { public class LastStandLoopController:UnityEngine.Component {} }
+namespace SingedTerra.VisualReview {
+ // Rendering is outside this adapter harness. Record only collaborator calls;
+ // imported/render suites own the actual dressing meshes and materials.
+ public sealed class LastStandBattlefieldDressing:IDisposable {
+  public static readonly List<LastStandBattlefieldDressing> Created=new List<LastStandBattlefieldDressing>();
+  public UnityEngine.Transform Root;public float Pitch;public int Disposals;
+  public static LastStandBattlefieldDressing Add(UnityEngine.Transform root,float pitch){
+   var detail=new LastStandBattlefieldDressing{Root=root,Pitch=pitch};Created.Add(detail);return detail;
+  }
+  public void Dispose(){Disposals++;}
+ }
+}
 """
 
 CHECKS = r"""
@@ -108,16 +120,26 @@ static class EnvironmentSourceChecks {
   public Fixture(bool playable=true){
    Art.gameObject=Review.gameObject;Review.gameObject.Components[typeof(TankPresentation)]=Art;
    if(playable)Review.gameObject.Components[typeof(LastStandLoopController)]=new LastStandLoopController();
-   Review.ashEnvironment=new GameObject();Review.ironEnvironment=new GameObject();Review.sun=new Light();Invoke(Review,"Awake");
+   Review.ashEnvironment=new GameObject();Review.ironEnvironment=new GameObject();Review.sun=new Light();
+   int count=LastStandBattlefieldDressing.Created.Count;Invoke(Review,"Awake");
+   Need(LastStandBattlefieldDressing.Created.Count==count+2,"each bound environment creates render dressing");
+   var ash=LastStandBattlefieldDressing.Created[count];var iron=LastStandBattlefieldDressing.Created[count+1];
+   Need(ash.Root==Review.ashEnvironment.transform&&ash.Pitch==LastStandEnvironmentCatalog.Get("sunlit-ash").CameraPitch&&
+    iron.Root==Review.ironEnvironment.transform&&iron.Pitch==LastStandEnvironmentCatalog.Get("iron-perimeter").CameraPitch,"dressing receives authored root and pitch");
   }
-  public void Dispose()=>Invoke(Review,"OnDestroy");
+  public void Dispose(){
+   Invoke(Review,"OnDestroy");
+   foreach(var detail in LastStandBattlefieldDressing.Created)
+    if(detail.Root==Review.ashEnvironment.transform||detail.Root==Review.ironEnvironment.transform)
+     Need(detail.Disposals==1,"adapter disposes its render dressing exactly once");
+  }
  }
  static void Catalog(){
   Need(LastStandEnvironmentCatalog.All.Count==6,"six authored definitions");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").Id=="sunlit-ash","stable identity");
   Need(LastStandEnvironmentCatalog.Get("iron-perimeter").Name=="Iron Perimeter","authored name");
   Need(LastStandEnvironmentCatalog.Get("sunlit-ash").SunIntensity==1.65f,"preserve first treatment light");
-  Need(LastStandEnvironmentCatalog.Get("iron-perimeter").CameraPitch==70f,"preserve second framing");
+  Need(LastStandEnvironmentCatalog.Get("sunlit-ash").CameraPitch==35f&&LastStandEnvironmentCatalog.Get("iron-perimeter").CameraPitch==50f,"authored concept battlefield framing");
   var cinder=LastStandEnvironmentCatalog.Get("cinder-basin");var foundry=LastStandEnvironmentCatalog.Get("storm-foundry");
   Need(cinder.Name=="Cinder Basin"&&foundry.Name=="Storm Foundry"&&cinder.TreatmentIndex==2&&foundry.TreatmentIndex==3,"stable campaign identities");
   Need(cinder.SunColor!=foundry.SunColor&&cinder.AmbientSky!=foundry.AmbientSky&&cinder.CameraPitch!=foundry.CameraPitch,"distinct campaign light and framing");

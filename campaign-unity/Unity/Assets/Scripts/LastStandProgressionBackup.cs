@@ -23,8 +23,12 @@ namespace SingedTerra.LastStand
         public IReadOnlyList<int> PermanentLevels { get; }
         public LastStandResearchSnapshot Research => research?.Clone();
         public LastStandTankAppearance Appearance { get; }
+        public int SkillIntel { get; }
+        public int OwnedSkillCount { get; }
+        public LastStandSkillLoadout Skills { get; }
         internal LastStandBackupPreview(LastStandProgression owner,string destination,long revision,string imported,
-            int tier,int wave,int salvage,bool checkpoint,bool previous,bool damaged,int[] levels,LastStandResearchSnapshot snapshot,LastStandTankAppearance appearance)
+            int tier,int wave,int salvage,bool checkpoint,bool previous,bool damaged,int[] levels,LastStandResearchSnapshot snapshot,LastStandTankAppearance appearance,
+            int skillIntel=0,int ownedSkills=0,LastStandSkillLoadout skills=null)
         {
             Owner=owner;DestinationRaw=destination;DestinationRevision=revision;ImportedRaw=imported;
             Tier=tier;CompletedWave=wave;Salvage=salvage;HasCheckpoint=checkpoint;IsPreviousBackup=previous;
@@ -34,6 +38,7 @@ namespace SingedTerra.LastStand
             PermanentLevels=Array.AsReadOnly(projectedLevels);
             research=snapshot?.Clone();
             Appearance=appearance;
+            SkillIntel=skillIntel;OwnedSkillCount=ownedSkills;Skills=skills??LastStandSkillLoadout.Empty;
         }
     }
     public static class LastStandBackupCodec
@@ -117,9 +122,10 @@ namespace SingedTerra.LastStand
             {error="This platform cannot preserve the current save before replacement.";return false;}
             if(!TryParseSave(raw,out var imported,out _))
             {error="This backup is damaged or uses unsupported save or run rules. Nothing was changed.";return false;}
+            int ownedSkills=0;foreach(int copies in imported.SkillCopies)if(copies>0)ownedSkills++;
             preview=new LastStandBackupPreview(this,RestoreDestinationRaw,Revision,raw,imported.SelectedTier,
                 imported.Checkpoint?.CompletedWave??0,imported.Wallet,imported.Checkpoint!=null,previous,
-                CanRepairDamagedSave,imported.Levels,imported.Research?.Snapshot(),imported.Appearance);
+                CanRepairDamagedSave,imported.Levels,imported.Research?.Snapshot(),imported.Appearance,imported.SkillIntel,ownedSkills,imported.SelectedSkills);
             return true;
         }
         public bool TryPreviewPreviousBackup(out LastStandBackupPreview preview,out string error)
@@ -176,7 +182,7 @@ namespace SingedTerra.LastStand
             ReconcileUnlocks(next);
             restoreDestinationRaw=preview.DestinationRaw;
             RestorePending=true;
-            bool confirmed=Commit(next,()=>{RestorePending=false;RestoreGeneration++;LastReceipt=null;rejectedRaw=null;restoreDestinationRaw=null;});
+            bool confirmed=Commit(next,()=>{RestorePending=false;RestoreGeneration++;LastReceipt=null;LastSkillDraw=null;rejectedRaw=null;restoreDestinationRaw=null;});
             if(!confirmed)
             {
                 if(candidate==null){RestorePending=false;restoreDestinationRaw=null;}

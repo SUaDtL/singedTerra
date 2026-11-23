@@ -20,7 +20,7 @@ class PresentationFixtureTests(unittest.TestCase):
     def test_roster_unlocks_follow_continuous_actual_transactions(self):
         case = self.case("roster-ready")
         saved = json.loads(case["save"])
-        self.assertEqual(saved["version"], 8)
+        self.assertEqual(saved["version"], 9)
         self.assertIsNone(saved["checkpoint"])
         self.assertIsNone(saved["pendingDefeat"])
         self.assertEqual(case["unlockedTiers"], [1, 2, 3, 4, 5, 6])
@@ -81,7 +81,7 @@ class PresentationFixtureTests(unittest.TestCase):
         case = self.case("tier5-before-commander")
         saved = json.loads(case["save"])
         encounter = saved["checkpoint"]["encounter"]
-        self.assertEqual(saved["version"], 8)
+        self.assertEqual(saved["version"], 9)
         self.assertEqual((encounter["tier"], encounter["wave"], encounter["completedWave"]), (5, 99, 99))
         self.assertEqual((case["tier"], case["completedWave"], case["nextWave"]), (5, 99, 100))
         self.assertEqual(case["simulatedRuns"][0]["committedBoundaries"], 99)

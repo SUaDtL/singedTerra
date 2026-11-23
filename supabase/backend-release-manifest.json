@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "supabaseCliVersion": "2.121.0",
+  "supabaseCliVersion": "3.0.0",
   "config": {
     "path": "supabase/config.toml",
-    "sha256": "4668b17bb9de5fd2541e5cacfe6b1297ffd6a2745132f98e546941da37367a9d"
+    "sha256": "ce046286310499ace351ef60c4f3987615fe044223bc8261debbb244633a8290"
   },
   "functionShared": {
     "path": "supabase/functions/_shared",
-    "sha256": "a21e2be45aa31979756d83a06ad37f0b4bb941d51c2d393a2eda8049aca02cfc"
+    "sha256": "d6491013d8368d395bae96bd4b3d70ba41c73661e86083d983d27398f2edbc8d"
   },
   "verifiedReplayShared": {
     "path": "shared/src",

@@ -34,7 +34,7 @@ namespace SingedTerra.Encounter
         void ApplyBuildcraftProjection(LastStandShopState shop)
         {
             if(!Profile.Edition.IsBuildcraft)return;
-            if(HasArc)CurrentArcDamage=shop.GetDefinition(LastStandUpgradeTrackId.ArcOutput).EffectWithResearchAt(shop.GetTrack(LastStandUpgradeTrackId.ArcOutput).CurrentLevel,1,CombatResearch);
+            if(HasArc)CurrentArcDamage=SkillDamage(shop.GetDefinition(LastStandUpgradeTrackId.ArcOutput).EffectWithResearchAt(shop.GetTrack(LastStandUpgradeTrackId.ArcOutput).CurrentLevel,1,CombatResearch));
             if(HasShield){
                 int capacity=shop.GetDefinition(LastStandUpgradeTrackId.ShieldCapacity).EffectAt(shop.GetTrack(LastStandUpgradeTrackId.ShieldCapacity).CurrentLevel,1);
                 Shield=(int)Math.Min(capacity,Shield+(long)capacity-CurrentShieldCapacity);CurrentShieldCapacity=capacity;
@@ -43,7 +43,7 @@ namespace SingedTerra.Encounter
         void StepBuildcraft()
         {
             if(!Profile.Edition.IsBuildcraft)return;
-            if(HasArc&&Tick>=nextArc&&Arc()){ArcShots=Add(ArcShots,1);nextArc=Tick+LastStandUpgradeCatalog.ArcPeriod;}
+            if(HasArc&&Tick>=nextArc&&Arc()){ArcShots=Add(ArcShots,1);nextArc=Tick+SkillPeriod(LastStandUpgradeCatalog.ArcPeriod);}
             if(HasShield&&Tick>=nextShieldRecharge&&Tick>=lastShieldHit+LastStandUpgradeCatalog.ShieldRechargeDelay){
                 int amount=Math.Min(ShieldRecoveryAmount,CurrentShieldCapacity-Shield);Shield+=amount;
                 ShieldRestored=Add(ShieldRestored,amount);nextShieldRecharge=Tick+LastStandUpgradeCatalog.ShieldRechargePeriod;
@@ -116,7 +116,7 @@ namespace SingedTerra.Encounter
         void RestoreBuildcraft(LastStandBuildcraftCheckpoint state)
         {
             if(state==null)throw new ArgumentException("Missing combat snapshot.");
-            if(!ValidAuxiliaryCheckpoint(HasArc,state.ArcShots,state.NextArcTick,state.ArcDamage,LastStandUpgradeCatalog.BaseArcDamage,LastStandUpgradeCatalog.ArcPeriod,Tick)||
+            if(!ValidAuxiliaryCheckpoint(HasArc,state.ArcShots,state.NextArcTick,state.ArcDamage,LastStandUpgradeCatalog.BaseArcDamage,LastStandUpgradeCatalog.ArcPeriod,Tick,Profile.Edition.IsSkills&&SkillUsed(LastStandSkillId.Overdrive))||
                 state.Shield<0||state.ShieldCapacity<state.Shield||state.ShieldCapacity>LastStandWaveCatalog.MaximumCombatValue||state.ShieldRestored<0||state.ShieldAbsorbed<0||
                 state.LastShieldHitTick<0||state.LastShieldHitTick>Tick||state.NextShieldRechargeTick<1||state.NextShieldRechargeTick>(long)Tick+LastStandUpgradeCatalog.ShieldRechargePeriod||
                 state.ShieldRestored<int.MaxValue&&state.ShieldAbsorbed<int.MaxValue&&state.Shield!=(long)state.ShieldCapacity+state.ShieldRestored-state.ShieldAbsorbed||

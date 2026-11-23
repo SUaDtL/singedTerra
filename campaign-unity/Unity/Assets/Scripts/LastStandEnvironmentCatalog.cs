@@ -35,10 +35,10 @@ namespace SingedTerra.LastStand
     public static class LastStandEnvironmentCatalog
     {
         static readonly LastStandEnvironmentDefinition[] definitions = {
-            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("sunlit-ash"), 0, 58f,
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("sunlit-ash"), 0, 35f,
                 new Color(1f,.86f,.66f), 1.65f, 42f,
                 new Color(.55f,.59f,.64f), new Color(.39f,.34f,.28f), new Color(.16f,.16f,.14f)),
-            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("iron-perimeter"), 1, 70f,
+            new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("iron-perimeter"), 1, 50f,
                 new Color(.78f,.87f,1f), 1.35f, 53f,
                 new Color(.49f,.59f,.68f), new Color(.32f,.38f,.40f), new Color(.16f,.16f,.14f)),
             new LastStandEnvironmentDefinition(LastStandContentCatalog.Environment("cinder-basin"), 2, 62f,

@@ -45,7 +45,18 @@ export function assertLastStandWaveMatrix(reports,expected){
     if(section==='recovery')requireWaveChecks(report,WAVE_RECOVERY_CHECKS);
     if(section==='entry'){
       requireWaveChecks(report,WAVE_ENTRY_CHECKS);
-      assert.deepEqual(report.actions.map(a=>[a.name,a.action]),WAVE_ENTRY_ACTIONS,'Current Return/resume/cancel/abandon sequence required');
+      const resume=report.return_resume;
+      assert.ok(resume?.state&&resume.layout,'Actual Return resume state and layout required');
+      assert.equal(resume.state.hasCheckpoint,true);
+      assert.equal(resume.state.phase,resume.state.wallet>0?'workshop':'garage','Return uses the actual funded inspection phase');
+      const resumeControl=lastStandDeploymentControl(resume.state,resume.layout);
+      const prepared=report.actions[2]?.resolved_layout;
+      assert.ok(prepared,'Actual prepared resume control required');
+      for(const key of ['load','timeOrigin','phase'])assert.equal(resume.layout[key],prepared[key],'Return resume action identity must match: '+key);
+      assert.ok(Number.isFinite(resume.layout.t)&&Number.isFinite(prepared.t)&&resume.layout.t<=prepared.t,
+        'Return resume layout must precede its prepared input');
+      const expectedActions=WAVE_ENTRY_ACTIONS.map((row,index)=>index===2?[resumeControl,'resume']:row);
+      assert.deepEqual(report.actions.map(a=>[a.name,a.action]),expectedActions,'Current Return/resume/cancel/abandon sequence required');
       assert.ok(Number.isInteger(report.input_trace.outer_keyboard_edges)&&report.input_trace.outer_keyboard_edges>=2,'Native Return keyboard input required');
       const preserved=report.retired_campaign_preservation;assert.match(preserved?.before_sha256??'',/^[a-f0-9]{64}$/);
       assert.equal(preserved.after_launch_sha256,preserved.before_sha256);assert.equal(preserved.native_return,'observed unchanged');assert.equal(preserved.retirement,'observed Last Stand only');
@@ -54,6 +65,8 @@ export function assertLastStandWaveMatrix(reports,expected){
       const cancel=report.lifecycle?.filter(row=>row.kind==='new-run-cancel');assert.equal(cancel?.length,1);
       assert.equal(cancel[0].layout?.selection,'ConfirmCancel');assert.equal(cancel[0].cancelled?.paused,true);
       const saved=JSON.parse(cancel[0].saved);assertIdleWaveSave(saved);assert.ok(saved.checkpoint);
+      assert.equal(resume.state.wallet,saved.credits,'Return preserves checkpoint wallet');
+      assert.equal(resume.state.runId,saved.checkpoint.runId,'Return preserves checkpoint run');
       assert.equal(cancel[0].confirmation.runId,saved.checkpoint.runId);assert.equal(cancel[0].cancelled.runId,saved.checkpoint.runId);
     }
     const profiles=section==='entry'?partition.entryViewports:section==='recovery'?partition.phaseViewports:partition.viewports;

@@ -14,10 +14,12 @@ namespace SingedTerra.LastStand
         public readonly Button TierPrevious,TierNext,ArmoryEntry,ResearchEntry;
         public readonly LastStandFittingCallout Callout;
         readonly Text tierName,tierDetail,fittingDescription,save;
+        readonly LastStandEquipmentBay equipmentBay;
         static readonly Color Brass=LastStandUiPrimitives.Brass,Paper=LastStandUiPrimitives.Paper;
         public LastStandGarageView(LastStandLoopController loop,Canvas canvas,RectTransform root,LastStandHudElements elements)
         {
             this.loop=loop;
+            equipmentBay=new LastStandEquipmentBay(loop,root);
             Func<string,Transform,RectTransform> Panel=(name,parent)=>elements.Panel(name,parent);
             Func<string,string,Transform,UnityEngine.Events.UnityAction,Button> Action=elements.Action;
             Func<string,Transform,int,Text> Label=elements.Label;
@@ -46,7 +48,7 @@ namespace SingedTerra.LastStand
                     "DEPLOY: "+refusal;
             }
         }
-        public void Layout(Dictionary<string,LastStandHudLayout.Slot> slots,float cssWidth,float cssHeight,float ratio,bool shopOpen)
+        public void Layout(Dictionary<string,LastStandHudLayout.Slot> slots,float cssWidth,float cssHeight,float ratio,bool shopOpen,bool hidesBackground=false)
         {
             var art=loop.GetComponent<SingedTerra.Art.TankPresentation>();
             LastStandHudLayout.Slot preview=null;
@@ -57,8 +59,17 @@ namespace SingedTerra.LastStand
                 art.SetGarageFraming(new Rect(bounds.X/cssWidth,1-(bounds.Y+bounds.Height)/cssHeight,bounds.Width/cssWidth,bounds.Height/cssHeight));
             }
             Callout.PixelRatio=ratio;
-            Callout.Refresh(garagePreview&&!loop.MenuOpen&&FittingCard.gameObject.activeInHierarchy);
+            Callout.Refresh(garagePreview&&!loop.MenuOpen&&FittingCard.gameObject.activeInHierarchy&&!LastStandEquipmentBay.Fits(cssWidth,cssHeight));
+            // The installed-systems deck supplies this action's outer frame.
+            // Keep the stock owner and hit target, without a nested third frame.
+            bool framed=!LastStandEquipmentBay.Fits(cssWidth,cssHeight);
+            FittingCard.GetComponent<Image>().enabled=framed;
+            foreach(var decoration in new[]{"AuthoredPanel","ConsoleFrame"})
+            {var child=FittingCard.Find(decoration);if(child)child.gameObject.SetActive(framed);}
+            equipmentBay.Layout(cssWidth,cssHeight,shopOpen,elementsForBay,hidesBackground);
         }
-        public void Dispose(){if(Callout)Callout.enabled=false;}
+        Dictionary<string,RectTransform> elementsForBay;
+        public void BindBayElements(Dictionary<string,RectTransform> nodes){elementsForBay=nodes;}
+        public void Dispose(){equipmentBay.Dispose();if(Callout)Callout.enabled=false;}
     }
 }

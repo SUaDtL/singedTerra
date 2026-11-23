@@ -17,7 +17,8 @@ const sources=[...LAST_STAND_HELPER_INPUTS,'scripts/last-stand-wave-milestones.m
   'campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
-'campaign-unity/Tools/contracts/last-stand-observation-v6.json'];
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json'];
 const repository=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 
 export function assertDependencyFreeWaveGuards(program,{additionalSources=[]}={}){

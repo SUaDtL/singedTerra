@@ -28,6 +28,8 @@ namespace SingedTerra.LastStand
             string context=(buildcraft?LastStandResearchCatalog.Version:LastStandResearchCatalog.LegacyVersion)+":"+string.Join(",",liveRanks);
             if(buildcraft)context+=";l:"+shop.Loadout+";c:"+shop.CombatResearch.ArmorPiercing+","+
                 shop.CombatResearch.AreaControl+","+shop.CombatResearch.FieldEngineering;
+            if(row.Checkpoint!=null&&row.Checkpoint.Edition.IsSkills)
+                context+=";s:"+row.Checkpoint.Skills.Loadout+":"+string.Join(",",row.Checkpoint.Skills.Ranks);
             // The shop freezes deployment levels. Profile purchases made in a
             // running game apply to its next deployment and must not relabel
             // this sample. Stable catalog order keeps both arrays bounded.

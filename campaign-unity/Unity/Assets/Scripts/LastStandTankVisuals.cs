@@ -65,6 +65,8 @@ namespace SingedTerra.Art
                 int slot = i % 4;
                 instances[i] = Instantiate(parts[i], slot < 2 ? chassis : slot == 2 ? turretRoot : barrelRoot, false);
                 instances[i].name = Families[i / 4] + "-" + ((LastStandTankPartSlot)slot).ToString().ToLowerInvariant();
+                LastStandVehicleDetail.Attach(instances[i],slot,i/4,armor,steel,edge);
+                if(slot==2 && i/4==0)instances[i].transform.localScale=new Vector3(1.35f,1.16f,1.35f);
                 renderers[i] = instances[i].GetComponentsInChildren<Renderer>(true);
                 instances[i].SetActive(false);
             }
@@ -90,7 +92,7 @@ namespace SingedTerra.Art
             if (!ColorUtility.TryParseHtmlString(LastStandTankAppearanceCatalog.GetPaint(appearance.Paint).Hex, out var color))
                 throw new InvalidOperationException("Invalid authored tank paint");
             // Pigmented armor; keep dark rubber, exposed metal and optics readable.
-            var pigment = Color.Lerp(new Color(.67f, .64f, .55f), color, .78f);
+            var pigment = Color.Lerp(new Color(.43f, .40f, .31f), color, .12f);
             paintBlock.Clear(); paintBlock.SetColor("_BaseColor", pigment);
             for (int i = 0; i < instances.Length; i++)
             {

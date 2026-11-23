@@ -56,6 +56,7 @@ public static class LastStandFittingChecks
         }
         public void Resize(int width,int height)
         {
+            CloseBay();
             Art.view.targetTexture=null;if(texture)UnityEngine.Object.DestroyImmediate(texture);
             texture=new RenderTexture(width,height,16);Art.view.targetTexture=texture;
             Canvas.renderMode=RenderMode.ScreenSpaceOverlay;Canvas.renderMode=RenderMode.ScreenSpaceCamera;Canvas.worldCamera=Art.view;
@@ -63,8 +64,15 @@ public static class LastStandFittingChecks
         }
         public void Dispose()
         {
+            CloseBay();
             Art.view.targetTexture=null;UnityEngine.Object.DestroyImmediate(texture);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+        }
+        void CloseBay()
+        {
+            var garage=typeof(LastStandLoopHud).GetField("garage",Private).GetValue(Hud);
+            var bay=garage.GetType().GetField("equipmentBay",Private).GetValue(garage);
+            bay.GetType().GetMethod("SetActive",Private).Invoke(bay,new object[]{false});
         }
     }
     static void Need(bool condition,string message) { if(!condition)throw new InvalidOperationException(message); }
@@ -194,7 +202,12 @@ public static class LastStandFittingChecks
             Attached(f);
             f.Callout.Refresh(false);Need(!f.Callout.Visible,"caller overlay hold hides leader");
             f.Callout.enabled=false;f.Callout.Refresh(true);Need(!f.Callout.Visible,"disabled owner cannot leave a stale line");f.Callout.enabled=true;
-            f.Canvas.worldCamera=null;f.Callout.Refresh(true);Need(!f.Callout.Visible,"missing UI projection camera hides leader");
+            // Unity treats ScreenSpaceCamera without a camera as Overlay, which
+            // legitimately needs no UI camera. WorldSpace preserves the missing
+            // projection-camera condition this negative control must exercise.
+            f.Canvas.worldCamera=null;f.Canvas.renderMode=RenderMode.WorldSpace;
+            Need(f.Canvas.renderMode==RenderMode.WorldSpace&&!f.Canvas.worldCamera,"missing-camera fixture has no projection camera");
+            f.Callout.Refresh(true);Need(!f.Callout.Visible,"missing world-space UI projection camera hides leader");
         }
     }
     static void OverlayAndEncounterLifecycle()

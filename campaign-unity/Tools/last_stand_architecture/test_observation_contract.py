@@ -16,8 +16,9 @@ from unity_check_runner import ROOT, PROJECT, run_checks
 
 class ObservationContractTests(unittest.TestCase):
     def test_actual_emitter_shared_contract_and_consumers(self):
-        contract_path = TOOLS / "contracts/last-stand-observation-v6.json"
+        contract_path = TOOLS / "contracts/last-stand-observation-v7.json"
         contract = json.loads(contract_path.read_text(encoding="utf8"))
+        buildcraft_contract = json.loads((TOOLS / "contracts/last-stand-observation-v6.json").read_text(encoding="utf8"))
         appearance_contract = json.loads((TOOLS / "contracts/last-stand-observation-v5.json").read_text(encoding="utf8"))
         continuity_contract = json.loads((TOOLS / "contracts/last-stand-observation-v4.json").read_text(encoding="utf8"))
         previous_contract = json.loads((TOOLS / "contracts/last-stand-observation-v2.json").read_text(encoding="utf8"))
@@ -28,7 +29,7 @@ class ObservationContractTests(unittest.TestCase):
         previous_output = os.environ.get("ST_LS_OBSERVATION_OUTPUT")
         os.environ["ST_LS_OBSERVATION_OUTPUT"] = str(output)
         try:
-            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, TOOLS / "contracts/last-stand-observation-v1.json", TOOLS / "contracts/last-stand-observation-v2.json", TOOLS / "contracts/last-stand-observation-v3.json", TOOLS / "contracts/last-stand-observation-v4.json", TOOLS / "contracts/last-stand-observation-v5.json", Path(__file__), TOOLS / "verify_last_stand_loop.py",
+            code, log = run_checks("LastStandObservationContractChecks.Run", [contract_path, TOOLS / "contracts/last-stand-observation-v1.json", TOOLS / "contracts/last-stand-observation-v2.json", TOOLS / "contracts/last-stand-observation-v3.json", TOOLS / "contracts/last-stand-observation-v4.json", TOOLS / "contracts/last-stand-observation-v5.json", TOOLS / "contracts/last-stand-observation-v6.json", Path(__file__), TOOLS / "verify_last_stand_loop.py",
                 ROOT / "e2e/helpers/lastStandJourney.mjs"])
         finally:
             if previous_output is None:
@@ -38,12 +39,12 @@ class ObservationContractTests(unittest.TestCase):
         self.assertEqual(code, 0, log[-10000:])
         self.assertIn("ST_LS_OBSERVATION_CONTRACT_PASS", log)
         packets = json.loads(output.read_text(encoding="utf8"))["packets"]
-        self.assertEqual(len(packets), 10)
+        self.assertEqual(len(packets), 11)
         # Execute the maintained parser body without starting its browser server.
         source = ast.parse((TOOLS / "verify_last_stand_loop.py").read_text(encoding="utf8"))
         owner = next(n for n in source.body if isinstance(n, ast.FunctionDef) and n.name == "verify_shop_vertical")
         functions = [n for n in owner.body if isinstance(n, ast.FunctionDef) and n.name in ("require", "read_controls")]
-        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACTS": (retained, previous_contract, clarity_contract, continuity_contract, appearance_contract, contract)}
+        namespace = {"json": json, "math": math, "OBSERVATION_CONTRACTS": (retained, previous_contract, clarity_contract, continuity_contract, appearance_contract, buildcraft_contract, contract)}
         exec(compile(ast.Module(body=functions, type_ignores=[]), "<maintained observation reader>", "exec"), namespace)
         for raw in packets:
             admitted = namespace["read_controls"](raw)
@@ -53,12 +54,12 @@ class ObservationContractTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "Malformed control field"):
                 namespace["read_controls"](contract["tag"] + json.dumps(broken, separators=(",", ":")))
             for name in ("DataExport", "DataImport", "DataPrevious", "DataGarage", "BackupCancel", "BackupReplace",
-                         "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction", "MenuAppearance", "MenuArmory"):
+                         "HelpPrevious", "HelpNext", "MenuGuidance", "GuidanceDismiss", "HelpAction", "MenuAppearance", "MenuArmory", "MenuSkills"):
                 incomplete = json.loads(raw[len(contract["tag"]):])
                 incomplete["settingsControls"] = [row for row in incomplete["settingsControls"] if row["name"] != name]
                 with self.assertRaisesRegex(AssertionError, "Missing or repeated observed controls"):
                     namespace["read_controls"](contract["tag"] + json.dumps(incomplete, separators=(",", ":")))
-            for field in ("appearanceControls", "armoryControls"):
+            for field in ("appearanceControls", "armoryControls", "skillsControls", "controls"):
                 for row in admitted[field]:
                     incomplete = json.loads(raw[len(contract["tag"]):])
                     incomplete[field] = [item for item in incomplete[field] if item["name"] != row["name"]]
@@ -73,12 +74,12 @@ for(const raw of JSON.parse(readFileSync(process.argv[2],'utf8')).packets){
   const packet=JSON.parse(raw.slice('ST_LS_HUD_LAYOUT '.length));packet.controls.pop();
   assert.throws(()=>readShopControlObservation('ST_LS_HUD_LAYOUT '+JSON.stringify(packet)));
   for(const name of ['DataExport','DataImport','DataPrevious','DataGarage','BackupCancel','BackupReplace',
-    'HelpPrevious','HelpNext','MenuGuidance','GuidanceDismiss','HelpAction','MenuAppearance','MenuArmory']){
+    'HelpPrevious','HelpNext','MenuGuidance','GuidanceDismiss','HelpAction','MenuAppearance','MenuArmory','MenuSkills']){
     const incomplete=JSON.parse(raw.slice('ST_LS_HUD_LAYOUT '.length));
     incomplete.settingsControls=incomplete.settingsControls.filter(row=>row.name!==name);
     assert.throws(()=>readShopControlObservation('ST_LS_HUD_LAYOUT '+JSON.stringify(incomplete)));
   }
-  for(const field of ['appearanceControls','armoryControls']) for(const item of JSON.parse(raw.slice('ST_LS_HUD_LAYOUT '.length))[field]){
+  for(const field of ['appearanceControls','armoryControls','skillsControls','controls']) for(const item of JSON.parse(raw.slice('ST_LS_HUD_LAYOUT '.length))[field]){
     const incomplete=JSON.parse(raw.slice('ST_LS_HUD_LAYOUT '.length));
     incomplete[field]=incomplete[field].filter(row=>row.name!==item.name);
     assert.throws(()=>readShopControlObservation('ST_LS_HUD_LAYOUT '+JSON.stringify(incomplete)));

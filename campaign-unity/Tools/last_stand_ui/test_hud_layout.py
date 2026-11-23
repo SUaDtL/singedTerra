@@ -40,7 +40,9 @@ class HudLayoutTests(unittest.TestCase):
         cls.executable = Path(cls.output.name) / "HudLayoutChecks.exe"
         baseline = os.environ.get("ST_HUD_LAYOUT_BASELINE") == "1"
         source = SCRIPTS / ("LastStandLoopHud.cs" if baseline else "LastStandHudLayout.cs")
-        build = compile_csharp(cls.executable, [source, DRIVER], warnings_as_errors=True, timeout_seconds=60, defines=('ST_HUD_LAYOUT_BASELINE',) if baseline else ())
+        sources=[source, DRIVER]
+        if not baseline:sources.append(SCRIPTS / "LastStandSkillHudLayout.cs")
+        build = compile_csharp(cls.executable, sources, warnings_as_errors=True, timeout_seconds=60, defines=('ST_HUD_LAYOUT_BASELINE',) if baseline else ())
         if build.returncode:
             cls.output.cleanup()
             raise AssertionError(f"Pinned C# compilation failed (not behavioral RED):\n{build.stdout}{build.stderr}")

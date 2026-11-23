@@ -37,7 +37,7 @@ namespace SingedTerra.LastStand
             }
             var data=LastStandSaveJson.Read(Serialize(row));
             if(retainedEconomy!=null){
-                data["version"]=7;data.Remove("secondaryFitting");data.Remove("loadoutPresets");
+                data["version"]=7;data.Remove("secondaryFitting");data.Remove("loadoutPresets");data.Remove("skills");
                 var levels=LastStandSaveJson.Object(data["permanentLevels"]);levels.Remove("arcOutput");levels.Remove("shieldCapacity");
                 var tiers=LastStandSaveJson.Object(data["tierRecords"]);tiers.Remove("tier-5");tiers.Remove("tier-6");
                 var fittings=LastStandSaveJson.Array(data["unlockedFittings"]);fittings.Remove("arc");fittings.Remove("shield");
@@ -98,7 +98,7 @@ static class BuildcraftChecks
         {
             if(args[0]=="capture"){File.WriteAllText(args[1],RetainedBaseline());return 0;}
             if(args[0]=="retained")Check(File.ReadAllText(args[1])==RetainedBaseline(),"retained edition combat, accounting or catalog changed");
-            else if(args[0]=="edition")Check(LastStandRunEdition.Current.RulesVersion=="last-stand-waves-v3","new deployments need a distinct immutable buildcraft edition");
+            else if(args[0]=="edition")Check(LastStandRunEdition.Buildcraft.RulesVersion=="last-stand-waves-v3"&&LastStandRunEdition.Current.RulesVersion=="last-stand-waves-v4","buildcraft remains retained beside the new skills edition");
             else if(args[0]=="campaign"){
                 Check(LastStandFittingCatalog.Definitions.Count==7,"seven authored fitting choices");
                 Check(LastStandTierCatalog.All.Count==6,"six authored campaign tiers");
@@ -126,7 +126,7 @@ static class BuildcraftChecks
             {
                 var store=new Store();var profile=LastStandProgression.Load(store);
                 Check(profile.SaveState=="ready","fresh profile");var data=LastStandSaveJson.Read(store.Raw);
-                Check(LastStandSaveJson.Integer(data["version"])==8,"loadout profile requires its own version");
+                Check(LastStandSaveJson.Integer(data["version"])==9,"skills profile retains bounded loadout fields");
                 Check(data.ContainsKey("secondaryFitting")&&LastStandSaveJson.Array(data["loadoutPresets"]).Count==3,"bounded loadout fields");
             }
             else if(args[0]=="loadout"){

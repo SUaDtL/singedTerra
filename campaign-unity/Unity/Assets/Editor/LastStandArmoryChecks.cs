@@ -41,6 +41,7 @@ public static class LastStandArmoryChecks
             Case("paid_effect_preview_matches_combat_without_changing_retained_run",EffectSummaries);
             Case("unconfirmed_save_and_stale_draft_refuse",SaveFailure);
             Case("responsive_controls_name_focus_and_scroll",Responsive);
+            Case("compact_callouts_require_complete_labels_and_clear_panel_edges",CompactCallouts);
         }
         finally
         {
@@ -140,6 +141,44 @@ public static class LastStandArmoryChecks
             };
             select(0,"arc",1);select(1,"shield",1);verify();
             select(0,"repair",-1);select(1,"arc",-1);select(0,"shield",1);verify();
+        }
+    }
+    static void CompactCallouts()
+    {
+        using(var f=new LastStandAppearanceChecks.Fixture(UnlockedSave()))
+        {
+            f.Click("ArmoryEntry");f.Click("ArmoryBay2Next");f.Resize(390,844);
+            var pane=f.Canvas.GetComponentsInChildren<ScrollRect>().Single(p=>p.name=="ArmoryViewport");
+            var label=f.Canvas.GetComponentsInChildren<Text>().Single(t=>t.name=="ArmoryBay1Name");
+            var panel=f.Canvas.GetComponentsInChildren<RectTransform>().Single(r=>r.name=="ArmoryPanel");
+            var lines=f.Canvas.GetComponentsInChildren<LastStandFittingCallout>().Where(c=>c.gameObject.name=="ArmoryModal").ToArray();
+            Need(lines.Length==2,"two actual Armory callout owners");
+            Action<float> placeCenter=screenY=>{
+                float pixelsPerUnit=f.Bounds(pane.content).height/pane.content.rect.height;
+                pane.content.anchoredPosition+=Vector2.up*((screenY-f.Bounds(label).center.y)/pixelsPerUnit);
+                Canvas.ForceUpdateCanvases();lines[0].RefreshGroup();
+            };
+            var clip=f.Bounds(pane.viewport);float labelHeight=f.Bounds(label).height;
+            // The center remains inside the viewport, while the upper quarter of
+            // the actual label is clipped beneath the fixed Armory header.
+            placeCenter(clip.yMax-labelHeight*.25f);
+            Need(clip.Contains(f.Bounds(label).center)&&f.Bounds(label).yMax>clip.yMax+1,"partially clipped label fixture");
+            Need(!lines[0].Visible,"partially clipped bay label must not retain a tank callout");
+            placeCenter(clip.yMax-labelHeight*.5f-18);
+            Debug.Log("ST_ARMORY_ROUTE_DIAGNOSTIC viewport="+f.Canvas.pixelRect+" panel="+f.Bounds(panel)+" label="+f.Bounds(label)+
+                " clip="+clip+" target="+lines[0].EndpointScreen+" ratio="+lines[0].PixelRatio+" rotate="+f.Bounds(f.Button("ArmoryRotateLeft"))+" / "+f.Bounds(f.Button("ArmoryRotateRight")));
+            Need(lines[0].Visible,"fully visible bay label retains a useful compact leader");
+            var boundary=f.Bounds(panel);var route=lines[0].RoutePoints;
+            Need(route.Count>=2&&Vector2.Distance(route[route.Count-1],lines[0].EndpointScreen)<.1f,"compact route ends on the actual fitting");
+            Need(Mathf.Min(Mathf.Abs(route[0].x-boundary.xMin),Mathf.Abs(route[0].x-boundary.xMax))<1&&
+                Mathf.Abs(route[0].y-f.Bounds(label).center.y)<1,"compact leader attaches to the panel side at its visible label");
+            var interior=Rect.MinMaxRect(boundary.xMin+.2f,boundary.yMin+.2f,boundary.xMax-.2f,boundary.yMax-.2f);
+            for(int i=1;i<route.Count;i++)for(int sample=0;sample<=40;sample++)
+                Need(!interior.Contains(Vector2.Lerp(route[i-1],route[i],sample/40f)),"compact leader must not cross the panel or sticky header");
+            placeCenter(clip.yMax+labelHeight);
+            Need(!lines[0].Visible,"offscreen bay label hides decoration immediately after scrolling");
+            f.Resize(1600,900);lines[0].RefreshGroup();
+            Need(lines.All(c=>c.Visible),"desktop service-card leaders remain visible after compact scrolling");
         }
     }
     static void Responsive()

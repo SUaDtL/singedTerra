@@ -153,6 +153,72 @@ exact function inventory. Production uses the protected **Deploy backend
 (Supabase)** GitHub workflow with an exact current-main commit and manifest
 digest. A Pages publication does not deploy Supabase.
 
+### Review the CLI 3 configuration proposal
+
+Before a backend release, check out the exact current-main candidate, install
+its locked dependencies, and set `SUPABASE_PROJECT_REF` to the intended project
+in your private shell. The CLI must recognize that project as the production
+target. If the checkout is not already linked to it, run the following locally;
+this updates the checkout's local link state:
+
+```bash
+npx --no-install supabase link --project-ref "$SUPABASE_PROJECT_REF"
+```
+
+In PowerShell, use `$env:SUPABASE_PROJECT_REF` in place of
+`$SUPABASE_PROJECT_REF`. In the same effective configuration environment intended
+for deployment, run:
+
+```bash
+node scripts/ci/reviewedConfigDiff.mjs preview
+```
+
+Use a clean checkout without project `.env` files or `supabase/config.json`.
+The release owner pins the CLI workdir to this checkout and removes inherited
+`SUPABASE_*` overrides except the access token and database password. The
+project reference is passed explicitly to every mutation.
+
+The command reads the remote configuration with the pinned CLI and displays a
+proposal in the interactive terminal. Review every change and target before
+using the single-line proposal. It can contain sensitive configuration or
+path values: do not paste it into public issues, PRs, logs, or artifacts. The
+command refuses missing API sections, masked values, unmanaged settings, or an
+unverified target; a zero-change result alone does not establish complete scope.
+Resolve those conditions rather than treating the output as an approved diff.
+
+After the authorized reviewer has privately inspected the proposal, store the
+exact single-line value in the `production-backend` environment secret named
+`REVIEWED_CONFIG_PROPOSAL`. Update that secret for each newly reviewed
+proposal before dispatching the protected GitHub workflow. For direct npm
+commands, set `REVIEWED_CONFIG_PROPOSAL` alongside `SUPABASE_PROJECT_REF` in
+your private shell. The value binds the proposal to the exact source, manifest,
+config, CLI version, and project. The release checks it before migrations and
+again immediately before config push; an intentional change is accepted when
+its proposal matches the review. A changed proposal requires a fresh review.
+The receipt records the preflight outcome, not the proposal values. The exact
+comparison does not itself prove that a person reviewed the proposal. Proposals
+over 32,000 bytes are refused rather than exceeding the protected secret limit.
+
+Treat the full proposal as private and share it only through a protected review
+channel. Never place it in a workflow dispatch input, public log, or receipt.
+
+The functions phase uses the manifest's exact function inventory and the same
+explicit project reference. It validates release inputs but does not repeat the
+pre-push config comparison after config has already been pushed. The standalone
+functions command is independently callable with production credentials and an
+explicit project ref; it does not claim that a config proposal was reviewed.
+Direct npm commands use the checked-out source; an operator must fetch and
+verify current main before preparing a production proposal. The GitHub workflow
+enforces current-main identity separately.
+
+The Supabase CLI fetches remote configuration again during `config push`; it
+does not offer a conditional write bound to the reviewed diff. Another actor
+can therefore change the project between the final check and the push. Keep
+other configuration writers quiescent during the release and inspect the
+post-release observations. If a recheck fails after migrations have already run,
+the release is partial: inspect the receipt and use the documented fix-forward
+recovery process. This limitation also applies to direct npm use.
+
 ## Crosswind Qualification rollout status
 
 The current source includes migration 024, five challenge and career endpoints,

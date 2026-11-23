@@ -1,4 +1,4 @@
-import { createElement, type JSX } from 'preact';
+import { createElement, type JSX, type TargetedMouseEvent } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import {
   clearTankLoadoutPreview,
@@ -267,7 +267,7 @@ export function SemanticContractTree({
       onClick: intent
         ? () => dispatch(intent)
         : isSettingsBackdrop
-          ? (event: JSX.TargetedMouseEvent<HTMLElement>) => {
+          ? (event: TargetedMouseEvent<HTMLElement>) => {
             if (event.target === event.currentTarget) dispatch({ type: 'settings-close' });
           }
           : undefined,

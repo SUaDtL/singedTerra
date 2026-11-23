@@ -36,13 +36,14 @@ namespace SingedTerra.LastStand
         public const int MaximumPresets=3,MaximumNameLength=32;
         public string Name { get; }
         public LastStandLoadout Loadout { get; }
-        public LastStandLoadoutPreset(string name,LastStandLoadout loadout)
+        public LastStandSkillLoadout Skills { get; }
+        public LastStandLoadoutPreset(string name,LastStandLoadout loadout,LastStandSkillLoadout skills=null)
         {
             if(name==null||name.Length==0||name.Length>MaximumNameLength||name.Trim()!=name||loadout==null)
                 throw new ArgumentException("Invalid loadout preset.");
             foreach(char character in name)if(Char.IsControl(character)||Char.IsSurrogate(character)||character=='<'||character=='>')
                 throw new ArgumentException("Preset names must be bounded plain text.");
-            Name=name;Loadout=loadout;
+            Name=name;Loadout=loadout;Skills=skills??LastStandSkillLoadout.Empty;
         }
     }
 

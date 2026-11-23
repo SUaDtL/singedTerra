@@ -83,11 +83,11 @@ public static class LastStandEnvironmentChecks
         Require(f.Review.TrySelectEnvironment("iron-perimeter"),"select authored Iron Perimeter");
         Require(!f.Review.ashEnvironment.activeSelf&&f.Review.ironEnvironment.activeSelf,"distinct authored root active");
         Require(f.Review.sun.color==LastStandEnvironmentCatalog.Get("iron-perimeter").SunColor&&
-            f.Review.sun.intensity==1.35f&&f.Review.CameraPitch==70,"Iron light and framing");
+            f.Review.sun.intensity==1.35f&&f.Review.CameraPitch==50,"Iron light and framing");
         Require(f.Review.TrySelectEnvironment("sunlit-ash"),"restore authored Sunlit Ash");
         Require(f.Review.ashEnvironment.activeSelf&&!f.Review.ironEnvironment.activeSelf,"Ash root restored");
         Require(f.Review.sun.color==LastStandEnvironmentCatalog.Get("sunlit-ash").SunColor&&
-            f.Review.sun.intensity==1.65f&&f.Review.CameraPitch==58,"Ash light and framing");
+            f.Review.sun.intensity==1.65f&&f.Review.CameraPitch==35,"Ash light and framing");
         Require(f.Loop.Progression.SaveState==record&&f.Loop.Progression.SelectedTier==1&&
             f.Loop.Progression.ActiveRunId==0&&f.Session.Model==null,"environment preview changes no gameplay state");
     }

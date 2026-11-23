@@ -45,7 +45,7 @@ static class ResearchProfileChecks
             // Explicit retained fixture identity; a single economy replacement
             // cannot turn a current complete edition into an old one.
             var retained=LastStandSaveJson.Read(store.Raw);var checkpoint=LastStandSaveJson.Object(retained["checkpoint"]);
-            foreach(string key in new[]{"loadout","combatResearch","buildcraft"})checkpoint.Remove(key);
+            foreach(string key in new[]{"loadout","combatResearch","buildcraft","skills","skillState"})checkpoint.Remove(key);
             checkpoint["contentVersion"]=LastStandRunEdition.LegacyContentVersion;
             LastStandSaveJson.Object(checkpoint["encounter"])["rulesVersion"]=LastStandRunEdition.LegacyRulesVersion;
             foreach(string key in new[]{"mortarShots","railgunShots","nextMortarTick","nextRailgunTick","mortarDamage","railgunDamage"})
@@ -92,7 +92,7 @@ static class ResearchProfileChecks
     static void Fresh()
     {
         var store = new Store(); var p = Load(store); string raw = store.Raw;
-        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 8, "Fresh v8 envelope");
+        Check(p.SaveState == "ready" && LastStandSaveJson.Integer(LastStandSaveJson.Read(raw)["version"]) == 9, "Fresh v9 envelope");
         Check(p.Wallet == 0 && p.ResearchSnapshot.lastObservedUtcMilliseconds == Epoch && p.ResearchSnapshot.completionSequence == 0,
             "No invented funds or research on creation");
         Check(p.HistorySnapshot.Lifetime.Runs == 0 && !p.HasCheckpoint, "Fresh empty history");
@@ -238,7 +238,7 @@ static class ResearchProfileChecks
                 "Nonowner cannot create, migrate, or mutate existing profile");
             store.Owner = true;
             Check(p.Retry() && p.SaveState == "ready", "Explicit ownership recovery admits original profile");
-            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 8,
+            Check(LastStandSaveJson.Integer(LastStandSaveJson.Read(store.Raw)["version"]) == 9,
                 "Recovered owner uses current envelope without lost data");
         }
         var faultStore = Unlocked(); var owner = Load(faultStore); Action(owner, LastStandResearchAction.Start);

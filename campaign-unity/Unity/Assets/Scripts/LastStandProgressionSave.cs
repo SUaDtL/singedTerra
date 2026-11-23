@@ -6,7 +6,7 @@ namespace SingedTerra.LastStand
 {
     public sealed partial class LastStandProgression
     {
-        const int CurrentSaveVersion=8;
+        const int CurrentSaveVersion=9;
         static Dictionary<string,object> Map(params object[] entries)
         {
             var result=new Dictionary<string,object>(StringComparer.Ordinal);
@@ -80,16 +80,16 @@ namespace SingedTerra.LastStand
         static object PresetsJson(IReadOnlyList<LastStandLoadoutPreset> presets)
         {
             var result=new List<object>();foreach(var preset in presets)
-                result.Add(preset==null?null:Map("name",preset.Name,"loadout",LoadoutJson(preset.Loadout)));
+                result.Add(preset==null?null:Map("name",preset.Name,"loadout",LoadoutJson(preset.Loadout),"skills",SkillLoadoutJson(preset.Skills)));
             return result;
         }
-        static LastStandLoadoutPreset[] ReadPresets(object value)
+        static LastStandLoadoutPreset[] ReadPresets(object value,bool hasSkills)
         {
             var rows=LastStandSaveJson.Array(value);
             if(rows.Count!=LastStandLoadoutPreset.MaximumPresets)throw new FormatException("Invalid preset slot count.");
             var result=new LastStandLoadoutPreset[rows.Count];for(int n=0;n<rows.Count;n++)if(rows[n]!=null){
-                var row=LastStandSaveJson.Object(rows[n]);LastStandSaveJson.Fields(row,"name","loadout");
-                result[n]=new LastStandLoadoutPreset(Text(row,"name"),ReadLoadout(row["loadout"]));
+                var row=LastStandSaveJson.Object(rows[n]);LastStandSaveJson.Fields(row,hasSkills?new[]{"name","loadout","skills"}:new[]{"name","loadout"});
+                result[n]=new LastStandLoadoutPreset(Text(row,"name"),ReadLoadout(row["loadout"]),hasSkills?ReadSkillLoadout(row["skills"]):LastStandSkillLoadout.Empty);
             }
             return result;
         }
@@ -105,6 +105,7 @@ namespace SingedTerra.LastStand
             return LastStandSaveJson.Write(Map("version",CurrentSaveVersion,"credits",record.Wallet,
                 "revision",record.Revision,"recoveryRemainder",record.RecoveryRemainder,
                 "appearance",AppearanceJson(record.Appearance),
+                "skills",SkillRecordJson(record),
                 "research",ResearchJson(record.Research),"history",HistoryJson(record.History),
                 "permanentLevels",LevelsJson(record.Levels),"nextRunId",record.NextRunId,
                 "lastFinalizedRunId",record.FinalizedRunId,"selectedTier",record.SelectedTier,
@@ -132,6 +133,7 @@ namespace SingedTerra.LastStand
                 if(version>=5)fields.AddRange(new[]{"revision","recoveryRemainder","research","history"});
                 if(version>=7)fields.Add("appearance");
                 if(version>=8)fields.AddRange(new[]{"secondaryFitting","loadoutPresets"});
+                if(version>=9)fields.Add("skills");
                 LastStandSaveJson.Fields(map,fields.ToArray());
                 var levels=ReadLevels(map["permanentLevels"],true,version==4?LastStandUpgradeCatalog.LegacyEconomyVersion:
                     version==5?LastStandUpgradeCatalog.RetainedEconomyVersion:version<8?LastStandUpgradeCatalog.CombatDepthEconomyVersion:LastStandUpgradeCatalog.EconomyVersion);
@@ -144,8 +146,9 @@ namespace SingedTerra.LastStand
                 if(version>=7)parsed.Appearance=ReadAppearance(map["appearance"]);
                 if(version>=8){
                     parsed.SecondaryFitting=map["secondaryFitting"]==null?null:Text(map,"secondaryFitting");
-                    parsed.Presets=ReadPresets(map["loadoutPresets"]);
+                    parsed.Presets=ReadPresets(map["loadoutPresets"],version>=9);
                 }
+                if(version>=9)ReadSkillRecord(parsed,map["skills"]);
                 if(parsed.NextRunId<1 || parsed.FinalizedRunId>=parsed.NextRunId || !LastStandTierCatalog.IsValid(parsed.SelectedTier)||version<6&&parsed.SelectedTier>2)return false;
                 var tierMap=LastStandSaveJson.Object(map["tierRecords"]);
                 if(tierMap.Count!=tiers.Count)return false;
@@ -177,6 +180,7 @@ namespace SingedTerra.LastStand
                 if(!loadout.IsAvailable(Entitlements(parsed).EquipmentBays,parsed.Fittings.Contains))return false;
                 foreach(var preset in parsed.Presets)if(preset!=null&&
                     !preset.Loadout.IsAvailable(Entitlements(parsed).EquipmentBays,parsed.Fittings.Contains))return false;
+                if(!ValidateSkillRecord(parsed))return false;
                 bool scatterEarned=parsed.FirstClears.Contains(LastStandTierCatalog.Get(1).Key+":wave-100");
                 if(parsed.Fittings.Contains("scattergun")!=scatterEarned)return false;
                 foreach(var tier in tiers)
@@ -190,7 +194,7 @@ namespace SingedTerra.LastStand
                     if(parsed.Pending!=null || cp.RunId!=parsed.NextRunId-1 || cp.RunId<=parsed.FinalizedRunId ||
                         cp.Tier!=parsed.SelectedTier || version<8&&cp.FittingId!=parsed.SelectedFitting || cp.Encounter.Hull==0 ||
                         cp.CompletedWave>parsed.Tiers[LastStandTierCatalog.Get(cp.Tier).Key].BestWave||
-                        !cp.Loadout.IsAvailable(Entitlements(parsed).EquipmentBays,parsed.Fittings.Contains))return false;
+                        !cp.Loadout.IsAvailable(Entitlements(parsed).EquipmentBays,parsed.Fittings.Contains)||!SkillsFunded(parsed,cp.Skills))return false;
                     foreach(var track in LastStandUpgradeCatalog.ForEconomy(cp.Shop.EconomyVersion).Tracks)
                         if(cp.Shop.PermanentLevels[(int)track.Id]>parsed.Levels[(int)track.Id])return false;
                 }
@@ -270,6 +274,7 @@ namespace SingedTerra.LastStand
                     "shield",b.Shield,"shieldCapacity",b.ShieldCapacity,"shieldRestored",b.ShieldRestored,"shieldAbsorbed",b.ShieldAbsorbed,
                     "nextShieldRechargeTick",b.NextShieldRechargeTick,"lastShieldHitTick",b.LastShieldHitTick));
             }
+            if(checkpoint.Edition.IsSkills){result.Add("skills",SkillSnapshotJson(e.Skills));result.Add("skillState",SkillStateJson(e.SkillState));}
             return result;
         }
         static LastStandRunCheckpoint ReadCheckpoint(object value,int profileVersion)
@@ -277,12 +282,15 @@ namespace SingedTerra.LastStand
             if(value==null)return null;
             var p=LastStandSaveJson.Object(value);
             var e=LastStandSaveJson.Object(p["encounter"]);var s=LastStandSaveJson.Object(p["shop"]);
-            string rules=Text(e,"rulesVersion");bool buildcraft=rules==LastStandRunEdition.CurrentRulesVersion;
+            string rules=Text(e,"rulesVersion");bool skills=rules==LastStandRunEdition.CurrentRulesVersion;
+            bool buildcraft=rules==LastStandRunEdition.BuildcraftRulesVersion||skills;
             bool current=rules==LastStandRunEdition.CombatDepthRulesVersion||buildcraft;
             if(buildcraft&&profileVersion<8)throw new FormatException("New run requires its profile schema.");
+            if(skills&&profileVersion<9)throw new FormatException("Skill run requires its profile schema.");
             var checkpointFields=new List<string>{"runId","encounter","shop"};
             if(profileVersion>=6)checkpointFields.Add("contentVersion");
             if(buildcraft)checkpointFields.AddRange(new[]{"loadout","combatResearch","buildcraft"});
+            if(skills)checkpointFields.AddRange(new[]{"skills","skillState"});
             LastStandSaveJson.Fields(p,checkpointFields.ToArray());
             var loadout=buildcraft?ReadLoadout(p["loadout"]):LastStandLoadout.Single((LastStandFitting)Number(e,"fitting"));
             var combatResearch=buildcraft?ReadCombatResearch(p["combatResearch"]):LastStandCombatResearchSnapshot.None;
@@ -312,7 +320,8 @@ namespace SingedTerra.LastStand
                 Number(e,"nextRepairTick"),Number(e,"nextScattergunTick"),Number(e,"lastCannonShotTick"),Number(e,"cannonDamage"),Number(e,"launcherDamage"),
                 Number(e,"scattergunDamage"),Number(e,"cannonPeriod"),Number(e,"repairAmount"),Number(e,"armorLevel"),Number(e,"committedCannonDamage"),
                 current?Number(e,"mortarShots"):0,current?Number(e,"railgunShots"):0,current?Number(e,"nextMortarTick"):1,current?Number(e,"nextRailgunTick"):1,
-                current?Number(e,"mortarDamage"):LastStandUpgradeCatalog.BaseMortarDamage,current?Number(e,"railgunDamage"):LastStandUpgradeCatalog.BaseRailgunDamage,loadout,combatResearch,combat);
+                current?Number(e,"mortarDamage"):LastStandUpgradeCatalog.BaseMortarDamage,current?Number(e,"railgunDamage"):LastStandUpgradeCatalog.BaseRailgunDamage,loadout,combatResearch,combat,
+                skills?ReadSkillSnapshot(p["skills"]):LastStandSkillSnapshot.None,skills?ReadSkillState(p["skillState"]):null);
             string economy=schema==LastStandShopCheckpoint.LegacyVersion?LastStandUpgradeCatalog.LegacyEconomyVersion:Text(s,"economyVersion");
             var shop=new LastStandShopCheckpoint(Number(s,"runId"),Number(s,"fitting"),Number(s,"purchaseSequence"),Number(s,"uniqueKills"),
                 Number(s,"earnedScrap"),Number(s,"spentScrap"),Number(s,"scrap"),ReadLevels(s["permanentLevels"],true,economy),ReadLevels(s["runPurchases"],false,economy),

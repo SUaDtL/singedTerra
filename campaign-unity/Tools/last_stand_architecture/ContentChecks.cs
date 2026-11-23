@@ -78,6 +78,8 @@ static class ContentChecks
         Require(LastStandResearchCatalog.Get(LastStandResearchTrackId.SalvageRecovery).Cost(100)==122500,"Recovery cost drift");
         Require(LastStandFittingCatalog.Parse("repair")==LastStandFitting.Repair&&LastStandFittingCatalog.Id(LastStandFitting.Scattergun)=="scattergun","Fitting identity drift");
         LastStandContentCatalog.Current.Validate();
+        Require(LastStandContentCatalog.Current.Skills.Count==6&&LastStandContentCatalog.Current.SkillVersion==LastStandSkillCatalog.Version,"Skills missing from current content identity");
+        Require(LastStandContentCatalog.Get("last-stand-content-v3")==LastStandContentCatalog.Buildcraft&&LastStandContentCatalog.Buildcraft.Skills.Count==0,"Retained buildcraft content remains skill-free");
     }
     static void Main(string[] args)
     { if(args[0]=="extension")Extension();else if(args[0]=="invalid")Invalid();else if(args[0]=="legacy")Legacy();else throw new Exception("Unknown case");Console.WriteLine("PASS "+args[0]); }

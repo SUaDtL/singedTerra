@@ -1,3 +1,4 @@
+import {assertSkillProfile} from '../e2e/helpers/lastStandWaveGuards.mjs';
 // Normal-speed source-bound footage through visible player controls. No seeded saves.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -29,6 +30,7 @@ const runnerInputs = () => Object.fromEntries(['scripts/last-stand-combat-feedba
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
 'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json',
   'scripts/assets/verify-last-stand-source.mjs', 'scripts/assets/verify-last-stand.mjs'].map(path =>
   [path, createHash('sha256').update(readFileSync(path)).digest('hex')]));
 if (baseline) {
@@ -175,9 +177,9 @@ export async function assertCombatCaptureSave({page,baseline,state}) {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('singedTerra.lastStand.prototype.v1')));
     if(baseline)assert.equal(saved.credits,0,'Archived pre-wave capture has no banked wave income');
     else {
-      assert.ok([7,8].includes(saved.version),'Supported capture requires save version 7 or 8');
+      assert.ok([7,8,9].includes(saved.version),'Supported capture requires save version 7, 8 or 9');
       assert.ok(saved.checkpoint?.encounter.completedWave>0,'Current capture completed a durable wave');
-      assertWaveCheckpointEdition(saved.checkpoint,saved.version);
+      assertWaveCheckpointEdition(saved.checkpoint,saved.version);if(saved.version===9)assertSkillProfile(saved.skills);
       assert.ok(saved.credits>0,'Cleared waves bank income during the run');
       assert.equal(saved.credits,state().wallet,'Stored wave income matches live wallet');
     }

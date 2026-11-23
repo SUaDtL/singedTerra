@@ -167,12 +167,28 @@ namespace SingedTerra.LastStand
                 case EncounterEventKind.Scattergun: Play(scattergun,"scattergun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Mortar: Play(mortar,"mortar"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
                 case EncounterEventKind.Railgun: Play(railgun,"railgun"); Play(targetAlive?impact:destruction,targetAlive?"impact":"destruction"); break;
+                case EncounterEventKind.Overdrive: Play(railgun,"skill-overdrive"); break;
+                case EncounterEventKind.EmergencyRepairs: Play(purchase,"skill-repairs"); break;
+                case EncounterEventKind.MinefieldArmed: Play(scattergun,"skill-mines-armed"); break;
+                case EncounterEventKind.Minefield: Play(destruction,"skill-minefield"); break;
                 case EncounterEventKind.CloseHit:
                 case EncounterEventKind.RangedHit: Play(impact,"impact"); break;
             }
         }
         public void PlayDefeat() { Play(defeat,"defeat"); }
         public void PlayPurchase() { Play(purchase,"purchase",gesture:true); }
+        // Called only after the controller accepts a real skill input. This
+        // instant cue is not a simulation catch-up callback; normal focus,
+        // pause, mute and gain admission still applies inside Play.
+        public void PlaySkillActivation(LastStandSkillId id)
+        {
+            switch(id)
+            {
+                case LastStandSkillId.Overdrive:Play(railgun,"skill-overdrive",gesture:true);break;
+                case LastStandSkillId.EmergencyRepairs:Play(purchase,"skill-repairs",gesture:true);break;
+                case LastStandSkillId.Minefield:Play(scattergun,"skill-mines-armed",gesture:true);break;
+            }
+        }
         // Visibility callbacks own visibility only. The controller owns explicit
         // Pause/failure/catch-up suspension, which focus return must not clear.
         void OnApplicationFocus(bool value) { focused=value; if(!value)Stop(); SyncMusic(); }

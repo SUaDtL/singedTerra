@@ -201,9 +201,9 @@ internal static class GuidanceChecks
 
     private static void HelpTopicsAreOrderedAndAvailable()
     {
-        string[] ids = { "controls", "waves", "checkpoints", "tiers", "upgrades", "research", "saves" };
+        string[] ids = { "controls", "waves", "checkpoints", "tiers", "upgrades", "research", "skills", "saves" };
         var topics = LastStandGuidance.HelpTopics;
-        Check(topics.Count == ids.Length, "seven focused Help topics");
+        Check(topics.Count == ids.Length, "eight focused Help topics");
         for (int i = 0; i < ids.Length; i++)
         {
             var topic = topics[i];
@@ -211,14 +211,19 @@ internal static class GuidanceChecks
                 "stable topic ordering and nonempty player content");
             Check(Object.ReferenceEquals(topic, LastStandGuidance.HelpTopic(ids[i])), "topic lookup retains the shared owner");
             Check(topic.Destination == "" || topic.Destination == "settings" || topic.Destination == "milestones" ||
-                topic.Destination == "workshop" || topic.Destination == "research" || topic.Destination == "data",
+                topic.Destination == "workshop" || topic.Destination == "research" || topic.Destination == "skills" || topic.Destination == "data",
                 "help links only address existing feature owners");
             Check((topic.Destination.Length == 0) == (topic.ActionLabel.Length == 0), "links have meaningful labels");
         }
         Check(LastStandGuidance.HelpTopic(null) == null && LastStandGuidance.HelpTopic("unknown") == null,
             "unknown topics do not silently select another page");
         var guidance = new LastStandGuidance(); guidance.Configure(false, false);
-        Check(LastStandGuidance.HelpTopics.Count == 7, "explicit Help remains available with all tips disabled");
+        Check(LastStandGuidance.HelpTopics.Count == ids.Length, "explicit Help remains available with all tips disabled");
+        var skills = LastStandGuidance.HelpTopic("skills");
+        Check(skills.Destination == "skills" && Contains(skills.Body, "In the garage") &&
+            Contains(skills.Body, "Skill Intel") && Contains(skills.Body, "one use per run") &&
+            Contains(skills.Body, "roll back together") && Contains(skills.Body, "never refills"),
+            "Skills help explains garage preparation, currency, limited use and checkpoint rollback");
         Check(Contains(LastStandGuidance.HelpTopic("research").Body, "real time") &&
             Contains(LastStandGuidance.HelpTopic("research").Body, "Salvage"), "research explains its clock and currency");
         string saves = LastStandGuidance.HelpTopic("saves").Body;

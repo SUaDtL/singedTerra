@@ -23,14 +23,18 @@ namespace SingedTerra.LastStand
         public IReadOnlyList<LastStandEnvironmentIdentity> Environments { get; }
         public IReadOnlyList<LastStandFittingDefinition> Fittings { get; }
         public LastStandResearchDefinitions Research { get; }
+        public IReadOnlyList<LastStandSkillDefinition> Skills { get; }
+        public string SkillVersion { get; }
         public LastStandContentManifest(string version,IEnumerable<LastStandTierDefinition> tiers,
-            IEnumerable<LastStandEnvironmentIdentity> environments,IEnumerable<LastStandFittingDefinition> fittings,LastStandResearchDefinitions research)
+            IEnumerable<LastStandEnvironmentIdentity> environments,IEnumerable<LastStandFittingDefinition> fittings,LastStandResearchDefinitions research,
+            IEnumerable<LastStandSkillDefinition> skills=null,string skillVersion=null)
         {
             if(String.IsNullOrWhiteSpace(version)||version.Length>80||tiers==null||environments==null||fittings==null||research==null)
                 throw new ArgumentException("Incomplete content manifest.");
             Version=version;Tiers=new List<LastStandTierDefinition>(tiers).AsReadOnly();
             Environments=new List<LastStandEnvironmentIdentity>(environments).AsReadOnly();
             Fittings=new List<LastStandFittingDefinition>(fittings).AsReadOnly();Research=research;
+            Skills=new List<LastStandSkillDefinition>(skills??new LastStandSkillDefinition[0]).AsReadOnly();SkillVersion=skillVersion;
             Validate();
             foreach(var tier in Tiers)tierById.Add(tier.Id,tier);
             foreach(var environment in Environments)environmentById.Add(environment.Id,environment);
@@ -51,6 +55,12 @@ namespace SingedTerra.LastStand
                 tiers.Add(tier.Id);if(!environments.Contains(tier.EnvironmentId))throw new ArgumentException("Tier references a missing environment.");
             }
             var fittings=new HashSet<string>(StringComparer.Ordinal);var mechanics=new HashSet<LastStandFitting>();
+            if(Skills.Count>LastStandSkillCatalog.Count||Skills.Count>0&&SkillVersion!=LastStandSkillCatalog.Version||Skills.Count==0&&SkillVersion!=null)
+                throw new ArgumentException("Invalid skill content version or bounds.");
+            var skillIds=new HashSet<LastStandSkillId>();var skillKeys=new HashSet<string>(StringComparer.Ordinal);
+            foreach(var skill in Skills)
+                if(skill==null||!skillIds.Add(skill.Id)||!skillKeys.Add(skill.Key)||LastStandSkillCatalog.Get(skill.Id).Key!=skill.Key||skill.UnlockWave<1)
+                    throw new ArgumentException("Duplicate or invalid skill content.");
             foreach(var fitting in Fittings)
             {
                 if(fitting==null||!fittings.Add(fitting.Id)||!mechanics.Add(fitting.Mechanic))throw new ArgumentException("Duplicate fitting identity or mechanic.");
@@ -117,10 +127,12 @@ namespace SingedTerra.LastStand
         public static LastStandContentManifest Legacy { get; } = new LastStandContentManifest(LastStandRunEdition.LegacyContentVersion,
             LastStandTierCatalog.Legacy,new[]{Environments[0],Environments[1]},LastStandFittingCatalog.Legacy,LastStandResearchCatalog.Definitions);
         public static LastStandContentManifest Current { get; } = new LastStandContentManifest(LastStandRunEdition.CurrentContentVersion,
+            LastStandTierCatalog.All,Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions,LastStandSkillCatalog.All,LastStandSkillCatalog.Version);
+        public static LastStandContentManifest Buildcraft { get; } = new LastStandContentManifest(LastStandRunEdition.BuildcraftContentVersion,
             LastStandTierCatalog.All,Environments,LastStandFittingCatalog.Definitions,LastStandResearchCatalog.Definitions);
         public static LastStandContentManifest CombatDepth { get; } = new LastStandContentManifest(LastStandRunEdition.CombatDepthContentVersion,
             LastStandTierCatalog.CombatDepth,new[]{Environments[0],Environments[1],Environments[2],Environments[3]},LastStandFittingCatalog.CombatDepth,LastStandResearchCatalog.Definitions);
-        public static LastStandContentManifest Get(string version)=>version==Legacy.Version?Legacy:version==CombatDepth.Version?CombatDepth:version==Current.Version?Current:
+        public static LastStandContentManifest Get(string version)=>version==Legacy.Version?Legacy:version==CombatDepth.Version?CombatDepth:version==Buildcraft.Version?Buildcraft:version==Current.Version?Current:
             throw new ArgumentException("Unsupported content edition.");
         public static LastStandEnvironmentIdentity Environment(string id)
         {

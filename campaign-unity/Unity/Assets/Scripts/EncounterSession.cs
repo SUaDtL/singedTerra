@@ -155,6 +155,18 @@ namespace SingedTerra.Encounter
             { if (runClock.Failed) Fail("InvalidClock"); return false; }
             PublishClockAction("menu"); return true;
         }
+        public bool CanActivateSkill(LastStandSkillId id)=>BackgroundContinuation&&CanRun&&!Paused&&!CheckpointBlocked&&
+            Failure==""&&!CatchingUp&&!reconciling&&model!=null&&model.CanActivateSkill(id);
+        public bool TryActivateSkill(LastStandSkillId id)=>TryActivateSkillAt(Time.realtimeSinceStartupAsDouble,id);
+        public bool TryActivateSkillAt(double timestamp,LastStandSkillId id)
+        {
+            // Reconcile elapsed time first, then recheck the live model. A click
+            // cannot affect past simulation or cross a failed wave transaction.
+            var selected=model;
+            if(!CanActivateSkill(id)||BeforeAdvance!=null&&!BeforeAdvance()||
+                !PrepareClockAction(timestamp)||model!=selected||!CanActivateSkill(id)||!model.TryActivateSkill(id))return false;
+            View.Present(model);View.Render(model);Emit("skill-"+LastStandSkillCatalog.Get(id).Key);return true;
+        }
         bool PrepareClockAction(double timestamp)
         {
             if (CheckpointBlocked || !BackgroundContinuation || model == null || Failure != "" || CatchingUp || !CanRun) return false;
@@ -243,6 +255,7 @@ namespace SingedTerra.Encounter
                     TerminalElapsedSeconds = Math.Min(.48, TerminalElapsedSeconds + elapsed);
                     View.Advance((float)Math.Min(elapsed, .7));
                     if (CanRun) art.AdvanceTerminalShot((float)Math.Min(elapsed, .1));
+                    reconciling = false;
                     if (elapsed > 0) Changed?.Invoke();
                     return;
                 }
@@ -269,6 +282,10 @@ namespace SingedTerra.Encounter
                         timestamp - runClock.LastStepTimestamp));
                 }
                 View.Render(current); View.Advance((float)Math.Min(elapsed, .7));
+                // All admitted steps and their feedback are complete. Publish
+                // controls against the settled admission state; retained debt
+                // remains gated by CatchingUp, even on a short frame batch.
+                reconciling = false;
                 if (current.Status != EncounterStatus.Running && !terminalReported)
                 { terminalReported = true; Emit("terminal"); }
                 else if (current.Tick / 20 != lastReportSecond)

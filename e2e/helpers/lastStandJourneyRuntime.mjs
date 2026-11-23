@@ -262,7 +262,11 @@ export async function verifyRetiredCampaignReturn({report,selected,check,page}) 
     check(campaignItems.length===1&&campaignItems[0]==='last-stand','native Return offers only Last Stand');
     report.retired_campaign_preservation.retirement='observed Last Stand only';
 }
-export async function resumeReturnedJourney({resize,captureViewport,gameClick}) {
+export async function resumeReturnedJourney({resize,captureViewport,gameClick,states,layouts,report}) {
   await resize(captureViewport);
-  return gameClick('Deploy','resume');
+  const state=states.at(-1),layout=layouts.at(-1);
+  assert.equal(state?.hasCheckpoint,true,'Return must resume its preserved checkpoint');
+  const name=lastStandDeploymentControl(state,layout);
+  report.return_resume={state,layout};
+  return gameClick(name,'resume');
 }

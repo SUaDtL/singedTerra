@@ -1,6 +1,6 @@
 import matchFrameUrl from '../../assets/battle-console/battle-match-frame-v2.webp';
 import armoryFrameUrl from '../../assets/battle-console/battle-armory-frame-ultrawide-v3.webp';
-import type { JSX } from 'preact';
+import type { CSSProperties } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { CompactConsole } from './components/CompactConsole';
 import { WeaponIcon } from './components/WeaponIcon';
@@ -27,7 +27,7 @@ interface RuntimeRect {
   readonly height: number;
 }
 
-function markerStyle(rect: RuntimeRect): JSX.CSSProperties {
+function markerStyle(rect: RuntimeRect): CSSProperties {
   return {
     position: 'absolute',
     left: `${rect.x}px`,
@@ -545,7 +545,7 @@ export function BattleConsoleRoot({
       data-battle-console-semantic-tree=""
       data-battle-console-scope="css-module"
       data-battle-console-canonical-ink={canonicalInkKeys || undefined}
-      style={{ '--battle-console-scale': String(scale) } as JSX.CSSProperties}
+      style={{ '--battle-console-scale': String(scale) } as CSSProperties}
     >
       <SemanticAtlasPreloads />
       <div class={classNames.inline} data-console-owner="preact" inert={inlineInert || undefined}>

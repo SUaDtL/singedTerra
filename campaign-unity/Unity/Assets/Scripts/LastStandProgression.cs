@@ -37,11 +37,13 @@ namespace SingedTerra.LastStand
         public int UnlockedEquipmentBays { get; }
         public int UnlockedResearchLabs { get; }
         public bool UnlockedCombatResearch { get; }
+        public int SkillIntel { get; }
         internal LastStandWaveReceipt(int wave,int salvage,string milestone,string fitting,int tier,
-            int equipmentBays=0,int researchLabs=0,bool combatResearch=false)
+            int equipmentBays=0,int researchLabs=0,bool combatResearch=false,int skillIntel=0)
         {
             Wave=wave; Salvage=salvage; MilestoneId=milestone; UnlockedFitting=fitting; UnlockedTier=tier;
             UnlockedEquipmentBays=equipmentBays;UnlockedResearchLabs=researchLabs;UnlockedCombatResearch=combatResearch;
+            SkillIntel=skillIntel;
         }
     }
 
@@ -68,6 +70,10 @@ namespace SingedTerra.LastStand
             public string SelectedFitting="repair";
             public string SecondaryFitting;
             public LastStandLoadoutPreset[] Presets=new LastStandLoadoutPreset[LastStandLoadoutPreset.MaximumPresets];
+            public int SkillIntel;
+            public int[] SkillCopies=new int[LastStandSkillCatalog.Count];
+            public LastStandSkillLoadout SelectedSkills=LastStandSkillLoadout.Empty;
+            public HashSet<string> SkillFirstAwards=new HashSet<string>(StringComparer.Ordinal);
             public PendingDefeat Pending;
             public LastStandRunCheckpoint Checkpoint;
             public Dictionary<string,TierRecord> Tiers=new Dictionary<string,TierRecord>(StringComparer.Ordinal);
@@ -86,6 +92,8 @@ namespace SingedTerra.LastStand
                 copy.FirstClears=new HashSet<string>(FirstClears,StringComparer.Ordinal);
                 copy.Fittings=new HashSet<string>(Fittings,StringComparer.Ordinal);
                 copy.Presets=(LastStandLoadoutPreset[])Presets.Clone();
+                copy.SkillCopies=(int[])SkillCopies.Clone();
+                copy.SkillFirstAwards=new HashSet<string>(SkillFirstAwards,StringComparer.Ordinal);
                 copy.Research=Research?.Clone();
                 copy.History=History?.Copy();
                 return copy;
@@ -211,7 +219,7 @@ namespace SingedTerra.LastStand
                 !IsTierUnlocked(SelectedTier) || !IsFittingUnlocked(SelectedFitting)||!LastStandTierCatalog.Get(SelectedTier).Playable||
                 !LastStandRunEdition.Current.Supports(LastStandFittingCatalog.Parse(SelectedFitting)))return false;
             var next=committed.Copy();
-            next.Checkpoint=LastStandRunCheckpoint.Start(next.NextRunId,next.SelectedTier,SelectedLoadout,next.Levels,LastStandRunEdition.Current,CaptureCombatResearch());
+            next.Checkpoint=LastStandRunCheckpoint.Start(next.NextRunId,next.SelectedTier,SelectedLoadout,next.Levels,LastStandRunEdition.Current,CaptureCombatResearch(),CaptureSkills());
             next.History.Begin(next.NextRunId,next.SelectedTier,next.Checkpoint.Loadout.ToString(),next.Checkpoint.Shop.EconomyVersion,ResearchContext(next));
             next.NextRunId++;
             return Commit(next,()=>LastReceipt=null);
@@ -226,7 +234,7 @@ namespace SingedTerra.LastStand
                 model.Tick<=Checkpoint.Encounter.Tick || model.Kills<Checkpoint.Encounter.Kills)return false;
             // Both snapshots validate their own conservation and boundary invariants.
             var boundary=new LastStandRunCheckpoint(shop.RunId,model.CaptureCheckpoint(),shop.CaptureCheckpoint());
-            if(!boundary.Loadout.Equals(Checkpoint.Loadout)||!boundary.CombatResearch.Equals(Checkpoint.CombatResearch))return false;
+            if(!boundary.Loadout.Equals(Checkpoint.Loadout)||!boundary.CombatResearch.Equals(Checkpoint.CombatResearch)||!boundary.Skills.Equals(Checkpoint.Skills))return false;
             var next=committed.Copy();
             var tier=boundary.Edition.Tier(boundary.Tier);
             var reward=LastStandRewardCatalog.At(tier,boundary.CompletedWave,boundary.Edition);
@@ -239,6 +247,9 @@ namespace SingedTerra.LastStand
             if(amount>int.MaxValue-next.Wallet)
             { Block("Salvage storage is full. This wave has not been saved.");return false; }
             next.Wallet+=(int)amount;
+            int skillIntel;
+            try{skillIntel=AwardSkillIntel(next,boundary.Tier,boundary.CompletedWave);}
+            catch(OverflowException){Block("Skill Intel storage is full. This wave has not been saved.");return false;}
             if(!UseLiveHistory(next,history))return false;
             if(!next.History.BankWave(boundary.CompletedWave,reward.RepeatableSalvage,milestone,
                 repeatable-reward.RepeatableSalvage,ResearchContext(next,boundary.Shop)))return false;
@@ -274,7 +285,7 @@ namespace SingedTerra.LastStand
                 first?reward.Milestone.Id:null,unlockedFitting,unlockedTier,
                 afterEntitlements.EquipmentBays>beforeEntitlements.EquipmentBays?afterEntitlements.EquipmentBays:0,
                 afterEntitlements.ResearchLabs>beforeEntitlements.ResearchLabs?afterEntitlements.ResearchLabs:0,
-                afterEntitlements.CombatResearch&&!beforeEntitlements.CombatResearch);
+                afterEntitlements.CombatResearch&&!beforeEntitlements.CombatResearch,skillIntel);
             return Commit(next,()=>LastReceipt=receipt);
         }
         public bool TryFinalizeRun(LastStandRunHistory history=null,string reason="defeat",LastStandShopState shop=null)

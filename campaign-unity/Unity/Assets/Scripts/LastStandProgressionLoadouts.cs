@@ -26,20 +26,23 @@ namespace SingedTerra.LastStand
         public bool TrySaveLoadoutPreset(int slot,string name,LastStandLoadout loadout)
         {
             if(!Ready||slot<0||slot>=LastStandLoadoutPreset.MaximumPresets||loadout==null||!loadout.IsAvailable(EquipmentBayCount,IsFittingUnlocked))return false;
-            LastStandLoadoutPreset preset;try{preset=new LastStandLoadoutPreset(name,loadout);}catch(ArgumentException){return false;}
+            LastStandLoadoutPreset preset;try{preset=new LastStandLoadoutPreset(name,loadout,SelectedSkills);}catch(ArgumentException){return false;}
             var next=committed.Copy();next.Presets[slot]=preset;return Commit(next,null);
         }
         public bool TryApplyLoadoutPreset(int slot)=>Ready&&slot>=0&&slot<LastStandLoadoutPreset.MaximumPresets&&
-            committed.Presets[slot]!=null&&TryApplyLoadout(committed.Presets[slot].Loadout);
+            committed.Presets[slot]!=null&&TryApplyLoadoutPreset(slot,committed.Presets[slot].Name,committed.Presets[slot].Loadout,committed.Presets[slot].Skills,Revision);
         public bool TryApplyLoadoutPreset(int slot,string name,LastStandLoadout loadout,long expectedRevision)
+            =>TryApplyLoadoutPreset(slot,name,loadout,SelectedSkills,expectedRevision);
+        public bool TryApplyLoadoutPreset(int slot,string name,LastStandLoadout loadout,LastStandSkillLoadout skills,long expectedRevision)
         {
             if(!Ready||expectedRevision!=Revision||slot<0||slot>=LastStandLoadoutPreset.MaximumPresets||
-                loadout==null||!loadout.IsAvailable(EquipmentBayCount,IsFittingUnlocked))return false;
+                loadout==null||!loadout.IsAvailable(EquipmentBayCount,IsFittingUnlocked)||!SkillsAvailable(committed,skills))return false;
             LastStandLoadoutPreset preset;
-            try{loadout.ValidateEdition(LastStandRunEdition.Current);preset=new LastStandLoadoutPreset(name,loadout);}
+            try{loadout.ValidateEdition(LastStandRunEdition.Current);preset=new LastStandLoadoutPreset(name,loadout,skills);}
             catch(ArgumentException){return false;}
             var next=committed.Copy();next.Presets[slot]=preset;
             next.SelectedFitting=loadout.PrimaryId;next.SecondaryFitting=loadout.SecondaryId;
+            next.SelectedSkills=skills;
             return Commit(next,null);
         }
         public bool TryClearLoadoutPreset(int slot)

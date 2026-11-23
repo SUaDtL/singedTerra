@@ -1,3 +1,4 @@
+import {assertSkillProfile} from '../e2e/helpers/lastStandWaveGuards.mjs';
 // Explicit accelerated, production-earned setup. This is separate from the
 // ordinary fresh-account journey and does not establish elapsed-time endurance.
 import assert from 'node:assert/strict';
@@ -16,7 +17,7 @@ const root=resolve(import.meta.dirname,'..'),key='singedTerra.lastStand.prototyp
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
   ...WAVE_ORACLE_SOURCES.map(name=>'campaign-unity/Unity/Assets/Scripts/'+name),
-  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
+  ...['LastStandProgression','LastStandProgressionLoadouts','LastStandProgressionSkills','LastStandProgressionSkillsSave','LastStandStore','LastStandRunCheckpoint','LastStandProgressionSave','LastStandLegacySave',
     'LastStandSaveJson','LastStandProgressionAppearance','Content/LastStandTankAppearance','LastStandProgressionBackup','LastStandProgressionResearch','LastStandProgressionResearchSave','LastStandRunHistory',
     'LastStandResearchState','LastStandResearchCatalog','LastStandResearchClock','Content/LastStandResearchDefinitions']
     .map(name=>'campaign-unity/Unity/Assets/Scripts/'+name+'.cs'),
@@ -25,8 +26,8 @@ export const MILESTONE_FIXTURE_SOURCES=Object.freeze([
   'campaign-unity/Tools/last_stand_source_closure.py','campaign-unity/Tools/last_stand_test_runtime.py']);
 export function admitMilestoneSaves(saved,expected,fixture){
   for(const value of [saved,expected]){
-    assert.ok([7,8].includes(value?.version),'Supported milestone requires save version 7 or 8');
-    assertWaveCheckpointEdition(value.checkpoint,value.version);
+    assert.ok([7,8,9].includes(value?.version),'Supported milestone requires save version 7, 8 or 9');
+    assertWaveCheckpointEdition(value.checkpoint,value.version);if(value.version===9)assertSkillProfile(value.skills);
   }
   assert.deepEqual(assertWaveCheckpointEdition(saved.checkpoint),assertWaveCheckpointEdition(expected.checkpoint),
     'Expected milestone must retain its saved edition');
@@ -268,7 +269,8 @@ export const MILESTONE_RUNNER_INPUTS=Object.freeze(['scripts/last-stand-wave-mil
   'campaign-unity/Tools/contracts/last-stand-observation-v2.json','campaign-unity/Tools/contracts/last-stand-observation-v3.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v4.json',
   'campaign-unity/Tools/contracts/last-stand-observation-v5.json',
-'campaign-unity/Tools/contracts/last-stand-observation-v6.json']);
+'campaign-unity/Tools/contracts/last-stand-observation-v6.json',
+'campaign-unity/Tools/contracts/last-stand-observation-v7.json']);
 export function hashMilestoneRunnerInputs({directory=root,readFile=readFileSync,resolvePath=resolve,hashBytes=hash}={}) {
   return Object.fromEntries(MILESTONE_RUNNER_INPUTS.map(path=>[path,hashBytes(readFile(resolvePath(directory,path)))]));
 }

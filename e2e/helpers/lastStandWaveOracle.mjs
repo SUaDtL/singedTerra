@@ -7,19 +7,20 @@ import { spawnSync } from 'node:child_process';
 import { verifyLastStandSource } from '../../scripts/assets/verify-last-stand-source.mjs';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
-export const WAVE_ORACLE_SOURCES=Object.freeze(['EncounterModel.cs','EncounterBuildcraft.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
+export const WAVE_ORACLE_SOURCES=Object.freeze(['EncounterModel.cs','EncounterBuildcraft.cs','EncounterSkills.cs','Content/LastStandSkillCatalog.cs','EncounterProfile.cs','LastStandTierCatalog.cs',
   'LastStandWaveCatalog.cs','LastStandRewardCatalog.cs','LastStandSelection.cs','LastStandUpgradeCatalog.cs','LastStandEconomyCatalog.cs','MechanicsShopModel.cs',
   'LastStandShopState.cs','LastStandRunClock.cs','LastStandSpeedPolicy.cs','Content/LastStandRunEdition.cs','Content/LastStandLoadout.cs','Content/LastStandEnemyCatalog.cs','EncounterFoeKind.cs','EncounterGeometry.cs']);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fileSha=path=>sha(readFileSync(path));
 
 export const COMBAT_DEPTH_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v2',contentVersion:'last-stand-content-v2',economyVersion:'combat-depth-economy-v4'});
-export const CURRENT_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v3',contentVersion:'last-stand-content-v3',economyVersion:'buildcraft-economy-v5'});
+export const BUILDCRAFT_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v3',contentVersion:'last-stand-content-v3',economyVersion:'buildcraft-economy-v5'});
+export const CURRENT_WAVE_EDITION=Object.freeze({rulesVersion:'last-stand-waves-v4',contentVersion:'last-stand-content-v4',economyVersion:'buildcraft-economy-v5'});
 const RETAINED_ECONOMIES=['long-run-economy-v1','research-farming-economy-v2','research-farming-economy-v3'];
 export function waveOracleProfileKeys(edition=CURRENT_WAVE_EDITION){
-  const current=edition.rulesVersion===CURRENT_WAVE_EDITION.rulesVersion;
+  const current=edition.rulesVersion===CURRENT_WAVE_EDITION.rulesVersion||edition.rulesVersion===BUILDCRAFT_WAVE_EDITION.rulesVersion;
   const depth=edition.rulesVersion===COMBAT_DEPTH_WAVE_EDITION.rulesVersion;
-  if(current)assert.deepEqual(edition,CURRENT_WAVE_EDITION,'Unsupported oracle edition');
+  if(current)assert.deepEqual(edition,edition.rulesVersion===BUILDCRAFT_WAVE_EDITION.rulesVersion?BUILDCRAFT_WAVE_EDITION:CURRENT_WAVE_EDITION,'Unsupported oracle edition');
   else if(depth)assert.deepEqual(edition,COMBAT_DEPTH_WAVE_EDITION,'Unsupported retained combat-depth edition');
   else {
     assert.ok(RETAINED_ECONOMIES.includes(edition.economyVersion),'Unsupported oracle economy');
@@ -43,7 +44,7 @@ export function parseWaveOracleCsv(raw,{edition,format='auto'}={}) {
   if(format!=='auto')assert.equal(detected,format,'Oracle fields differ from declared format');
   const archived=detected===1,buildcraft=detected===3;
   edition??=buildcraft?CURRENT_WAVE_EDITION:archived?{rulesVersion:'last-stand-waves-v1',contentVersion:'last-stand-content-v1',economyVersion:'research-farming-economy-v3'}:COMBAT_DEPTH_WAVE_EDITION;
-  assert.equal(edition.rulesVersion==='last-stand-waves-v3',buildcraft,'Oracle format must match buildcraft edition');
+  assert.equal(['last-stand-waves-v3','last-stand-waves-v4'].includes(edition.rulesVersion),buildcraft,'Oracle format must match buildcraft or skills edition');
   if(archived)assert.equal(edition.rulesVersion,'last-stand-waves-v1','Archive format retains original rules');
   const identities=new Set(waveOracleProfileKeys(edition));
   for(const line of text.slice(0,-2).split('\r\n')) {
@@ -83,7 +84,7 @@ export function parseWaveOracleCsv(raw,{edition,format='auto'}={}) {
 // Browser qualification always requires the inspected export binding. Local
 // development tests may explicitly request source-only proof, which is labeled.
 export function buildWaveOracle(output,{requireExport=true,maximumTicks=12000,edition=CURRENT_WAVE_EDITION}={}) {
-  const expectedProfiles=waveOracleProfileKeys(edition),format=edition.rulesVersion===CURRENT_WAVE_EDITION.rulesVersion?3:2;
+  const expectedProfiles=waveOracleProfileKeys(edition),format=[CURRENT_WAVE_EDITION.rulesVersion,BUILDCRAFT_WAVE_EDITION.rulesVersion].includes(edition.rulesVersion)?3:2;
   assert.ok(Number.isInteger(maximumTicks) && maximumTicks>=100 && maximumTicks<=24000,'Wave oracle tick bound');
   const directory=join(output,'wave-model-oracle');mkdirSync(directory,{recursive:false});
   const scripts=join(ROOT,'campaign-unity/Unity/Assets/Scripts');

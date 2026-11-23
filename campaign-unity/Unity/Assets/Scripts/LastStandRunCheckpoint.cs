@@ -15,6 +15,7 @@ namespace SingedTerra.LastStand
         public LastStandRunEdition Edition { get; }
         public LastStandLoadout Loadout=>Encounter.Loadout;
         public LastStandCombatResearchSnapshot CombatResearch=>Encounter.CombatResearch;
+        public LastStandSkillSnapshot Skills=>Encounter.Skills;
         public int CompletedWave=>Encounter.CompletedWave;
         public EncounterCheckpoint Encounter { get; }
         public LastStandShopCheckpoint Shop { get; }
@@ -24,11 +25,14 @@ namespace SingedTerra.LastStand
                 !encounter.Loadout.Equals(shop.Loadout)||!encounter.CombatResearch.Equals(shop.CombatResearch) || encounter.Kills!=shop.UniqueKills)
                 throw new ArgumentException("Checkpoint identities do not match.");
             Edition=LastStandRunEdition.Resolve(encounter.RulesVersion,contentVersion??LastStandRunEdition.ContentForRules(encounter.RulesVersion),shop.EconomyVersion);
+            encounter.SkillState.Validate(encounter.Skills,encounter.Tick,encounter.CannonDamage);
+            if(!Edition.IsSkills&&(!encounter.Skills.IsEmpty||encounter.SkillState.SpentMask!=0))
+                throw new ArgumentException("Retained runs cannot contain skills.");
             var restoredShop=LastStandShopState.RestoreCheckpoint(shop,Edition,encounter.Tier);
             if(!Edition.IsLegacy&&(shop.Tier!=encounter.Tier||shop.RewardWave!=encounter.Wave||
                 shop.DefeatedMask!=(encounter.CompletedWave==0?0:(1<<LastStandWaveCatalog.ForWave(Edition.Tier(encounter.Tier),encounter.Wave,Edition).EnemyCount)-1)))
                 throw new ArgumentException("Checkpoint encounter and income cohorts do not match.");
-            var projection=EncounterModel.CreatePlayable(restoredShop.Fitting,encounter.Tier,restoredShop);
+            var projection=EncounterModel.CreatePlayable(restoredShop.Fitting,encounter.Tier,restoredShop,encounter.Skills);
             if(encounter.CannonDamage!=projection.CurrentCannonDamage ||
                 encounter.CommittedCannonDamage!=projection.CommittedCannonDamage ||
                 encounter.LauncherDamage!=projection.CurrentLauncherDamage ||
@@ -50,12 +54,12 @@ namespace SingedTerra.LastStand
         public static LastStandRunCheckpoint Start(int runId,int tier,string fitting,IReadOnlyList<int> levels,LastStandRunEdition edition=null)
             =>Start(runId,tier,new LastStandLoadout(fitting),levels,edition);
         public static LastStandRunCheckpoint Start(int runId,int tier,LastStandLoadout loadout,IReadOnlyList<int> levels,
-            LastStandRunEdition edition=null,LastStandCombatResearchSnapshot combatResearch=null)
+            LastStandRunEdition edition=null,LastStandCombatResearchSnapshot combatResearch=null,LastStandSkillSnapshot skills=null)
         {
             edition=edition??LastStandRunEdition.Current;
             if(loadout==null)throw new ArgumentNullException(nameof(loadout));
             var shop=new LastStandShopState(runId,loadout.Primary,levels,edition.EconomyVersion,edition,tier,loadout,combatResearch);
-            var model=EncounterModel.CreatePlayable(shop.Fitting,tier,shop);
+            var model=EncounterModel.CreatePlayable(shop.Fitting,tier,shop,skills);
             return new LastStandRunCheckpoint(runId,model.CaptureCheckpoint(),shop.CaptureCheckpoint());
         }
     }

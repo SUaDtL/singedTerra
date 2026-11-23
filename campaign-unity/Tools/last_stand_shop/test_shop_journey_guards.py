@@ -79,6 +79,14 @@ def _current_control_fixture():
         ('Close', 'PresetPrevious', 'PresetNext', 'Bay1Previous', 'Bay1Next', 'Bay2Previous', 'Bay2Next',
          'Apply', 'Cancel', 'RotateLeft', 'RotateRight', 'Name')]
     fixture['armoryScrollOffset'] = fixture['armoryMaximumScrollOffset'] = 0
+    fixture['schema'] = 'singedterra-last-stand-observation/v7'
+    fixture['controls'] += [control('CombatSkill'+str(index),'Core') for index in range(3)]
+    fixture['settingsControls'].append(control('MenuSkills','Settings'))
+    fixture['armoryControls'].append(control('ArmorySkills','Armory'))
+    fixture['skillsControls'] = [control(name,'Skills') for name in ['SkillsClose','SkillsDraw']+
+        ['Skill'+name+'Equip' for name in ('Overdrive','EmergencyRepairs','Minefield','ReinforcedHull','Ballistics','ReactiveLining')]+
+        ['SkillsApply','SkillsCancel','SkillsArmory','SkillsRetrySave']]
+    fixture['skillsScrollOffset'] = fixture['skillsMaximumScrollOffset'] = 0
     return fixture
 
 
@@ -1221,6 +1229,8 @@ class ShopJourneyGuardTests(unittest.TestCase):
         actual_core = [names[owner][field] for owner,field in (item.strip().split('.') for item in action_fields.split(','))]
         self.assertIn('core.Add(combat.WaveInfo)',core_source)
         actual_core += re.findall(r'var waveTarget=Node\("([^\"]+)"',owners['combat'])
+        self.assertIn('core.AddRange(combatSkills.Buttons)',core_source)
+        actual_core += ['CombatSkill'+str(index) for index in range(3)]
         actual_settings = re.findall(r'Button\("([^"]+)",', settings_source)
         self.assertIn('new Button[4]', settings_source)
         actual_settings += ['SettingsClose'] + ['SettingsTab' + str(index) for index in range(4)]
@@ -1238,6 +1248,13 @@ class ShopJourneyGuardTests(unittest.TestCase):
         actual_armory += ['ArmoryClose'] + ['ArmoryBay' + str(bay) + direction
             for bay in (1, 2) for direction in ('Previous', 'Next')]
         self.assertCountEqual(actual_armory, [row['name'] for row in fixture['armoryControls']])
+        skills_source = (scripts / 'LastStandSkillsHud.cs').read_text(encoding='utf8')
+        actual_skills = re.findall(r'modal\.Button\("([^\"]+)"', skills_source)
+        self.assertIn('new LastStandModal("Skills"',skills_source)
+        self.assertIn('modal.Button(token+"Equip"',skills_source)
+        actual_skills += ['SkillsClose']+['Skill'+name+'Equip' for name in
+            ('Overdrive','EmergencyRepairs','Minefield','ReinforcedHull','Ballistics','ReactiveLining')]
+        self.assertCountEqual(actual_skills,[row['name'] for row in fixture['skillsControls']])
 
     def test_shop_controls_only_complete_prefix(self):
         """Synthetic current inventory and truncation, never browser qualification."""
@@ -1260,9 +1277,9 @@ assert.equal(controls.observationScope,'complete-controls-only');
 assert.equal(controls.graphicsTruncated,false);
 assert.equal(controls.raw,raw,'Exact synthetic parser input retained');
 assert.equal(Object.hasOwn(controls,'graphics'),false,'No missing graphics fabricated');
-assert.equal(controls.schema,'singedterra-last-stand-observation/v6');
-assert.equal(controls.controls.length,19);assert.equal(controls.shopControls.length,18);assert.equal(controls.settingsControls.length,54);assert.equal(controls.researchControls.length,26);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);assert.equal(controls.appearanceControls.length,33);assert.equal(controls.armoryControls.length,12);
-assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls,...controls.appearanceControls,...controls.armoryControls].map(c=>c.name)).size,188);
+assert.equal(controls.schema,'singedterra-last-stand-observation/v7');
+assert.equal(controls.controls.length,22);assert.equal(controls.shopControls.length,18);assert.equal(controls.settingsControls.length,55);assert.equal(controls.researchControls.length,26);assert.equal(controls.historyControls.length,10);assert.equal(controls.plannerControls.length,16);assert.equal(controls.appearanceControls.length,33);assert.equal(controls.armoryControls.length,13);assert.equal(controls.skillsControls.length,12);
+assert.equal(new Set([...controls.controls,...controls.shopControls,...controls.settingsControls,...controls.researchControls,...controls.historyControls,...controls.plannerControls,...controls.appearanceControls,...controls.armoryControls,...controls.skillsControls].map(c=>c.name)).size,205);
 assert.throws(()=>actual.readShopControlObservation(truncated),/Complete controls/,'Expanded inventory must be complete; truncated new controls cannot qualify');
 const prefix=raw.slice('ST_LS_HUD_LAYOUT '.length).split(',"graphics":')[0];
 const value=JSON.parse(prefix+'}');

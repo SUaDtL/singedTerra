@@ -94,6 +94,22 @@ public static class VisualReviewPolish
             if (filter.name == "ContinuousGround" || meshPath == ReviewRoot + "/Meshes/FeedbackQuad.asset") continue;
             Require(filter.GetComponent<Renderer>(), "scenery mesh has no renderer");
             var vertices = filter.sharedMesh.vertices.Select(v => filter.transform.TransformPoint(v)).ToArray();
+            if(filter.transform.parent.name=="Industrial field detail"&&filter.name.StartsWith("Ground rubble cluster "))
+            {
+                Require(vertices.All(v=>v.y>=center.y&&v.y<center.y+.1f),filter.name+" is not a shallow ground projection");
+                Require(!filter.GetComponent<Collider>(),filter.name+" changes encounter collision");
+                continue;
+            }
+            // The concept adds low cover and rubble inside the ring. These two
+            // render-only batches must remain below the one-metre threat plane;
+            // every tall landmark still satisfies the original silhouette gate.
+            if(filter.transform.parent.name=="Industrial field detail"&&
+                (filter.name=="Field barricades"||filter.name=="Scattered fragments"))
+            {
+                Require(vertices.All(v=>v.y<center.y+.9f),filter.name+" rises into threat silhouettes");
+                Require(!filter.GetComponent<Collider>(),filter.name+" changes encounter collision");
+                continue;
+            }
             var projected = vertices.Select(v => AtThreatHeight(v, camera, center.y + 1)).ToArray();
             var triangles = filter.sharedMesh.triangles;
             float footprint = float.MaxValue, silhouette = float.MaxValue;

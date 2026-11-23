@@ -11,21 +11,29 @@ namespace SingedTerra.LastStand
         string armoryNameInput="";
         public bool CanCustomizeBuild=>CanCustomizeAppearance;
         public LastStandLoadout ArmoryDraft=>armoryEditor.Draft??Progression.SelectedLoadout;
+        public LastStandSkillLoadout ArmorySkillDraft=>armoryEditor.Skills??Progression.SelectedSkills;
+        public string ArmorySkillsSummary
+        {
+            get{var names=new List<string>();foreach(var id in ArmorySkillDraft.Ids)names.Add(LastStandSkillCatalog.Get(id).Name);
+                return "SKILLS "+ArmorySkillDraft.Count+" / "+Progression.SkillSlotCount+"  ·  "+(names.Count==0?"No skills equipped":String.Join("  /  ",names));}
+        }
+        public string ArmorySkillsNavigationLabel=>armoryEditor.HasChanges?"SKILLS / CANCEL DRAFT":"MANAGE SKILLS";
         public int ArmoryPresetSlot=>armoryEditor.Slot;
         public string ArmoryPresetName=>armoryEditor.Name;
         public string ArmoryNameInput=>armoryNameInput;
         public string ArmoryStatus { get; private set; }="";
         public bool ArmoryCanPreview=>MenuPage=="armory" && CanCustomizeBuild &&
-            armoryEditor.Matches(Progression.SelectedLoadout,Progression.LoadoutPresets,Progression.RestoreGeneration);
+            armoryEditor.Matches(Progression.SelectedLoadout,Progression.SelectedSkills,Progression.LoadoutPresets,Progression.RestoreGeneration);
         public bool ArmoryCanApply=>ArmoryCanPreview && armoryNameValid && armoryEditor.HasChanges &&
-            ArmoryDraft.IsAvailable(Progression.EquipmentBayCount,Progression.IsFittingUnlocked);
+            ArmoryDraft.IsAvailable(Progression.EquipmentBayCount,Progression.IsFittingUnlocked) &&
+            ArmorySkillDraft.IsAvailable(Progression.SkillSlotCount,Progression.SkillRank);
         public void OpenArmory()=>OpenMenu("armory");
         void BeginArmory()
         {
-            armoryEditor.Begin(Progression.SelectedLoadout,Progression.LoadoutPresets,Progression.RestoreGeneration);
+            armoryEditor.Begin(Progression.SelectedLoadout,Progression.SelectedSkills,Progression.LoadoutPresets,Progression.RestoreGeneration);
             armoryApplyUnconfirmed=false;armoryNameValid=true;
             armoryNameInput=armoryEditor.Name;
-            ArmoryStatus=Progression.HasCheckpoint?"Prepare your next deployment. Resume keeps the saved run's build.":"Choose fittings, name your build, then Apply.";
+            ArmoryStatus=Progression.HasCheckpoint?"Prepare your next deployment. Resume keeps the saved run's build.":"Choose fittings and skills, name your build, then Apply.";
             art.TrySelectLoadout(ArmoryDraft);
         }
         public void MoveArmoryPreset(int direction)
@@ -78,18 +86,24 @@ namespace SingedTerra.LastStand
         public void ApplyArmory()
         {
             if(!ArmoryCanApply)return;
-            if(!Progression.TryApplyLoadoutPreset(ArmoryPresetSlot,ArmoryPresetName,ArmoryDraft,Progression.Revision))
+            if(!Progression.TryApplyLoadoutPreset(ArmoryPresetSlot,ArmoryPresetName,ArmoryDraft,ArmorySkillDraft,Progression.Revision))
             {armoryApplyUnconfirmed=true;ArmoryStatus=Progression.SaveError??"Build save needs confirmation. Retry the save before continuing.";Refresh("armory-unconfirmed");return;}
             ConfirmArmory();Refresh("armory-saved");
         }
         void ConfirmArmory()
         {
-            armoryEditor.Confirm(Progression.SelectedLoadout,Progression.LoadoutPresets,Progression.RestoreGeneration,ArmoryPresetSlot);
+            armoryEditor.Confirm(Progression.SelectedLoadout,Progression.SelectedSkills,Progression.LoadoutPresets,Progression.RestoreGeneration,ArmoryPresetSlot);
             armoryNameInput=armoryEditor.Name;armoryNameValid=true;
             armoryApplyUnconfirmed=false;ArmoryStatus=Progression.HasCheckpoint?"Build saved for your next deployment. Resume keeps the saved build.":"Build saved. Ready to deploy.";
             art.TrySelectLoadout(ArmoryDraft);
         }
         public void CancelArmory()=>CloseMenu();
+        public void OpenSkillsFromArmory()
+        {
+            if(!ArmoryCanPreview)return;bool discarded=armoryEditor.HasChanges;
+            OpenSkills();
+            if(MenuPage=="skills"&&discarded){SkillsStatus="Unapplied Armory draft cancelled. "+SkillsStatus;Refresh("armory-to-skills");}
+        }
         public void RotateArmory(int direction)
         {if(!ArmoryCanPreview)return;if(direction<0)art.OrbitLeft();else if(direction>0)art.OrbitRight();Refresh("armory-rotate");}
         public void FrameArmory(Rect viewport){if(MenuPage=="armory"&&armoryEditor.IsOpen)art.SetGarageFraming(viewport);}
@@ -140,8 +154,9 @@ namespace SingedTerra.LastStand
             if(MenuPage!="armory"){LeaveArmoryPage(MenuPage);return;}
             var preset=Progression.LoadoutPresets[ArmoryPresetSlot];
             if(armoryApplyUnconfirmed && Progression.SaveState=="ready" && ArmoryDraft.Equals(Progression.SelectedLoadout) &&
-                preset!=null && preset.Name==ArmoryPresetName && preset.Loadout.Equals(ArmoryDraft))ConfirmArmory();
-            if(!armoryEditor.Matches(Progression.SelectedLoadout,Progression.LoadoutPresets,Progression.RestoreGeneration))
+                ArmorySkillDraft.Equals(Progression.SelectedSkills) && preset!=null && preset.Name==ArmoryPresetName &&
+                preset.Loadout.Equals(ArmoryDraft) && preset.Skills.Equals(ArmorySkillDraft))ConfirmArmory();
+            if(!armoryEditor.Matches(Progression.SelectedLoadout,Progression.SelectedSkills,Progression.LoadoutPresets,Progression.RestoreGeneration))
             {ArmoryStatus="Your saved build changed. Close and reopen Armory before editing.";RestoreArmoryPresentation();}
             else if(Progression.SaveState!="ready")ArmoryStatus=Progression.SaveError??"Confirm the local save before applying changes.";
         }

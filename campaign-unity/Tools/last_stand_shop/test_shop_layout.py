@@ -18,6 +18,7 @@ sys.dont_write_bytecode = True
 PROJECT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from last_stand_test_runtime import MONO, CSC, COMPILER_MODE
+from last_stand_source_closure import complete_sources
 SOURCE = PROJECT / "Unity/Assets/Scripts/LastStandHudLayout.cs"
 DRIVER = Path(__file__).with_name("ShopLayoutChecks.cs")
 
@@ -43,7 +44,7 @@ class ShopLayoutTests(unittest.TestCase):
                 datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
             )
             cls.evidence.mkdir(parents=True, exist_ok=False)
-        sources = [SOURCE, DRIVER]
+        sources = complete_sources(SOURCE.parent, [SOURCE, DRIVER])
         cls.source_hashes = {str(p): file_hash(p) for p in sources}
         cls.tool_hashes = {str(p): file_hash(p) for p in (Path(sys.executable), MONO, CSC)}
         if cls.evidence:

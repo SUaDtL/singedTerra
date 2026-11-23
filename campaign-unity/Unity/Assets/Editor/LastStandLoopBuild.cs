@@ -25,6 +25,54 @@ public static class LastStandLoopBuild
     const string GraphicsPath = "ProjectSettings/GraphicsSettings.asset";
     const string QualityPath = "ProjectSettings/QualitySettings.asset";
 
+    internal sealed class WebRendererDebugScope : IDisposable
+    {
+        readonly string[] paths;
+        readonly UniversalRendererData[] renderers;
+        readonly Shader[] originals;
+        readonly byte[][] savedBytes;
+
+        internal WebRendererDebugScope()
+        {
+            // Resources pipelines can introduce renderers beyond the saved scene.
+            // Remove their unsupported debug references for this export as well.
+            paths = AssetDatabase.FindAssets("t:UniversalRendererData", new[] { "Assets" })
+                .Select(AssetDatabase.GUIDToAssetPath).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+            renderers = paths.Select(AssetDatabase.LoadAssetAtPath<UniversalRendererData>).ToArray();
+            Require(renderers.Length > 0 && renderers.All(renderer => renderer), "Saved WebGL renderer data missing");
+#pragma warning disable 618
+            originals = renderers.Select(renderer => renderer.debugShaders?.hdrDebugViewPS).ToArray();
+            savedBytes = paths.Select(File.ReadAllBytes).ToArray();
+            foreach (var renderer in renderers)
+                if (renderer.debugShaders != null) renderer.debugShaders.hdrDebugViewPS = null;
+#pragma warning restore 618
+        }
+
+        internal bool AllCleared
+        {
+            get
+            {
+#pragma warning disable 618
+                return renderers.All(renderer => renderer.debugShaders?.hdrDebugViewPS == null);
+#pragma warning restore 618
+            }
+        }
+
+        public void Dispose()
+        {
+#pragma warning disable 618
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i].debugShaders != null) renderers[i].debugShaders.hdrDebugViewPS = originals[i];
+#pragma warning restore 618
+        }
+
+        internal void VerifySavedAssetsUnchanged()
+        {
+            for (int i = 0; i < paths.Length; i++)
+                Require(File.ReadAllBytes(paths[i]).SequenceEqual(savedBytes[i]), "WebGL build changed saved renderer: " + paths[i]);
+        }
+    }
+
     static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
@@ -127,33 +175,27 @@ public static class LastStandLoopBuild
             "573620ae32aec764abd4d728906d2587", "Unexpected saved HDR debug shader");
         BuildReport report;
         bool rendererRefStayedCleared = false;
+        WebRendererDebugScope webRenderers = null;
         try
         {
             EditorGraphicsSettings.SetRenderPipelineGlobalSettingsAsset<UniversalRenderPipeline>(webSettings);
             QualitySettings.renderPipeline = pipeline;
             Require(EditorGraphicsSettings.GetRenderPipelineGlobalSettingsAsset<UniversalRenderPipeline>() == webSettings,
                 "WebGL global settings were not selected");
-#pragma warning disable 618
-            webRenderer.debugShaders.hdrDebugViewPS = null;
-            Require(webRenderer.debugShaders.hdrDebugViewPS == null,
-                "WebGL renderer must omit unsupported HDR debug shader");
-#pragma warning restore 618
+            webRenderers = new WebRendererDebugScope();
+            Require(webRenderers.AllCleared, "WebGL renderers must omit unsupported HDR debug shader");
             WebDebugSettingsStripped = false;
             StripWebDebugSettings = true;
             Debug.Log("ST_LS_PLAYER_BUILD_BEGIN target=webgl");
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { ScenePath }, locationPathName = output,
                 target = BuildTarget.WebGL, options = options });
             Debug.Log("ST_LS_PLAYER_BUILD_END target=webgl result=" + report.summary.result);
-#pragma warning disable 618
-            rendererRefStayedCleared = webRenderer.debugShaders.hdrDebugViewPS == null;
-#pragma warning restore 618
+            rendererRefStayedCleared = webRenderers.AllCleared;
         }
         finally
         {
             StripWebDebugSettings = false;
-#pragma warning disable 618
-            try { webRenderer.debugShaders.hdrDebugViewPS = nativeHdrShader; }
-#pragma warning restore 618
+            try { webRenderers?.Dispose(); }
             finally
             {
                 try { EditorGraphicsSettings.SetRenderPipelineGlobalSettingsAsset<UniversalRenderPipeline>(previousSettings); }
@@ -175,10 +217,18 @@ public static class LastStandLoopBuild
         Require(Digest(ScenePath) == sceneBefore && Digest(FieldScene) == fieldBefore && Digest(ReviewScene) == reviewBefore,
             "Build changed a saved scene");
         Require(Digest(RendererPath) == rendererBefore, "Build changed saved renderer data");
+        webRenderers.VerifySavedAssetsUnchanged();
         Require(Digest(GraphicsPath) == graphicsBefore && Digest(QualityPath) == qualityBefore,
             "Build changed saved project graphics settings");
         Require(Digest(WebSettingsPath) == webSettingsBefore, "Build changed saved WebGL resource settings");
-        Debug.Log("ST_LS_WEB_BUILD_PASS configuration=" + configuration + " options=" + options
+        Require(((report.summary.options & BuildOptions.Development) != 0) == (configuration == "development"),
+            "Actual WebGL development mode differs from the requested configuration");
+        // Unity's Flags enum formats zero-valued aliases alongside Development.
+        // Bind the actual report bit above and keep the requested option stable
+        // instead of depending on Enum.ToString's display names.
+        Debug.Log("ST_LS_WEB_BUILD_PASS configuration=" + configuration + " options="
+            + (configuration == "development" ? "Development" : "None")
+            + " effectiveOptionsBits=" + (long)report.summary.options
             + " bytes=" + report.summary.totalSize + " path=" + output);
     }
 }

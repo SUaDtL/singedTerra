@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseWaveOracleCsv,CURRENT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION} from '../../e2e/helpers/lastStandWaveOracle.mjs';
+import {parseWaveOracleCsv,CURRENT_WAVE_EDITION,BUILDCRAFT_WAVE_EDITION,COMBAT_DEPTH_WAVE_EDITION} from '../../e2e/helpers/lastStandWaveOracle.mjs';
 import {validateWaveResume} from '../../e2e/helpers/lastStandWaveJourney.mjs';
 import {validateModelObservation} from '../../e2e/helpers/lastStandJourney.mjs';
 import {idleWaveFields} from './lastStandWaveSaveFixtures.mjs';
@@ -79,13 +79,15 @@ function buildcraftCsv(){return Buffer.from([1,2,3,4,5,6].flatMap(tier=>
     [tier,fitting,damage,0,120,0,0,0,0,0,0,0,0,0,1,0,0,0,18,40,1,1,0,16,fitting==='shield'?60:0,fitting==='shield'?60:0,0,0,1,20,0,'Running'].join(',')))).join('\r\n')+'\r\n');}
 test('format3 maps exactly six tiers and seven fittings and binds observed Arc/shield state',()=>{
   const bytes=buildcraftCsv(),profiles=parseWaveOracleCsv(bytes,{format:3});assert.equal(Object.keys(profiles).length,168);
-  const oracle=profiles['6:shield:50'],model={...oracle[0],rules:'last-stand-waves-v3:storm-foundry'};
+  const oracle=profiles['6:shield:50'],model={...oracle[0],rules:'last-stand-waves-v4:storm-foundry'};
   assert.equal(model.shield,60);assert.doesNotThrow(()=>validateModelObservation(model,oracle));
   for(const key of ['arc','arcDamage','shield','shieldCapacity','shieldRestored','shieldAbsorbed','armorPiercing','areaControl','fieldEngineering']){
     assert.throws(()=>validateModelObservation({...model,[key]:model[key]+1},oracle));
     const missing={...model};delete missing[key];assert.throws(()=>validateModelObservation(missing,oracle));
   }
-  for(const options of [{format:2},{edition:COMBAT_DEPTH_WAVE_EDITION},{edition:{...CURRENT_WAVE_EDITION,rulesVersion:'last-stand-waves-v4'}}])
+  const retained=parseWaveOracleCsv(bytes,{format:3,edition:BUILDCRAFT_WAVE_EDITION})['6:shield:50'];
+  assert.doesNotThrow(()=>validateModelObservation({...retained[0],rules:'last-stand-waves-v3:storm-foundry'},retained));
+  for(const options of [{format:2},{edition:COMBAT_DEPTH_WAVE_EDITION},{edition:{...CURRENT_WAVE_EDITION,rulesVersion:'last-stand-waves-v5'}}])
     assert.throws(()=>parseWaveOracleCsv(bytes,options));
   assert.throws(()=>parseWaveOracleCsv(Buffer.from(bytes.toString().split('\r\n').slice(1).join('\r\n'))));
   assert.throws(()=>parseWaveOracleCsv(Buffer.from(bytes.toString().replace(',60,60,0,0,1,20,0,Running',',61,60,0,0,1,20,0,Running'))));

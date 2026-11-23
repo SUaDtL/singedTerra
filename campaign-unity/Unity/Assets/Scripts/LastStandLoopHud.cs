@@ -16,6 +16,8 @@ namespace SingedTerra.LastStand
         readonly Dictionary<string,RectTransform> nodes;
         readonly LastStandGarageView garage;
         readonly LastStandCombatHud combat;
+        readonly LastStandBattlePresentation battleArt;
+        readonly LastStandCombatSkillsHud combatSkills;
         readonly LastStandShopHud shop;
         readonly LastStandModalHost modals;
         readonly LastStandHudObservations observations;
@@ -58,12 +60,15 @@ namespace SingedTerra.LastStand
             root.offsetMin=root.offsetMax=Vector2.zero;
             combat=new LastStandCombatHud(loop,root,elements,metalGrain,metalSurface);
             garage=new LastStandGarageView(loop,canvas,root,elements);
+            garage.BindBayElements(nodes);
+            battleArt=new LastStandBattlePresentation(loop,root);
+            combatSkills=new LastStandCombatSkillsHud(loop,root,elements);
             shop=new LastStandShopHud(loop,root,elements,Refresh,Layout,b=>keyboard.Focus(b),combat.SetSummary,
                 (activation,intent,result)=>observations.ObservePurchase(activation,intent,result));
             modals=new LastStandModalHost(loop,root,font,metalGrain,metalSurface,elements,shop.OpenPermanentFromPlanner,shop.CanOpenPermanentShop);settings=modals.Settings;
             actions=new[]{combat.Fitting,combat.Deploy,combat.Claim,combat.Purchase,combat.Redeploy,combat.Retry,combat.Pause,combat.Mute,combat.Tier,combat.Effects,
                 modals.Menu,combat.SpeedMinus,combat.SpeedRate,combat.SpeedPlus,garage.TierPrevious,garage.TierNext,garage.ArmoryEntry,garage.ResearchEntry};
-            var core=new List<Button>(actions);core.Add(combat.WaveInfo);coreActions=core.ToArray();
+            var core=new List<Button>(actions);core.Add(combat.WaveInfo);core.AddRange(combatSkills.Buttons);coreActions=core.ToArray();
             var background=new List<Button>(coreActions);background.AddRange(shop.Buttons);backgroundActions=background.ToArray();
             var all=new List<Selectable>(backgroundActions);all.AddRange(modals.Buttons);all.Add(modals.Armory.NameInput);
             keyboard=root.gameObject.AddComponent<LastStandHudKeyboard>();
@@ -93,9 +98,10 @@ namespace SingedTerra.LastStand
                 LastStandUiPrimitives.Style(button,state.Available[i],button.name==state.Primary);
             }
             combat.Refresh(state,loop.GarageCardsVisible,shop.IsOpen);garage.Refresh(state.Available[1],DeploymentRefusal());shop.Refresh();
+            combatSkills.Refresh(shop.IsOpen);
             if(loop.GarageCardsVisible&&!shop.IsOpen)shop.Entry.GetComponentInChildren<Text>(true).text="UPGRADES";
             if((state.Phase=="battle"||state.Phase=="settling")&&!shop.IsOpen)shop.Entry.GetComponentInChildren<Text>(true).text="RUN\nUPGRADES";
-            nodes["DockHeading"].GetComponent<Text>().text=state.Phase=="battle"||state.Phase=="settling"?"GAME SPEED":"FIELD CONTROLS";
+            nodes["DockHeading"].GetComponent<Text>().text="FIELD CONTROLS";
             modals.Refresh(keyboard,backgroundActions);Layout();
             modals.AfterRefresh(keyboard,garage.TierNext,garage.ArmoryEntry);observations.ReportShopState();
         }
@@ -106,6 +112,7 @@ namespace SingedTerra.LastStand
             bool resized=layoutPixels!=pixels.size;layoutPixels=pixels.size;
             float ratio=LastStandHudDisplay.PreferredPixelRatio(),cssWidth=pixels.width/ratio,cssHeight=pixels.height/ratio;
             float unitsX=size.x/cssWidth,unitsY=size.y/cssHeight;
+            nodes["DockHeading"].GetComponent<Text>().text=LastStandHudLayout.HasConceptCombat(cssWidth,cssHeight)&&loop.Session.Model?.Skills.Loadout.Count>0?"SKILLS":"FIELD CONTROLS";
             var active=new List<string>();foreach(var button in coreActions)if(button.gameObject.activeSelf)active.Add(button.name);
             if(shop.Entry.gameObject.activeSelf)active.Add(shop.Entry.name);
             bool receipt=loop.Progression.SaveState=="ready"&&loop.Progression.LastReceipt!=null;
@@ -130,13 +137,19 @@ namespace SingedTerra.LastStand
                     var bounds=slot.Bounds;float x=bounds.X,y=bounds.Y;
                     if(slot.Parent!=null){var parent=slots[slot.Parent].Bounds;x-=parent.X;y-=parent.Y;}
                     LastStandUiPrimitives.Place(entry.Value,x*unitsX,y*unitsY,bounds.Width*unitsX,bounds.Height*unitsY);
-                    var text=entry.Value.GetComponent<Text>();if(text)text.fontSize=Mathf.CeilToInt(slot.FontSize*unitsY);
+                    var text=entry.Value.GetComponent<Text>();if(text)
+                    {
+                        text.fontSize=Mathf.CeilToInt(slot.FontSize*unitsY);
+                        int minimum=Mathf.CeilToInt(LastStandHudLayout.MinimumTextSize*unitsY);
+                        while(text.fontSize>minimum&&text.preferredHeight>entry.Value.rect.height+.1f)text.fontSize--;
+                    }
                 }
             }
             finally{shop.EndLayout(false);}
             combat.LayoutRecovery(slots,unitsX,unitsY);
             combat.LayoutInstruments(slots,unitsX,unitsY);modals.Layout(cssWidth,cssHeight,unitsX,unitsY);
-            garage.Layout(slots,cssWidth,cssHeight,ratio,shop.IsOpen);
+            garage.Layout(slots,cssWidth,cssHeight,ratio,shop.IsOpen,modals.HidesBackground);
+            battleArt.Layout(cssWidth,cssHeight,shop.IsOpen);
             if(modals.HidesBackground)foreach(var node in nodes.Values)node.gameObject.SetActive(false);
             keyboard.Refresh();shop.EndLayout(resized);observations.ReportLayout();
         }

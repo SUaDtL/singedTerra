@@ -32,9 +32,9 @@ public static class LastStandObservationContractChecks
     static object Field(object value,string name)=>value.GetType().GetField(name).GetValue(value);
     static Contract CurrentContract()
     {
-        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v6.json"));
+        string path=Path.GetFullPath(Path.Combine(Application.dataPath,"../../Tools/contracts/last-stand-observation-v7.json"));
         var contract=JsonUtility.FromJson<Contract>(File.ReadAllText(path));
-        Require(contract.schema=="singedterra-last-stand-observation/v6"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
+        Require(contract.schema=="singedterra-last-stand-observation/v7"&&contract.tag=="ST_LS_HUD_LAYOUT ","Unsupported contract version");
         return contract;
     }
     internal static Dictionary<string,string[]> CurrentControlInventory()
@@ -101,6 +101,61 @@ public static class LastStandObservationContractChecks
             }
         }
     }
+    static void CheckModalScrollUnits(LastStandLoopController loop,object hud,object observations,MethodInfo capture)
+    {
+        // Batch import has no application focus callbacks, as in ControlsChecks.
+        typeof(EncounterSession).GetField("focused",Private).SetValue(loop.Session,true);
+        typeof(EncounterSession).GetField("applicationPaused",Private).SetValue(loop.Session,false);
+        var root=(RectTransform)hud.GetType().GetField("root",Private).GetValue(hud);
+        var modals=hud.GetType().GetField("modals",Private).GetValue(hud);
+        var shop=hud.GetType().GetField("shop",Private).GetValue(hud);
+        var layout=modals.GetType().GetMethod("Layout");var scroll=modals.GetType().GetMethod("Scroll");
+        // Exercise the real large-display modal scale at several root-unit
+        // ratios. Rect travel / root units is an independent CSS-distance oracle.
+        foreach(var size in new[]{new Vector2(1366,664),new Vector2(1920,976),new Vector2(3840,2160)})
+        foreach(float units in new[]{.75f,1f,1.25f})
+        foreach(var pane in new[]{new[]{"milestones","Settings","settings"},new[]{"research","ResearchList","researchList"},
+            new[]{"research","ResearchDetail","researchDetail"},new[]{"history","RunHistory","history"},
+            new[]{"planner","Planner","planner"},new[]{"appearance","Appearance","appearance"},
+            new[]{"armory","Armory","armory"},new[]{"skills","Skills","skills"}})
+        {
+            loop.CloseMenu();loop.OpenMenu(pane[0]);Require(loop.MenuPage==pane[0],"Page owns the imported scroll fixture: "+pane[0]);
+            layout.Invoke(modals,new object[]{size.x,size.y,units,units});Canvas.ForceUpdateCanvases();
+            var rects=root.GetComponentsInChildren<RectTransform>(true);
+            var viewport=rects.Single(r=>r.name==pane[1]+"Viewport");
+            var content=rects.Single(r=>r.name==pane[1]+"Content");
+            // Imported batch rendering can fit the short fresh-account text.
+            // Give the real ScrollRect finite overflow without changing game state.
+            content.sizeDelta=new Vector2(content.sizeDelta.x,viewport.rect.height+500*units);
+            Canvas.ForceUpdateCanvases();
+            float actualMaximum=Mathf.Max(0,content.rect.height-viewport.rect.height)/units;
+            Require(actualMaximum>0,"Fixture must have actual scroll travel: "+pane[1]);
+            shop.GetType().GetMethod("BeginLayout").Invoke(shop,new object[]{130f,500f,units});
+            shop.GetType().GetMethod("EndLayout").Invoke(shop,new object[]{false});
+            if(pane[1]=="ResearchDetail")
+                modals.GetType().GetMethod("Reveal").Invoke(modals,new object[]{
+                    root.GetComponentsInChildren<UnityEngine.UI.Button>(true).Single(b=>b.name=="ResearchHelp")});
+            foreach(string direction in new[]{"scroll-start","scroll-end"})
+            {
+                scroll.Invoke(modals,new object[]{direction});Canvas.ForceUpdateCanvases();
+                var snapshot=capture.Invoke(observations,new object[]{null});
+                double maximum=Convert.ToDouble(Field(snapshot,pane[2]+"MaximumScrollOffset"));
+                double offset=Convert.ToDouble(Field(snapshot,pane[2]+"ScrollOffset"));
+                Require(Math.Abs(maximum-actualMaximum)<.1,
+                    "Modal scroll telemetry must use CSS units: "+pane[1]+" "+size+" root units="+units+" observed="+maximum+" actual="+actualMaximum);
+                Require(Math.Abs(offset-content.anchoredPosition.y/units)<.1,"Modal scroll offset must match actual CSS travel: "+direction);
+                Require(direction=="scroll-start"?Math.Abs(offset)<.1:offset>0&&Math.Abs(offset-maximum)<.1,
+                    "The actual selected pane reaches both scroll endpoints: "+pane[1]);
+                if(pane[0]=="research")
+                    Require(Math.Abs(Convert.ToDouble(Field(snapshot,"researchScrollOffset"))-offset)<.1&&
+                        Math.Abs(Convert.ToDouble(Field(snapshot,"researchMaximumScrollOffset"))-maximum)<.1,
+                        "Research compatibility telemetry follows the selected pane in CSS units");
+                Require(Convert.ToDouble(Field(snapshot,"scrollOffset"))==130&&Convert.ToDouble(Field(snapshot,"maximumScrollOffset"))==500,
+                    "Nonmodal shop telemetry must retain its existing CSS units");
+            }
+        }
+        loop.CloseMenu();loop.RefreshControls();
+    }
     public static void Run()
     {
         var factory=LastStandLoopController.StorageFactory;bool background=Application.runInBackground;
@@ -120,7 +175,7 @@ public static class LastStandObservationContractChecks
                 var observations=hud.GetType().GetField("observations",Private).GetValue(hud);
                 var capture=observations.GetType().GetMethod("CaptureLayoutSnapshot",Private);
                 var packets=new List<string>();
-                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance","armory"})
+                foreach(string page in new[]{"","settings","research","history","planner","save","backup-preview","help","appearance","armory","skills"})
                 {
                     if(page!="")loop.OpenMenu(page);else loop.CloseMenu();loop.RefreshControls();
                     var snapshot=capture.Invoke(observations,new object[]{null});Check(snapshot,contract);
@@ -130,6 +185,7 @@ public static class LastStandObservationContractChecks
                     bool rejected=false;try{Check(snapshot,contract);}catch(InvalidOperationException){rejected=true;}
                     Require(rejected,"Duplicate emitter negative control escaped");rows.SetValue(original,0);
                 }
+                CheckModalScrollUnits(loop,hud,observations,capture);
                 string output=Environment.GetEnvironmentVariable("ST_LS_OBSERVATION_OUTPUT");
                 Require(!string.IsNullOrEmpty(output),"Contract test needs its owned evidence output");
                 File.WriteAllText(output,JsonUtility.ToJson(new Packets{packets=packets.ToArray()}));
